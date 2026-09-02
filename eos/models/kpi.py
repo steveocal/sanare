@@ -33,8 +33,7 @@ class EosKpiValue(models.Model):
     value = fields.Float(string='Value', aggregator='sum')
     notes = fields.Text(string='Notes')
 
-    _sql_constraints = [
-        ('period_market_kpi_uniq',
-         'unique(period, market_id, kpi_id)',
-         'Only one KPI value per market per month.'),
-    ]
+    _period_market_kpi_uniq = models.Constraint(
+        'unique(period, market_id, kpi_id)',
+        'Only one KPI value per market per month.',
+    )

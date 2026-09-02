@@ -73,7 +73,6 @@
                 <field name="category" type="row"/>
                 <field name="rating" type="col"/>
                 <field name="risk_score" type="measure"/>
-                <field name="__count" type="measure"/>
             </pivot>
         </field>
     </record>

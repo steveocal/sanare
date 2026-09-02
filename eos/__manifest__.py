@@ -8,19 +8,19 @@
     'description': '''
 Sanare International EOS operating & reporting engine.
 
-Replaces the Excel "Management Reporting Engine" workbook with Odoo models:
+Replaces the Excel "Management Reporting Engine" workbook with Odoo models.
+
 - EOS execution: Markets, Rocks, Tasks (auto % complete & health)
 - CRM extension: Sanare stages + commercial cm2 pipeline on crm.lead
 - Clinical: Physician / KOL tracker
 - Supply chain: SKU inventory (reads Odoo Inventory as source of truth)
 - Enterprise risk register (auto rating & score)
 - KPI dictionary + monthly KPI history
-- Launch readiness workstreams, month-end close checklist, monthly control,
-  milestones and weekly L10 / IDS meeting capture.
+- Launch readiness workstreams, month-end close checklist, monthly control, milestones and weekly L10 / IDS meeting capture
 
 Financial layer (D) is intentionally deferred: accounting will feed the
 financial reports in a later phase.
-    ''',
+''',
     'depends': ['base', 'crm', 'product', 'stock'],
     'data': [
         'security/ir.model.access.csv',

@@ -183,7 +183,6 @@
                 <field name="rock_id" type="row"/>
                 <field name="status" type="col"/>
                 <field name="percent_complete" type="measure"/>
-                <field name="__count" type="measure"/>
             </pivot>
         </field>
     </record>
