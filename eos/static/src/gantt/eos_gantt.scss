@@ -1,0 +1,177 @@
+.eos-gantt {
+    --eos-row-h: 30px;
+    --eos-bar: #4a7fd4;
+    --eos-bar-done: #274d8a;
+    --eos-crit: #d94a4a;
+    --eos-crit-done: #8a2727;
+    --eos-summary: #2b2b3a;
+    --eos-grid: #e6e6e9;
+    --eos-weekend: rgba(0, 0, 0, 0.035);
+    --eos-border: #d0d0d5;
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: #fff;
+    font-size: 12px;
+
+    .eos-gantt-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--eos-border);
+        flex-wrap: wrap;
+
+        .eos-rock-select { width: 260px; }
+        .eos-gantt-spacer { flex: 1; }
+        .eos-gantt-opts { display: flex; gap: 10px; align-items: center; margin-left: 6px; }
+        .eos-opt { display: flex; align-items: center; gap: 3px; margin: 0; font-weight: 400; cursor: pointer; }
+    }
+
+    .eos-gantt-loading { padding: 30px; color: #888; }
+
+    .eos-gantt-body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* ---------- left grid ---------- */
+    .eos-gantt-left {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--eos-border);
+        flex: none;
+        min-width: 240px;
+
+        .eos-gantt-left-head {
+            display: flex;
+            height: calc(var(--eos-row-h) * 2);
+            align-items: center;
+            border-bottom: 2px solid var(--eos-border);
+            background: #f7f7f8;
+            font-weight: 600;
+            padding: 0 4px;
+        }
+        .eos-gantt-left-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .eos-row {
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+            border-bottom: 1px solid var(--eos-grid);
+            cursor: pointer;
+            white-space: nowrap;
+            &:hover { background: #eef3fb; }
+            &.is-summary { background: #f3f3f6; }
+            &.is-critical .c-name { color: var(--eos-crit); }
+        }
+        .c-wbs { width: 46px; flex: none; color: #999; overflow: hidden; }
+        .c-name { flex: 1; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 2px; }
+        .c-date { width: 74px; flex: none; color: #666; font-variant-numeric: tabular-nums; }
+        .c-dur { width: 44px; flex: none; color: #666; text-align: right; }
+        .c-pct { width: 30px; flex: none; text-align: right; color: #666; }
+        .c-pred { width: 70px; flex: none; overflow: hidden; text-overflow: ellipsis; color: #888; }
+
+        .eos-exp { width: 12px; cursor: pointer; color: #666; user-select: none; }
+        .eos-exp-spacer { width: 12px; display: inline-block; }
+    }
+
+    .eos-gantt-splitter {
+        width: 5px;
+        flex: none;
+        cursor: col-resize;
+        background: var(--eos-border);
+        &:hover { background: var(--eos-bar); }
+    }
+
+    /* ---------- right timeline ---------- */
+    .eos-gantt-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .eos-gantt-timehead {
+        height: calc(var(--eos-row-h) * 2);
+        overflow: hidden;
+        border-bottom: 2px solid var(--eos-border);
+        background: #f7f7f8;
+        flex: none;
+        .eos-th-inner { position: relative; height: 100%; }
+        .eos-th-major, .eos-th-minor { position: relative; height: var(--eos-row-h); }
+        .eos-th-cell {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 4px;
+            border-left: 1px solid var(--eos-border);
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .eos-th-minor .eos-th-cell { font-weight: 400; color: #666; }
+    }
+    .eos-gantt-canvas {
+        flex: 1;
+        overflow: auto;
+    }
+    .eos-gantt-svg { display: block; }
+
+    .eos-weekend { fill: var(--eos-weekend); }
+    .eos-grid { stroke: var(--eos-grid); stroke-width: 1; }
+    .eos-rowline { stroke: var(--eos-grid); stroke-width: 1; }
+    .eos-today { stroke: #e08a2e; stroke-width: 1.5; stroke-dasharray: 4 3; }
+
+    .eos-bar-g { cursor: pointer; }
+    .eos-bar { fill: var(--eos-bar); opacity: 0.55; stroke: var(--eos-bar-done); stroke-width: 1; }
+    .eos-bar.is-critical { fill: var(--eos-crit); stroke: var(--eos-crit-done); }
+    .eos-bar-progress { fill: var(--eos-bar-done); }
+    .eos-bar-progress.is-critical { fill: var(--eos-crit-done); }
+    .eos-bar-label { fill: #555; font-size: 11px; }
+    .eos-summary { fill: var(--eos-summary); }
+    .eos-milestone { fill: var(--eos-summary); }
+    .eos-milestone.is-critical { fill: var(--eos-crit); }
+    .eos-baseline { fill: #9a9aa5; }
+    .eos-slack { fill: none; stroke: #9a9aa5; stroke-width: 1; stroke-dasharray: 3 2; }
+    .eos-deadline { fill: #2e8b57; }
+
+    .eos-link { stroke: #8a8a95; stroke-width: 1.2; }
+    .eos-link.is-critical { stroke: var(--eos-crit); stroke-width: 1.5; }
+    .eos-arrowhead { fill: #8a8a95; }
+    .eos-arrowhead-c { fill: var(--eos-crit); }
+
+    .eos-gantt-tip {
+        position: fixed;
+        z-index: 1000;
+        background: #1f1f28;
+        color: #fff;
+        padding: 7px 10px;
+        border-radius: 4px;
+        font-size: 11.5px;
+        max-width: 340px;
+        pointer-events: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        .tip-title { font-weight: 700; margin-bottom: 3px; }
+        .tip-crit { color: #ff9a9a; font-weight: 700; }
+        .tip-warn { color: #ffcf8a; margin-top: 3px; }
+    }
+}
+
+.o_web_client.o_dark .eos-gantt {
+    --eos-grid: #3a3a42;
+    --eos-weekend: rgba(255, 255, 255, 0.04);
+    --eos-border: #444;
+    background: var(--o-gray-900, #1e1e24);
+    .eos-gantt-left-head, .eos-gantt-timehead { background: #2a2a31; }
+    .eos-row.is-summary, .eos-gantt-left .eos-row.is-summary { background: #26262d; }
+    .eos-row:hover { background: #2c3646; }
+}

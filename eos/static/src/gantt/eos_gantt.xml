@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="eos.Gantt">
+        <div class="eos-gantt o_action">
+            <!-- Toolbar -->
+            <div class="eos-gantt-toolbar">
+                <select class="form-select form-select-sm eos-rock-select"
+                        t-on-change="onRockChange">
+                    <t t-foreach="state.rocks" t-as="r" t-key="r.id">
+                        <option t-att-value="r.id" t-att-selected="r.id === state.rockId">
+                            <t t-esc="r.rock_id ? (r.rock_id + ' · ' + r.name) : r.name"/>
+                        </option>
+                    </t>
+                </select>
+
+                <div class="btn-group btn-group-sm">
+                    <t t-foreach="['day','week','month','quarter']" t-as="z" t-key="z">
+                        <button class="btn"
+                                t-att-class="state.zoom === z ? 'btn-primary' : 'btn-secondary'"
+                                t-on-click="() => this.setZoom(z)">
+                            <t t-esc="z[0].toUpperCase() + z.slice(1)"/>
+                        </button>
+                    </t>
+                </div>
+
+                <button class="btn btn-sm btn-secondary" t-on-click="scrollToToday">Today</button>
+                <button class="btn btn-sm btn-secondary" t-on-click="expandAll">Expand</button>
+                <button class="btn btn-sm btn-secondary" t-on-click="collapseAll">Collapse</button>
+
+                <div class="eos-gantt-opts">
+                    <t t-foreach="[['critical','Critical path'],['baseline','Baseline'],['slack','Slack'],['links','Links'],['nonworking','Non-working']]"
+                       t-as="o" t-key="o[0]">
+                        <label class="eos-opt">
+                            <input type="checkbox" t-att-checked="state.opt[o[0]]"
+                                   t-on-change="() => this.toggleOpt(o[0])"/>
+                            <span t-esc="o[1]"/>
+                        </label>
+                    </t>
+                </div>
+
+                <div class="eos-gantt-spacer"/>
+                <button class="btn btn-sm btn-primary" t-on-click="() => this.reschedule(false)">
+                    Reschedule
+                </button>
+                <button class="btn btn-sm btn-secondary" t-on-click="() => this.reschedule(true)">
+                    + Level
+                </button>
+                <button class="btn btn-sm btn-secondary" t-on-click="setBaseline">Set Baseline</button>
+            </div>
+
+            <div t-if="state.loading" class="eos-gantt-loading">Loading plan…</div>
+
+            <div class="eos-gantt-body" t-else="">
+                <!-- LEFT GRID -->
+                <div class="eos-gantt-left" t-attf-style="width:{{state.leftWidth}}px">
+                    <div class="eos-gantt-left-head">
+                        <span class="c-wbs">WBS</span>
+                        <span class="c-name">Task Name</span>
+                        <span class="c-date">Start</span>
+                        <span class="c-date">Finish</span>
+                        <span class="c-dur">Dur.</span>
+                        <span class="c-pct">%</span>
+                        <span class="c-pred">Pred.</span>
+                    </div>
+                    <div class="eos-gantt-left-body" t-ref="leftList" t-on-scroll="onRowScroll">
+                        <t t-foreach="orderedTasks" t-as="t" t-key="t.id">
+                            <div class="eos-row"
+                                 t-att-class="{'is-summary': t.is_summary, 'is-critical': state.opt.critical and t.is_critical}"
+                                 t-attf-style="height:{{rowHeight}}px"
+                                 t-on-click="() => this.openTask(t.id)">
+                                <span class="c-wbs" t-esc="t.wbs"/>
+                                <span class="c-name" t-attf-style="padding-left:{{t._depth * 14}}px">
+                                    <span t-if="t._hasKids" class="eos-exp"
+                                          t-on-click.stop="() => this.toggleCollapse(t.id)">
+                                        <t t-esc="state.collapsed[t.id] ? '▸' : '▾'"/>
+                                    </span>
+                                    <span t-else="" class="eos-exp-spacer"/>
+                                    <span t-att-class="{'fw-bold': t.is_summary}" t-esc="t.name"/>
+                                </span>
+                                <span class="c-date" t-esc="t.planned_start ? t.planned_start.slice(0,10) : ''"/>
+                                <span class="c-date" t-esc="t.planned_finish ? t.planned_finish.slice(0,10) : ''"/>
+                                <span class="c-dur" t-esc="t.duration_display"/>
+                                <span class="c-pct" t-esc="Math.round(t.percent_work_complete or t.percent_complete or 0)"/>
+                                <span class="c-pred" t-esc="t.predecessor_display"/>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+
+                <div class="eos-gantt-splitter" t-on-pointerdown="startSplit"/>
+
+                <!-- RIGHT TIMELINE -->
+                <div class="eos-gantt-right">
+                    <div class="eos-gantt-timehead">
+                        <div class="eos-th-inner" t-attf-style="width:{{layout.width}}px">
+                            <div class="eos-th-major">
+                                <t t-foreach="layout.majors" t-as="m" t-key="m_index">
+                                    <span class="eos-th-cell"
+                                          t-attf-style="left:{{m.x}}px;width:{{m.w}}px" t-esc="m.label"/>
+                                </t>
+                            </div>
+                            <div class="eos-th-minor">
+                                <t t-foreach="layout.minors" t-as="mi" t-key="mi_index">
+                                    <span class="eos-th-cell"
+                                          t-attf-style="left:{{mi.x}}px;width:{{mi.w}}px" t-esc="mi.label"/>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="eos-gantt-canvas" t-ref="rightPane" t-on-scroll="onPaneScroll">
+                        <svg class="eos-gantt-svg"
+                             t-att-width="layout.width" t-att-height="layout.height"
+                             t-attf-viewBox="0 0 {{layout.width}} {{layout.height}}">
+                            <defs>
+                                <marker id="eosArrow" markerWidth="7" markerHeight="7"
+                                        refX="6" refY="3.5" orient="auto">
+                                    <path d="M0,0 L7,3.5 L0,7 Z" class="eos-arrowhead"/>
+                                </marker>
+                                <marker id="eosArrowC" markerWidth="7" markerHeight="7"
+                                        refX="6" refY="3.5" orient="auto">
+                                    <path d="M0,0 L7,3.5 L0,7 Z" class="eos-arrowhead-c"/>
+                                </marker>
+                            </defs>
+
+                            <!-- weekend / non-working shading -->
+                            <t t-foreach="layout.weekends" t-as="w" t-key="w_index">
+                                <rect class="eos-weekend" t-att-x="w.x" y="0"
+                                      t-att-width="w.w" t-att-height="layout.height"/>
+                            </t>
+                            <!-- vertical gridlines -->
+                            <t t-foreach="layout.grid" t-as="gx" t-key="gx_index">
+                                <line class="eos-grid" t-att-x1="gx" t-att-x2="gx"
+                                      y1="0" t-att-y2="layout.height"/>
+                            </t>
+                            <!-- row separators -->
+                            <t t-foreach="layout.rows" t-as="r" t-key="r.id">
+                                <line class="eos-rowline" x1="0" t-att-x2="layout.width"
+                                      t-att-y1="r.y + rowHeight" t-att-y2="r.y + rowHeight"/>
+                            </t>
+
+                            <!-- today -->
+                            <line class="eos-today" t-att-x1="layout.todayX" t-att-x2="layout.todayX"
+                                  y1="0" t-att-y2="layout.height"/>
+
+                            <!-- dependency arrows -->
+                            <t t-foreach="layout.arrows" t-as="a" t-key="a_index">
+                                <path class="eos-link" t-att-class="{'is-critical': a.critical}"
+                                      t-att-d="a.d" fill="none"
+                                      t-att-marker-end="a.critical ? 'url(#eosArrowC)' : 'url(#eosArrow)'"/>
+                            </t>
+
+                            <!-- bars -->
+                            <t t-foreach="layout.rows" t-as="r" t-key="'b'+r.id">
+                                <g t-on-click="() => this.openTask(r.id)"
+                                   t-on-mouseenter="(ev) => this.showTip(ev, orderedTasks[r_index])"
+                                   t-on-mouseleave="hideTip" class="eos-bar-g">
+
+                                    <t t-if="r.kind === 'summary'">
+                                        <path class="eos-summary"
+                                              t-attf-d="M {{r.x1}} {{r.y+9}} L {{r.x1+r.w}} {{r.y+9}}
+                                                        L {{r.x1+r.w}} {{r.y+9+7}} L {{r.x1+r.w-5}} {{r.y+9}}
+                                                        L {{r.x1+5}} {{r.y+9}} L {{r.x1}} {{r.y+9+7}} Z"/>
+                                    </t>
+
+                                    <t t-elif="r.kind === 'milestone'">
+                                        <path class="eos-milestone"
+                                              t-att-class="{'is-critical': r.critical}"
+                                              t-attf-d="M {{r.x1}} {{r.mid-8}} L {{r.x1+8}} {{r.mid}}
+                                                        L {{r.x1}} {{r.mid+8}} L {{r.x1-8}} {{r.mid}} Z"/>
+                                    </t>
+
+                                    <t t-else="">
+                                        <rect class="eos-bar" t-att-class="{'is-critical': r.critical}"
+                                              t-att-x="r.x1" t-att-y="r.y + (rowHeight-barH)/2"
+                                              t-att-width="r.w" t-att-height="barH" rx="3"/>
+                                        <rect class="eos-bar-progress"
+                                              t-att-class="{'is-critical': r.critical}"
+                                              t-att-x="r.x1" t-att-y="r.y + (rowHeight-barH)/2"
+                                              t-att-width="r.progressW" t-att-height="barH" rx="3"/>
+                                        <text class="eos-bar-label" t-att-x="r.x1 + r.w + 6"
+                                              t-att-y="r.mid + 4" t-esc="r.resource"/>
+                                    </t>
+
+                                    <rect t-if="r.baseline" class="eos-baseline"
+                                          t-att-x="r.baseline.x" t-att-y="r.y + rowHeight - 6"
+                                          t-att-width="r.baseline.w" height="3"/>
+                                    <rect t-if="r.slack" class="eos-slack"
+                                          t-att-x="r.slack.x" t-att-y="r.y + (rowHeight-barH)/2 + 3"
+                                          t-att-width="r.slack.w" t-att-height="barH - 6"/>
+                                    <path t-if="r.deadlineX" class="eos-deadline"
+                                          t-attf-d="M {{r.deadlineX-6}} {{r.y+2}} L {{r.deadlineX+6}} {{r.y+2}}
+                                                    L {{r.deadlineX}} {{r.y+10}} Z"/>
+                                </g>
+                            </t>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- tooltip -->
+            <div t-if="state.tooltip" class="eos-gantt-tip"
+                 t-attf-style="left:{{state.tooltip.x}}px;top:{{state.tooltip.y}}px">
+                <div class="tip-title">
+                    <t t-esc="state.tooltip.wbs"/> · <t t-esc="state.tooltip.name"/>
+                </div>
+                <div><b>Start:</b> <t t-esc="state.tooltip.start"/> &#160; <b>Finish:</b> <t t-esc="state.tooltip.finish"/></div>
+                <div><b>Duration:</b> <t t-esc="state.tooltip.dur"/> &#160; <b>Work done:</b> <t t-esc="state.tooltip.pct"/>%</div>
+                <div t-if="state.tooltip.res"><b>Resources:</b> <t t-esc="state.tooltip.res"/></div>
+                <div t-if="state.tooltip.pred"><b>Predecessors:</b> <t t-esc="state.tooltip.pred"/></div>
+                <div><b>Total slack:</b> <t t-esc="state.tooltip.slack"/> h
+                    <span t-if="state.tooltip.crit" class="tip-crit"> · CRITICAL</span></div>
+                <div t-if="state.tooltip.warn" class="tip-warn"><t t-esc="state.tooltip.warn"/></div>
+            </div>
+        </div>
+    </t>
+</templates>

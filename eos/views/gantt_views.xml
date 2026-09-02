@@ -1,0 +1,14 @@
+<odoo>
+    <record id="action_eos_project_gantt" model="ir.actions.client">
+        <field name="name">Project Plan (Gantt)</field>
+        <field name="tag">eos_project_gantt</field>
+    </record>
+
+    <menuitem id="menu_eos_project_gantt" name="Project Plan (Gantt)"
+              parent="menu_eos_execution"
+              action="action_eos_project_gantt" sequence="40"/>
+
+    <menuitem id="menu_eos_task_sheet" name="Task Sheet (MS Project)"
+              parent="menu_eos_execution"
+              action="action_eos_task_sheet" sequence="35"/>
+</odoo>

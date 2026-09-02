@@ -13,3 +13,5 @@ access_eos_monthly_report,eos.monthly.report,model_eos_monthly_report,base.group
 access_eos_milestone,eos.milestone,model_eos_milestone,base.group_user,1,1,1,1
 access_eos_l10,eos.l10,model_eos_l10,base.group_user,1,1,1,1
 access_eos_ids,eos.ids,model_eos_ids,base.group_user,1,1,1,1
+access_eos_task_dependency,eos.task.dependency,model_eos_task_dependency,base.group_user,1,1,1,1
+access_eos_task_assignment,eos.task.assignment,model_eos_task_assignment,base.group_user,1,1,1,1

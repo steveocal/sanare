@@ -21,7 +21,7 @@ Replaces the Excel "Management Reporting Engine" workbook with Odoo models.
 Financial layer (D) is intentionally deferred: accounting will feed the
 financial reports in a later phase.
 ''',
-    'depends': ['base', 'crm', 'product', 'stock'],
+    'depends': ['base', 'crm', 'product', 'stock', 'resource', 'web'],
     'data': [
         'security/ir.model.access.csv',
         'data/markets.xml',
@@ -34,6 +34,7 @@ financial reports in a later phase.
         'data/milestones.xml',
         'views/market_views.xml',
         'views/rock_task_views.xml',
+        'views/project_plan_views.xml',
         'views/physician_views.xml',
         'views/supply_chain_views.xml',
         'views/risk_views.xml',
@@ -41,7 +42,15 @@ financial reports in a later phase.
         'views/governance_views.xml',
         'views/crm_views.xml',
         'views/menus.xml',
+        'views/gantt_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'eos/static/src/gantt/eos_gantt.scss',
+            'eos/static/src/gantt/eos_gantt.xml',
+            'eos/static/src/gantt/eos_gantt.js',
+        ],
+    },
     'installable': True,
     'application': True,
     'auto_install': False,

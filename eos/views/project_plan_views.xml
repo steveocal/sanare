@@ -1,0 +1,171 @@
+<odoo>
+    <!-- ============ eos.task: MS Project scheduling pages ============ -->
+    <record id="view_eos_task_form_msp" model="ir.ui.view">
+        <field name="name">eos.task.form.msp</field>
+        <field name="model">eos.task</field>
+        <field name="inherit_id" ref="eos.view_eos_task_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group[1]" position="before">
+                <group>
+                    <field name="wbs" readonly="1"/>
+                    <field name="parent_task_id"/>
+                    <field name="is_summary" readonly="1"/>
+                    <field name="is_milestone"/>
+                    <field name="is_critical" readonly="1"/>
+                    <field name="schedule_warning" readonly="1"
+                           invisible="not schedule_warning"
+                           class="text-danger"/>
+                </group>
+            </xpath>
+
+            <xpath expr="//sheet" position="inside">
+              <notebook name="msp_notebook">
+                <page string="Schedule" name="msp_schedule">
+                    <group>
+                        <group string="Planned">
+                            <field name="task_mode"/>
+                            <field name="planned_start"/>
+                            <field name="planned_finish"/>
+                            <field name="duration_hours"/>
+                            <field name="duration_display" readonly="1"/>
+                            <field name="calendar_id"/>
+                            <field name="effort_driven"/>
+                        </group>
+                        <group string="Constraint / Deadline">
+                            <field name="constraint_type"/>
+                            <field name="constraint_date"
+                                   invisible="constraint_type in ('asap','alap')"/>
+                            <field name="deadline"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Critical Path (computed)">
+                            <field name="early_start" readonly="1"/>
+                            <field name="early_finish" readonly="1"/>
+                            <field name="late_start" readonly="1"/>
+                            <field name="late_finish" readonly="1"/>
+                            <field name="total_slack_hours" readonly="1"/>
+                            <field name="free_slack_hours" readonly="1"/>
+                        </group>
+                        <group string="Baseline">
+                            <field name="baseline_start" readonly="1"/>
+                            <field name="baseline_finish" readonly="1"/>
+                            <field name="baseline_duration_hours" readonly="1"/>
+                            <field name="baseline_work_hours" readonly="1"/>
+                            <field name="baseline_date" readonly="1"/>
+                            <button name="action_set_baseline" type="object"
+                                    string="Set Baseline" class="btn-secondary"/>
+                        </group>
+                    </group>
+                </page>
+
+                <page string="Predecessors" name="msp_predecessors">
+                    <field name="predecessor_ids">
+                        <list editable="bottom">
+                            <field name="predecessor_task_id"
+                                   domain="[('rock_id','=',parent.rock_id),('id','!=',parent.id)]"/>
+                            <field name="dependency_type"/>
+                            <field name="lag_hours"/>
+                            <field name="lag_display" readonly="1"/>
+                        </list>
+                    </field>
+                    <separator string="Successors"/>
+                    <field name="successor_ids" readonly="1">
+                        <list>
+                            <field name="task_id"/>
+                            <field name="dependency_type"/>
+                            <field name="lag_display"/>
+                        </list>
+                    </field>
+                </page>
+
+                <page string="Resources" name="msp_resources">
+                    <group>
+                        <group string="Work">
+                            <field name="work_hours"/>
+                            <field name="actual_work_hours"/>
+                            <field name="remaining_work_hours" readonly="1"/>
+                            <field name="percent_work_complete"/>
+                        </group>
+                        <group>
+                            <field name="is_overallocated" readonly="1"
+                                   class="text-warning"/>
+                            <field name="resource_names" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="assignment_ids">
+                        <list editable="bottom">
+                            <field name="user_id"/>
+                            <field name="units"/>
+                            <field name="work_hours"/>
+                            <field name="actual_work_hours"/>
+                        </list>
+                    </field>
+                </page>
+              </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- eos.task: MS Project style sheet list -->
+    <record id="view_eos_task_list_msp" model="ir.ui.view">
+        <field name="name">eos.task.list.msp</field>
+        <field name="model">eos.task</field>
+        <field name="arch" type="xml">
+            <list string="Task Sheet" default_order="rock_id, sequence, id"
+                  decoration-danger="is_critical"
+                  decoration-muted="status == 'deferred'"
+                  decoration-bf="is_summary">
+                <field name="wbs" string="WBS"/>
+                <field name="rock_id" optional="show"/>
+                <field name="name"/>
+                <field name="is_milestone" optional="hide"/>
+                <field name="duration_display" string="Duration"/>
+                <field name="planned_start" string="Start"/>
+                <field name="planned_finish" string="Finish"/>
+                <field name="predecessor_display" string="Predecessors"/>
+                <field name="resource_names" string="Resources"/>
+                <field name="percent_work_complete" widget="progressbar"
+                       string="% Work"/>
+                <field name="total_slack_hours" string="Slack (h)" optional="show"/>
+                <field name="is_critical" optional="hide"/>
+                <field name="deadline" optional="hide"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_eos_task_sheet" model="ir.actions.act_window">
+        <field name="name">Task Sheet (MS Project)</field>
+        <field name="res_model">eos.task</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="view_id" ref="view_eos_task_list_msp"/>
+    </record>
+
+    <!-- ============ eos.rock: planning controls ============ -->
+    <record id="view_eos_rock_form_plan" model="ir.ui.view">
+        <field name="name">eos.rock.form.plan</field>
+        <field name="model">eos.rock</field>
+        <field name="inherit_id" ref="eos.view_eos_rock_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_reschedule" type="object"
+                            string="Reschedule" class="btn-primary"/>
+                    <button name="action_reschedule_and_level" type="object"
+                            string="Reschedule + Level Resources"/>
+                    <button name="action_set_all_baselines" type="object"
+                            string="Set Baseline (all tasks)"/>
+                    <button name="action_open_gantt" type="object"
+                            string="Open Gantt" class="btn-secondary"/>
+                </header>
+            </xpath>
+            <xpath expr="//field[@name='due_date']" position="after">
+                <field name="calendar_id"/>
+                <field name="plan_start_date"/>
+                <field name="plan_finish_date" readonly="1"/>
+                <field name="critical_task_count" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
