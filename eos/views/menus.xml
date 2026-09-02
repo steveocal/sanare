@@ -3,67 +3,67 @@
     <record id="action_eos_market" model="ir.actions.act_window">
         <field name="name">Markets</field>
         <field name="res_model">eos.market</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_rock" model="ir.actions.act_window">
         <field name="name">Rocks</field>
         <field name="res_model">eos.rock</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_task" model="ir.actions.act_window">
         <field name="name">Tasks</field>
         <field name="res_model">eos.task</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_physician" model="ir.actions.act_window">
         <field name="name">Physicians / KOLs</field>
         <field name="res_model">eos.physician</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_sku" model="ir.actions.act_window">
         <field name="name">Supply Chain / Inventory</field>
         <field name="res_model">eos.sku</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_risk" model="ir.actions.act_window">
         <field name="name">Risk Register</field>
         <field name="res_model">eos.risk</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_kpi" model="ir.actions.act_window">
         <field name="name">KPI Dictionary</field>
         <field name="res_model">eos.kpi</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_kpi_value" model="ir.actions.act_window">
         <field name="name">KPI History</field>
         <field name="res_model">eos.kpi.value</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_launch_workstream" model="ir.actions.act_window">
         <field name="name">Launch Readiness</field>
         <field name="res_model">eos.launch.workstream</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_close_step" model="ir.actions.act_window">
         <field name="name">Month-End Close</field>
         <field name="res_model">eos.close.step</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_monthly_report" model="ir.actions.act_window">
         <field name="name">Monthly Reports</field>
         <field name="res_model">eos.monthly.report</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_milestone" model="ir.actions.act_window">
         <field name="name">Milestones</field>
         <field name="res_model">eos.milestone</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="action_eos_l10" model="ir.actions.act_window">
         <field name="name">Weekly L10</field>
         <field name="res_model">eos.l10</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENUS -->
