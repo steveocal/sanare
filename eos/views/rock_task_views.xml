@@ -136,4 +136,55 @@
             </form>
         </field>
     </record>
+
+    <!-- ROCK GRAPH / PIVOT -->
+    <record id="view_eos_rock_graph" model="ir.ui.view">
+        <field name="name">eos.rock.graph</field>
+        <field name="model">eos.rock</field>
+        <field name="arch" type="xml">
+            <graph string="Rocks" type="bar" sample="1">
+                <field name="quarter"/>
+                <field name="status"/>
+                <field name="percent_complete" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eos_rock_pivot" model="ir.ui.view">
+        <field name="name">eos.rock.pivot</field>
+        <field name="model">eos.rock</field>
+        <field name="arch" type="xml">
+            <pivot string="Rocks" sample="1">
+                <field name="market_id" type="row"/>
+                <field name="quarter" type="row"/>
+                <field name="status" type="col"/>
+                <field name="percent_complete" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- TASK GRAPH / PIVOT -->
+    <record id="view_eos_task_graph" model="ir.ui.view">
+        <field name="name">eos.task.graph</field>
+        <field name="model">eos.task</field>
+        <field name="arch" type="xml">
+            <graph string="Tasks" type="bar" sample="1">
+                <field name="rock_id"/>
+                <field name="status"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eos_task_pivot" model="ir.ui.view">
+        <field name="name">eos.task.pivot</field>
+        <field name="model">eos.task</field>
+        <field name="arch" type="xml">
+            <pivot string="Tasks" sample="1">
+                <field name="rock_id" type="row"/>
+                <field name="status" type="col"/>
+                <field name="percent_complete" type="measure"/>
+                <field name="__count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
 </odoo>

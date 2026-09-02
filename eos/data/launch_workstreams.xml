@@ -6,7 +6,7 @@
             <field name="market_id" ref="market_thailand"/>
             <field name="workstream">corporate</field>
             <field name="weight">0.1</field>
-            <field name="readiness">0.5454545455</field>
+            <field name="readiness">54.5455</field>
             <field name="status">red</field>
             <field name="key_gate">Legal entity, governance, tax/banking and statutory setup completed and operating.</field>
             <field name="owner">Greg Walker</field>
@@ -17,7 +17,7 @@
             <field name="market_id" ref="market_thailand"/>
             <field name="workstream">finance</field>
             <field name="weight">0.08</field>
-            <field name="readiness">0.35</field>
+            <field name="readiness">35.0</field>
             <field name="status">green</field>
             <field name="key_gate">Banking, accounting, budget, monthly reporting and cash forecasting operational.</field>
             <field name="owner">Greg Walker / Finance</field>
@@ -28,7 +28,7 @@
             <field name="market_id" ref="market_thailand"/>
             <field name="workstream">manufacturer</field>
             <field name="weight">0.14</field>
-            <field name="readiness">0.125</field>
+            <field name="readiness">12.5</field>
             <field name="status">red</field>
             <field name="key_gate">Manufacturer approved; commercial/supply agreement executed; quality and regulatory documentation complete.</field>
             <field name="owner">Greg Walker</field>
@@ -127,7 +127,7 @@
             <field name="market_id" ref="market_singapore"/>
             <field name="workstream">manufacturer</field>
             <field name="weight">0.14</field>
-            <field name="readiness">0.125</field>
+            <field name="readiness">12.5</field>
             <field name="status">red</field>
             <field name="key_gate">Manufacturer approved; commercial/supply agreement executed; quality and regulatory documentation complete.</field>
             <field name="owner">Greg Walker</field>

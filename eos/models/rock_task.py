@@ -35,7 +35,8 @@ class EosRock(models.Model):
     ], string='Health', help='Management judgment, distinct from task completion.')
     percent_complete = fields.Float(
         string='% Complete', compute='_compute_percent_complete', store=True,
-        help='Average % complete of non-deferred tasks.')
+        aggregator='avg',
+        help='Average % complete of non-deferred tasks (0-100).')
     last_update = fields.Date(string='Last Update')
     next_milestone = fields.Char(string='Next Milestone')
     top_issue = fields.Text(string='Top Issue / Blocker')
@@ -78,7 +79,9 @@ class EosTask(models.Model):
         ('complete', 'Complete'),
         ('deferred', 'Deferred'),
     ], string='Status', default='not_started')
-    percent_complete = fields.Float(string='% Complete', compute='_compute_percent_complete', store=True)
+    percent_complete = fields.Float(
+        string='% Complete', compute='_compute_percent_complete', store=True,
+        aggregator='avg', help='0-100 scale, derived from status.')
     dependency = fields.Char(string='Dependency', help='Free-text predecessor reference.')
     critical_path = fields.Selection([
         ('critical', 'Critical'),

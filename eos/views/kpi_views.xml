@@ -78,4 +78,29 @@
             </form>
         </field>
     </record>
+
+    <record id="view_eos_kpi_value_graph" model="ir.ui.view">
+        <field name="name">eos.kpi.value.graph</field>
+        <field name="model">eos.kpi.value</field>
+        <field name="arch" type="xml">
+            <graph string="KPI History" type="line" sample="1">
+                <field name="period" interval="month"/>
+                <field name="kpi_id"/>
+                <field name="value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eos_kpi_value_pivot" model="ir.ui.view">
+        <field name="name">eos.kpi.value.pivot</field>
+        <field name="model">eos.kpi.value</field>
+        <field name="arch" type="xml">
+            <pivot string="KPI History" sample="1">
+                <field name="kpi_id" type="row"/>
+                <field name="market_id" type="row"/>
+                <field name="period" interval="month" type="col"/>
+                <field name="value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
 </odoo>

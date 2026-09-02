@@ -1,0 +1,11 @@
+# Build artifacts
+eos.zip
+*.pyc
+__pycache__/
+
+# Source / working files kept out of the module repo
+Sanare_Management_Reporting_Engine_v2_ORDERED.xlsx
+Product Datasheet.pdf
+deepseek_conv_eos.txt
+scratch_formulas.txt
+generate_eos_data.py

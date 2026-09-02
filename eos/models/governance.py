@@ -19,8 +19,10 @@ class EosLaunchWorkstream(models.Model):
         ('commercial', 'Commercial'),
         ('compliance', 'Compliance'),
     ], string='Workstream', required=True)
-    weight = fields.Float(string='Weight')
-    readiness = fields.Float(string='Readiness %')
+    weight = fields.Float(string='Weight', help='Relative weight of this workstream (0-1).')
+    readiness = fields.Float(
+        string='Readiness %', aggregator='avg',
+        help='Workstream readiness on a 0-100 scale.')
     status = fields.Selection([
         ('green', 'Green'),
         ('yellow', 'Yellow'),
@@ -110,7 +112,8 @@ class EosMilestone(models.Model):
         ('on_track', 'On Track'),
         ('complete', 'Complete'),
     ], string='Status', default='not_started')
-    percent_complete = fields.Float(string='% Complete')
+    percent_complete = fields.Float(
+        string='% Complete', aggregator='avg', help='0-100 scale.')
     notes = fields.Text(string='Notes')
 
 

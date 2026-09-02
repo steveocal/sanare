@@ -34,7 +34,8 @@ class EosRisk(models.Model):
         ('yellow', 'Yellow'),
         ('red', 'Red'),
     ], string='Overall Rating', compute='_compute_rating', store=True)
-    risk_score = fields.Integer(string='Risk Score', compute='_compute_rating', store=True)
+    risk_score = fields.Integer(
+        string='Risk Score', compute='_compute_rating', store=True, aggregator='avg')
     owner = fields.Char(string='Owner')
     mitigation = fields.Text(string='Mitigation')
     target_resolution = fields.Date(string='Target Resolution')
@@ -54,11 +55,16 @@ class EosRisk(models.Model):
     def _compute_rating(self):
         score_map = {'low': 1, 'medium': 2, 'high': 3}
         for risk in self:
-            score = score_map.get(risk.probability, 1) * score_map.get(risk.impact, 1)
+            if not risk.probability or not risk.impact:
+                # Unrated risk: leave blank, mirroring the workbook's IF(C="","",...)
+                risk.risk_score = 0
+                risk.rating = False
+                continue
+            score = score_map[risk.probability] * score_map[risk.impact]
             risk.risk_score = score
-            if score <= 2:
-                risk.rating = 'green'
-            elif score <= 4:
+            if score >= 6:
+                risk.rating = 'red'
+            elif score >= 3:
                 risk.rating = 'yellow'
             else:
-                risk.rating = 'red'
+                risk.rating = 'green'

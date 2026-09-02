@@ -30,7 +30,7 @@ class EosKpiValue(models.Model):
     period = fields.Date(string='Month', required=True)
     market_id = fields.Many2one('eos.market', string='Market', required=True)
     kpi_id = fields.Many2one('eos.kpi', string='KPI', required=True)
-    value = fields.Float(string='Value')
+    value = fields.Float(string='Value', aggregator='sum')
     notes = fields.Text(string='Notes')
 
     _sql_constraints = [

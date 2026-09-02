@@ -8,12 +8,12 @@
     <record id="action_eos_rock" model="ir.actions.act_window">
         <field name="name">Rocks</field>
         <field name="res_model">eos.rock</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,graph,pivot</field>
     </record>
     <record id="action_eos_task" model="ir.actions.act_window">
         <field name="name">Tasks</field>
         <field name="res_model">eos.task</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,graph,pivot</field>
     </record>
     <record id="action_eos_physician" model="ir.actions.act_window">
         <field name="name">Physicians / KOLs</field>
@@ -28,7 +28,7 @@
     <record id="action_eos_risk" model="ir.actions.act_window">
         <field name="name">Risk Register</field>
         <field name="res_model">eos.risk</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,graph,pivot</field>
     </record>
     <record id="action_eos_kpi" model="ir.actions.act_window">
         <field name="name">KPI Dictionary</field>
@@ -38,7 +38,7 @@
     <record id="action_eos_kpi_value" model="ir.actions.act_window">
         <field name="name">KPI History</field>
         <field name="res_model">eos.kpi.value</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,graph,pivot</field>
     </record>
     <record id="action_eos_launch_workstream" model="ir.actions.act_window">
         <field name="name">Launch Readiness</field>

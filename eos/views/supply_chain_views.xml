@@ -8,6 +8,7 @@
                 <field name="market_id"/>
                 <field name="product_id"/>
                 <field name="manufacturer"/>
+                <field name="currency_id" column_invisible="1"/>
                 <field name="inventory_cm2"/>
                 <field name="inventory_value"/>
                 <field name="weeks_supply"/>
@@ -30,8 +31,11 @@
                         <group>
                             <field name="market_id"/>
                             <field name="product_id"/>
+                            <field name="warehouse_id"/>
+                            <field name="cm2_per_unit"/>
                             <field name="manufacturer"/>
                             <field name="owner"/>
+                            <field name="currency_id" invisible="1"/>
                         </group>
                         <group>
                             <field name="inventory_cm2"/>

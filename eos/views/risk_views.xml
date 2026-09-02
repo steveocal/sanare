@@ -52,4 +52,29 @@
             </form>
         </field>
     </record>
+
+    <record id="view_eos_risk_graph" model="ir.ui.view">
+        <field name="name">eos.risk.graph</field>
+        <field name="model">eos.risk</field>
+        <field name="arch" type="xml">
+            <graph string="Risks" type="bar" sample="1">
+                <field name="category"/>
+                <field name="rating"/>
+                <field name="risk_score" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eos_risk_pivot" model="ir.ui.view">
+        <field name="name">eos.risk.pivot</field>
+        <field name="model">eos.risk</field>
+        <field name="arch" type="xml">
+            <pivot string="Risks" sample="1">
+                <field name="category" type="row"/>
+                <field name="rating" type="col"/>
+                <field name="risk_score" type="measure"/>
+                <field name="__count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
 </odoo>
