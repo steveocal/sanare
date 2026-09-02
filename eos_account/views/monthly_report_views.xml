@@ -1,0 +1,19 @@
+<odoo>
+    <record id="view_eos_monthly_report_form_finance" model="ir.ui.view">
+        <field name="name">eos.monthly.report.form.finance</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="inherit_id" ref="eos.view_eos_monthly_report_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='financial_health']" position="after">
+                <field name="currency_id" invisible="1"/>
+                <field name="financial_period_id"/>
+                <field name="ending_cash" readonly="1"/>
+                <field name="net_cash_burn" readonly="1"/>
+                <field name="runway_months" readonly="1"/>
+                <field name="gross_margin_pct" readonly="1"/>
+                <field name="capital_received" readonly="1"/>
+                <field name="financial_health_suggestion" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

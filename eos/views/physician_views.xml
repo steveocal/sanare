@@ -24,21 +24,26 @@
             <form string="Physician / KOL">
                 <sheet>
                     <div class="oe_title">
-                        <h1><field name="name"/></h1>
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Physician / KOL name"/></h1>
                     </div>
                     <group>
-                        <group>
-                            <field name="partner_id"/>
+                        <group string="Contact">
+                            <field name="partner_id"
+                                   help="Underlying contact record. Leave the name above to auto-create one."/>
+                            <field name="email" widget="email"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="function" string="Job Position"/>
                             <field name="market_id"/>
+                        </group>
+                        <group string="KOL Program">
                             <field name="hospital_id"/>
                             <field name="specialty"/>
-                            <field name="owner"/>
-                        </group>
-                        <group>
                             <field name="relationship_stage"/>
                             <field name="training_status"/>
                             <field name="first_case_date"/>
                             <field name="repeat_user"/>
+                            <field name="owner"/>
                         </group>
                     </group>
                     <group string="Activity (month-to-date / year-to-date)">

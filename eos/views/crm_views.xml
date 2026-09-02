@@ -52,11 +52,18 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_view_physician" type="object"
+                        class="oe_stat_button" icon="fa-user-md"
+                        invisible="physician_count == 0">
+                    <field name="physician_count" widget="statinfo" string="KOL Record"/>
+                </button>
+            </div>
             <xpath expr="//notebook" position="inside">
                 <page name="eos" string="EOS / Sanare">
                     <group>
                         <field name="is_hospital"/>
-                        <field name="is_physician"/>
+                        <field name="is_physician" readonly="1"/>
                         <field name="market_id"/>
                         <field name="hospital_type"/>
                         <field name="vendor_registration_status"/>

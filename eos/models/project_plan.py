@@ -251,7 +251,7 @@ class EosTask(models.Model):
     successor_ids = fields.One2many(
         'eos.task.dependency', 'predecessor_task_id', string='Successors')
     predecessor_display = fields.Char(
-        string='Predecessors', compute='_compute_predecessor_display')
+        string='Predecessors (text)', compute='_compute_predecessor_display')
 
     # -- resources ---------------------------------------------------
     assignment_ids = fields.One2many(

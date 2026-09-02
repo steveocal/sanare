@@ -1,15 +1,16 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class EosPhysician(models.Model):
     _name = 'eos.physician'
     _description = 'EOS Physician / KOL'
+    _inherits = {'res.partner': 'partner_id'}
     _order = 'name'
 
-    name = fields.Char(string='Physician / KOL', required=True)
     partner_id = fields.Many2one(
-        'res.partner', string='Contact', domain=[('is_physician', '=', True)])
-    market_id = fields.Many2one('eos.market', string='Market')
+        'res.partner', string='Contact Record', required=True, ondelete='cascade',
+        index=True)
+    # market_id and name live on res.partner (delegated) - do not redefine here.
     hospital_id = fields.Many2one(
         'res.partner', string='Hospital', domain=[('is_hospital', '=', True)])
     specialty = fields.Char(string='Specialty')
@@ -33,4 +34,16 @@ class EosPhysician(models.Model):
     cm2_ytd = fields.Float(string='cm2 YTD')
     repeat_user = fields.Boolean(string='Repeat User?')
     owner = fields.Char(string='Owner')
-    notes = fields.Text(string='Notes')
+    notes = fields.Text(string='KOL Notes')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records.partner_id.write({'is_physician': True})
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'partner_id' in vals:
+            self.partner_id.write({'is_physician': True})
+        return res

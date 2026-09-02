@@ -1,0 +1,34 @@
+<odoo>
+    <record id="view_eos_use_of_funds_list" model="ir.ui.view">
+        <field name="name">eos.use.of.funds.list</field>
+        <field name="model">eos.use.of.funds</field>
+        <field name="arch" type="xml">
+            <list string="Use of Funds" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="category"/>
+                <field name="since_date"/>
+                <field name="approved_budget" sum="Approved"/>
+                <field name="spent_to_date" sum="Spent"/>
+                <field name="committed" sum="Committed"/>
+                <field name="remaining" sum="Remaining"/>
+                <field name="percent_used" widget="progressbar"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_eos_use_of_funds" model="ir.actions.act_window">
+        <field name="name">Use of Funds</field>
+        <field name="res_model">eos.use.of.funds</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_eos_use_of_funds_refresh_server" model="ir.actions.server">
+        <field name="name">Refresh Spend</field>
+        <field name="model_id" ref="model_eos_use_of_funds"/>
+        <field name="binding_model_id" ref="model_eos_use_of_funds"/>
+        <field name="state">code</field>
+        <field name="code">records.action_refresh()</field>
+    </record>
+</odoo>

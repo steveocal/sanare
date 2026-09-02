@@ -1,0 +1,22 @@
+<odoo>
+    <record id="view_eos_budget_line_list" model="ir.ui.view">
+        <field name="name">eos.budget.line.list</field>
+        <field name="model">eos.budget.line</field>
+        <field name="arch" type="xml">
+            <list string="Budget Lines" editable="bottom">
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="period_date"/>
+                <field name="category"/>
+                <field name="amount" sum="Budget"/>
+                <field name="note"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_eos_budget_line" model="ir.actions.act_window">
+        <field name="name">Budgets</field>
+        <field name="res_model">eos.budget.line</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

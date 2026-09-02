@@ -1,0 +1,122 @@
+<odoo>
+    <record id="action_report_eos_investor" model="ir.actions.report">
+        <field name="name">Investor Report</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_account.report_investor</field>
+        <field name="report_file">eos_account.report_investor</field>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_investor">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="Rock" t-value="o.env['eos.rock']"/>
+                    <t t-set="Risk" t-value="o.env['eos.risk']"/>
+                    <t t-set="fp" t-value="o.financial_period_id"/>
+                    <div class="page">
+                        <h2>Monthly Management &amp; Investor Report</h2>
+                        <h4 t-esc="o.name"/>
+
+                        <h3 class="mt-4">Executive Snapshot</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Overall Health</th>
+                                <td t-esc="dict(o._fields['overall_health'].selection).get(o.overall_health)"/>
+                                <th>Active Quarter</th>
+                                <td t-esc="o.active_quarter"/>
+                            </tr>
+                            <tr>
+                                <th>Rocks On Track</th>
+                                <td t-esc="Rock.search_count([('quarter','=',o.active_quarter),('status','=','on_track')])"/>
+                                <th>Rocks At Risk / Off Track</th>
+                                <td t-esc="Rock.search_count([('quarter','=',o.active_quarter),('status','in',('at_risk','off_track'))])"/>
+                            </tr>
+                            <tr>
+                                <th>Ending Cash</th>
+                                <td><span t-field="o.ending_cash"/></td>
+                                <th>Runway (months)</th>
+                                <td><t t-esc="'%.1f' % (o.runway_months or 0.0)"/></td>
+                            </tr>
+                            <tr>
+                                <th>Net Cash Burn</th>
+                                <td><span t-field="o.net_cash_burn"/></td>
+                                <th>Open Red Risks</th>
+                                <td t-esc="Risk.search_count([('rating','=','red'),('status','!=','resolved')])"/>
+                            </tr>
+                        </table>
+
+                        <h3 class="mt-4">Executive Summary</h3>
+                        <p t-field="o.executive_summary"/>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <h4>What Went Well</h4>
+                                <p t-field="o.what_went_well"/>
+                            </div>
+                            <div class="col-6">
+                                <h4>Misses / Slippage</h4>
+                                <p t-field="o.misses_slippage"/>
+                            </div>
+                        </div>
+
+                        <div t-if="fp">
+                            <h3 class="mt-4">Financial Position — <span t-esc="fp.name"/></h3>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th class="text-end">Month Actual</th>
+                                        <th class="text-end">Month Budget</th>
+                                        <th class="text-end">YTD Actual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="fp.line_ids" t-as="l">
+                                        <td t-esc="dict(l._fields['category'].selection).get(l.category)"/>
+                                        <td class="text-end"><span t-field="l.actual"/></td>
+                                        <td class="text-end"><span t-field="l.budget"/></td>
+                                        <td class="text-end"><span t-field="l.ytd_actual"/></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Operating Result</th>
+                                        <th class="text-end">
+                                            <span t-field="fp.operating_result"/></th>
+                                        <th colspan="2"/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <h3 class="mt-4">Top Enterprise Risks</h3>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Risk</th><th>Category</th><th>Rating</th>
+                                    <th>Owner</th><th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="Risk.search([('status','!=','resolved')], order='risk_score desc', limit=8)" t-as="r">
+                                    <td t-esc="r.name"/>
+                                    <td t-esc="r.category"/>
+                                    <td t-esc="r.rating"/>
+                                    <td t-esc="r.owner"/>
+                                    <td t-esc="r.trend"/>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 class="mt-4">Corrective Actions &amp; Key Decisions</h3>
+                        <p t-field="o.corrective_actions"/>
+                        <p t-field="o.key_decisions"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

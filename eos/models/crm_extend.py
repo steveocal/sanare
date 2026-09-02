@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class CrmStage(models.Model):
@@ -20,7 +20,9 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     is_hospital = fields.Boolean(string='Is Hospital')
-    is_physician = fields.Boolean(string='Is Physician / KOL')
+    is_physician = fields.Boolean(
+        string='Is Physician / KOL',
+        help='Set automatically when a KOL record is linked to this contact.')
     market_id = fields.Many2one('eos.market', string='Market')
     hospital_type = fields.Selection([
         ('public', 'Public'),
@@ -33,6 +35,31 @@ class ResPartner(models.Model):
         ('in_progress', 'In Progress'),
         ('complete', 'Complete'),
     ], string='Vendor Registration')
+    physician_ids = fields.One2many(
+        'eos.physician', 'partner_id', string='KOL Records')
+    physician_count = fields.Integer(
+        string='KOL Record Count', compute='_compute_physician_count')
+
+    @api.depends('physician_ids')
+    def _compute_physician_count(self):
+        for partner in self:
+            partner.physician_count = len(partner.physician_ids)
+
+    def action_view_physician(self):
+        self.ensure_one()
+        physicians = self.physician_ids
+        action = {
+            'type': 'ir.actions.act_window',
+            'res_model': 'eos.physician',
+            'name': 'KOL Record',
+        }
+        if len(physicians) == 1:
+            action.update(res_id=physicians.id, view_mode='form')
+        else:
+            action.update(
+                view_mode='list,form',
+                domain=[('partner_id', '=', self.id)])
+        return action
 
 
 class CrmLead(models.Model):

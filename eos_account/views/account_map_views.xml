@@ -1,0 +1,47 @@
+<odoo>
+    <record id="view_eos_account_map_list" model="ir.ui.view">
+        <field name="name">eos.account.map.list</field>
+        <field name="model">eos.account.map</field>
+        <field name="arch" type="xml">
+            <list string="Account Mapping" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="account_id"/>
+                <field name="account_prefix"/>
+                <field name="account_type"/>
+                <field name="category"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_account_map_form" model="ir.ui.view">
+        <field name="name">eos.account.map.form</field>
+        <field name="model">eos.account.map</field>
+        <field name="arch" type="xml">
+            <form string="Account Mapping">
+                <sheet>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="category"/>
+                        <field name="sequence"/>
+                    </group>
+                    <group string="Match (priority: account &gt; prefix &gt; type)">
+                        <field name="account_id"/>
+                        <field name="account_prefix"/>
+                        <field name="account_type"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eos_account_map" model="ir.actions.act_window">
+        <field name="name">Account Mapping</field>
+        <field name="res_model">eos.account.map</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Map GL accounts to report categories</p>
+            <p>Unmapped accounts fall back to sensible defaults based on their type.</p>
+        </field>
+    </record>
+</odoo>

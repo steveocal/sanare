@@ -1,0 +1,133 @@
+<odoo>
+    <record id="action_report_eos_financial_period" model="ir.actions.report">
+        <field name="name">Financial Position</field>
+        <field name="model">eos.financial.period</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_account.report_financial_period</field>
+        <field name="report_file">eos_account.report_financial_period</field>
+        <field name="binding_model_id" ref="model_eos_financial_period"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_financial_period">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Monthly &amp; YTD Financial Position</h2>
+                        <h4 t-esc="o.company_id.name"/>
+                        <p>Period: <strong t-esc="o.name"/>
+                           (<span t-field="o.date_from"/> – <span t-field="o.date_to"/>)</p>
+
+                        <h3 class="mt-4">Financial Snapshot</h3>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Beginning Cash</th>
+                                <td class="text-end">
+                                    <span t-field="o.beginning_cash"/></td>
+                                <th>Ending Cash</th>
+                                <td class="text-end"><span t-field="o.ending_cash"/></td>
+                            </tr>
+                            <tr>
+                                <th>Capital Received</th>
+                                <td class="text-end">
+                                    <span t-field="o.capital_received"/></td>
+                                <th>Net Cash Burn</th>
+                                <td class="text-end"><span t-field="o.net_cash_burn"/></td>
+                            </tr>
+                            <tr>
+                                <th>Committed but Unspent</th>
+                                <td class="text-end">
+                                    <span t-field="o.committed_unspent"/></td>
+                                <th>Available Capital</th>
+                                <td class="text-end">
+                                    <span t-field="o.available_capital"/></td>
+                            </tr>
+                            <tr>
+                                <th>Gross Margin %</th>
+                                <td class="text-end">
+                                    <t t-esc="'%.1f' % o.gross_margin_pct"/>%</td>
+                                <th>Runway (months)</th>
+                                <td class="text-end">
+                                    <t t-esc="'%.1f' % o.runway_months"/></td>
+                            </tr>
+                        </table>
+
+                        <h3 class="mt-4">Profit &amp; Loss — Actual vs Budget</h3>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th class="text-end">Month Actual</th>
+                                    <th class="text-end">Month Budget</th>
+                                    <th class="text-end">Var $</th>
+                                    <th class="text-end">Var %</th>
+                                    <th class="text-end">YTD Actual</th>
+                                    <th class="text-end">YTD Budget</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.line_ids" t-as="l">
+                                    <td t-esc="dict(l._fields['category'].selection).get(l.category)"/>
+                                    <td class="text-end"><span t-field="l.actual"/></td>
+                                    <td class="text-end"><span t-field="l.budget"/></td>
+                                    <td class="text-end"><span t-field="l.variance"/></td>
+                                    <td class="text-end">
+                                        <t t-esc="'%.0f' % l.variance_pct"/>%</td>
+                                    <td class="text-end"><span t-field="l.ytd_actual"/></td>
+                                    <td class="text-end"><span t-field="l.ytd_budget"/></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>Operating Result</th>
+                                    <th class="text-end">
+                                        <span t-field="o.operating_result"/></th>
+                                    <th colspan="5"/>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <t t-set="uof"
+                           t-value="o.env['eos.use.of.funds'].search([('company_id','=',o.company_id.id)])"/>
+                        <div t-if="uof">
+                            <h3 class="mt-4">Use of Funds</h3>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th class="text-end">Approved</th>
+                                        <th class="text-end">Spent to Date</th>
+                                        <th class="text-end">Committed</th>
+                                        <th class="text-end">Remaining</th>
+                                        <th class="text-end">% Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="uof" t-as="u">
+                                        <td t-esc="dict(u._fields['category'].selection).get(u.category)"/>
+                                        <td class="text-end">
+                                            <span t-field="u.approved_budget"/></td>
+                                        <td class="text-end">
+                                            <span t-field="u.spent_to_date"/></td>
+                                        <td class="text-end">
+                                            <span t-field="u.committed"/></td>
+                                        <td class="text-end">
+                                            <span t-field="u.remaining"/></td>
+                                        <td class="text-end">
+                                            <t t-esc="'%.0f' % u.percent_used"/>%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <p class="text-muted mt-4"><small>
+                            Figures are computed from posted journal entries via the EOS
+                            account mapping. Net cash burn is a P&amp;L-derived approximation.
+                        </small></p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,163 @@
+<odoo>
+    <record id="view_eos_financial_period_list" model="ir.ui.view">
+        <field name="name">eos.financial.period.list</field>
+        <field name="model">eos.financial.period</field>
+        <field name="arch" type="xml">
+            <list string="Financial Periods">
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="revenue" sum="Revenue"/>
+                <field name="gross_margin" sum="Gross Margin"/>
+                <field name="total_opex" sum="Opex"/>
+                <field name="operating_result" sum="Operating Result"/>
+                <field name="net_cash_burn" sum="Burn"/>
+                <field name="ending_cash"/>
+                <field name="runway_months"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'confirmed'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_financial_period_form" model="ir.ui.view">
+        <field name="name">eos.financial.period.form</field>
+        <field name="model">eos.financial.period</field>
+        <field name="arch" type="xml">
+            <form string="Financial Period">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh from Accounting"
+                            class="btn-primary"/>
+                    <button name="action_confirm" type="object" string="Confirm"
+                            invisible="state == 'confirmed'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="prior_period_id" readonly="1"/>
+                            <field name="last_refresh" readonly="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Cash &amp; Runway">
+                            <field name="beginning_cash" readonly="1"/>
+                            <field name="capital_received" readonly="1"/>
+                            <field name="net_cash_burn" readonly="1"/>
+                            <field name="ending_cash" readonly="1"/>
+                            <field name="use_manual_committed"/>
+                            <field name="committed_unspent_manual"
+                                   invisible="not use_manual_committed"/>
+                            <field name="committed_unspent" readonly="1"/>
+                            <field name="available_capital" readonly="1"/>
+                            <field name="runway_months" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Profit &amp; Loss" name="pl">
+                            <group>
+                                <group>
+                                    <field name="revenue" readonly="1"/>
+                                    <field name="cogs" readonly="1"/>
+                                    <field name="gross_margin" readonly="1"/>
+                                    <field name="gross_margin_pct" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="payroll" readonly="1"/>
+                                    <field name="regulatory" readonly="1"/>
+                                    <field name="legal_prof" readonly="1"/>
+                                    <field name="sales_marketing" readonly="1"/>
+                                    <field name="travel" readonly="1"/>
+                                    <field name="office_it_ga" readonly="1"/>
+                                    <field name="other_opex" readonly="1"/>
+                                    <field name="total_opex" readonly="1"/>
+                                    <field name="operating_result" readonly="1"/>
+                                </group>
+                            </group>
+                            <group string="Flows &amp; Balances">
+                                <group>
+                                    <field name="inventory_purchases" readonly="1"/>
+                                    <field name="other_capex" readonly="1"/>
+                                    <field name="other_cash" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="accounts_receivable" readonly="1"/>
+                                    <field name="inventory_value" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Budget vs Actual" name="bva">
+                            <field name="line_ids" readonly="1">
+                                <list string="Categories">
+                                    <field name="category"/>
+                                    <field name="actual" sum="Actual"/>
+                                    <field name="budget" sum="Budget"/>
+                                    <field name="variance" sum="Variance"/>
+                                    <field name="variance_pct"/>
+                                    <field name="ytd_actual" sum="YTD Actual"/>
+                                    <field name="ytd_budget" sum="YTD Budget"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eos_financial_period_line_pivot" model="ir.ui.view">
+        <field name="name">eos.financial.period.line.pivot</field>
+        <field name="model">eos.financial.period.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Financials by Category" sample="1">
+                <field name="category" type="row"/>
+                <field name="date_to" interval="month" type="col"/>
+                <field name="actual" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_eos_financial_period_line_graph" model="ir.ui.view">
+        <field name="name">eos.financial.period.line.graph</field>
+        <field name="model">eos.financial.period.line</field>
+        <field name="arch" type="xml">
+            <graph string="Financials by Category" type="bar" sample="1">
+                <field name="date_to" interval="month"/>
+                <field name="category"/>
+                <field name="actual" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_eos_financial_period" model="ir.actions.act_window">
+        <field name="name">Financial Periods</field>
+        <field name="res_model">eos.financial.period</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_eos_financial_period_line" model="ir.actions.act_window">
+        <field name="name">Financials Analysis</field>
+        <field name="res_model">eos.financial.period.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <record id="ir_cron_eos_financial_refresh" model="ir.cron">
+        <field name="name">EOS: refresh draft financial periods</field>
+        <field name="model_id" ref="model_eos_financial_period"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_refresh()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="False"/>
+    </record>
+</odoo>

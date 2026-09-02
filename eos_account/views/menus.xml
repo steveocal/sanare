@@ -1,0 +1,22 @@
+<odoo>
+    <menuitem id="menu_eos_finance_root" name="EOS Finance" sequence="55"/>
+
+    <menuitem id="menu_eos_financial_period" name="Financial Periods"
+              parent="menu_eos_finance_root"
+              action="action_eos_financial_period" sequence="10"/>
+    <menuitem id="menu_eos_financial_analysis" name="Analysis"
+              parent="menu_eos_finance_root"
+              action="action_eos_financial_period_line" sequence="20"/>
+    <menuitem id="menu_eos_budget" name="Budgets"
+              parent="menu_eos_finance_root"
+              action="action_eos_budget_line" sequence="30"/>
+    <menuitem id="menu_eos_use_of_funds" name="Use of Funds"
+              parent="menu_eos_finance_root"
+              action="action_eos_use_of_funds" sequence="40"/>
+
+    <menuitem id="menu_eos_finance_config" name="Configuration"
+              parent="menu_eos_finance_root" sequence="90"/>
+    <menuitem id="menu_eos_account_map" name="Account Mapping"
+              parent="menu_eos_finance_config"
+              action="action_eos_account_map" sequence="10"/>
+</odoo>
