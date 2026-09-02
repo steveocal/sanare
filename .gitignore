@@ -1,5 +1,4 @@
 # Build artifacts
-eos.zip
 *.pyc
 __pycache__/
 
