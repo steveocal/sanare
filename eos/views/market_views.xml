@@ -1,0 +1,31 @@
+<odoo>
+    <record id="view_eos_market_tree" model="ir.ui.view">
+        <field name="name">eos.market.tree</field>
+        <field name="model">eos.market</field>
+        <field name="arch" type="xml">
+            <list string="Markets">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="country_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_market_form" model="ir.ui.view">
+        <field name="name">eos.market.form</field>
+        <field name="model">eos.market</field>
+        <field name="arch" type="xml">
+            <form string="Market">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="country_id"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

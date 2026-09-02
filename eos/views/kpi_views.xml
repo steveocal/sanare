@@ -1,0 +1,81 @@
+<odoo>
+    <!-- KPI DICTIONARY -->
+    <record id="view_eos_kpi_tree" model="ir.ui.view">
+        <field name="name">eos.kpi.tree</field>
+        <field name="model">eos.kpi</field>
+        <field name="arch" type="xml">
+            <list string="KPI Dictionary">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="source"/>
+                <field name="owner"/>
+                <field name="frequency"/>
+                <field name="report_section"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_kpi_form" model="ir.ui.view">
+        <field name="name">eos.kpi.form</field>
+        <field name="model">eos.kpi</field>
+        <field name="arch" type="xml">
+            <form string="KPI">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="source"/>
+                        <field name="owner"/>
+                        <field name="frequency"/>
+                        <field name="target"/>
+                        <field name="report_section"/>
+                    </group>
+                    <group string="Definition">
+                        <field name="definition" nolabel="1"/>
+                    </group>
+                    <group string="Calculation / Logic">
+                        <field name="calculation" nolabel="1"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- KPI HISTORY / VALUES -->
+    <record id="view_eos_kpi_value_tree" model="ir.ui.view">
+        <field name="name">eos.kpi.value.tree</field>
+        <field name="model">eos.kpi.value</field>
+        <field name="arch" type="xml">
+            <list string="KPI History">
+                <field name="period"/>
+                <field name="market_id"/>
+                <field name="kpi_id"/>
+                <field name="value"/>
+                <field name="notes"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_kpi_value_form" model="ir.ui.view">
+        <field name="name">eos.kpi.value.form</field>
+        <field name="model">eos.kpi.value</field>
+        <field name="arch" type="xml">
+            <form string="KPI Value">
+                <sheet>
+                    <group>
+                        <field name="period"/>
+                        <field name="market_id"/>
+                        <field name="kpi_id"/>
+                        <field name="value"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

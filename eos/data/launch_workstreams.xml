@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="workstream_thailand_corporate" model="eos.launch.workstream">
+            <field name="sequence">10</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">corporate</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.5454545455</field>
+            <field name="status">red</field>
+            <field name="key_gate">Legal entity, governance, tax/banking and statutory setup completed and operating.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="source_key">ROCK:R1</field>
+        </record>
+        <record id="workstream_thailand_finance" model="eos.launch.workstream">
+            <field name="sequence">20</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">finance</field>
+            <field name="weight">0.08</field>
+            <field name="readiness">0.35</field>
+            <field name="status">green</field>
+            <field name="key_gate">Banking, accounting, budget, monthly reporting and cash forecasting operational.</field>
+            <field name="owner">Greg Walker / Finance</field>
+            <field name="source_key">ROCK:R2</field>
+        </record>
+        <record id="workstream_thailand_manufacturer" model="eos.launch.workstream">
+            <field name="sequence">30</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">manufacturer</field>
+            <field name="weight">0.14</field>
+            <field name="readiness">0.125</field>
+            <field name="status">red</field>
+            <field name="key_gate">Manufacturer approved; commercial/supply agreement executed; quality and regulatory documentation complete.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="source_key">ROCK:R5</field>
+        </record>
+        <record id="workstream_thailand_regulatory" model="eos.launch.workstream">
+            <field name="sequence">40</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">regulatory</field>
+            <field name="weight">0.18</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Classification/pathway locked; dossier, submission and approval conditions on track with no unresolved launch blocker.</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="source_key">ROCK:R6</field>
+        </record>
+        <record id="workstream_thailand_supply_chain" model="eos.launch.workstream">
+            <field name="sequence">50</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">supply_chain</field>
+            <field name="weight">0.12</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Importer, freight/customs, storage, traceability, receiving, lot/expiry/recall and replenishment operational.</field>
+            <field name="owner">Greg Walker / Operations</field>
+            <field name="source_key">ROCK:R7</field>
+        </record>
+        <record id="workstream_thailand_clinical" model="eos.launch.workstream">
+            <field name="sequence">60</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">clinical</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Medical Director, KOLs, training, case support and clinical documentation/outcomes process operational.</field>
+            <field name="owner">Harold</field>
+            <field name="source_key">ROCK:R8</field>
+        </record>
+        <record id="workstream_thailand_hospitals" model="eos.launch.workstream">
+            <field name="sequence">70</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">hospitals</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Target hospitals approved/contracted/vendor-ready with ordering and first-case pathway.</field>
+            <field name="owner">Sales Lead</field>
+            <field name="source_key">ROCK:R9</field>
+        </record>
+        <record id="workstream_thailand_commercial" model="eos.launch.workstream">
+            <field name="sequence">80</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">commercial</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Pricing/cm², margins, CRM, sales coverage, pipeline, contracts and selling tools live.</field>
+            <field name="owner">Greg Walker / Sales Lead</field>
+            <field name="source_key">ROCK:R10|R11</field>
+        </record>
+        <record id="workstream_thailand_compliance" model="eos.launch.workstream">
+            <field name="sequence">90</field>
+            <field name="market_id" ref="market_thailand"/>
+            <field name="workstream">compliance</field>
+            <field name="weight">0.08</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Insurance, HCP/anti-bribery, PDPA/data, contracts, complaints/adverse-event/recall controls operational.</field>
+            <field name="owner">Greg Walker / Legal</field>
+            <field name="source_key">ROCK:R12</field>
+        </record>
+        <record id="workstream_singapore_corporate" model="eos.launch.workstream">
+            <field name="sequence">10</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">corporate</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Legal entity, governance, tax/banking and statutory setup completed and operating.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="source_key">ID:S1|S2|S9</field>
+        </record>
+        <record id="workstream_singapore_finance" model="eos.launch.workstream">
+            <field name="sequence">20</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">finance</field>
+            <field name="weight">0.08</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Banking, accounting, budget, monthly reporting and cash forecasting operational.</field>
+            <field name="owner">Greg Walker / Finance</field>
+            <field name="source_key">ID:S2|S9</field>
+        </record>
+        <record id="workstream_singapore_manufacturer" model="eos.launch.workstream">
+            <field name="sequence">30</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">manufacturer</field>
+            <field name="weight">0.14</field>
+            <field name="readiness">0.125</field>
+            <field name="status">red</field>
+            <field name="key_gate">Manufacturer approved; commercial/supply agreement executed; quality and regulatory documentation complete.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="source_key">ROCK:R5</field>
+        </record>
+        <record id="workstream_singapore_regulatory" model="eos.launch.workstream">
+            <field name="sequence">40</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">regulatory</field>
+            <field name="weight">0.18</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Classification/pathway locked; dossier, submission and approval conditions on track with no unresolved launch blocker.</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="source_key">ID:S3|S4|S5|S10|S15</field>
+        </record>
+        <record id="workstream_singapore_supply_chain" model="eos.launch.workstream">
+            <field name="sequence">50</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">supply_chain</field>
+            <field name="weight">0.12</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Importer, freight/customs, storage, traceability, receiving, lot/expiry/recall and replenishment operational.</field>
+            <field name="owner">Greg Walker / Operations</field>
+            <field name="source_key">ID:S4|S11</field>
+        </record>
+        <record id="workstream_singapore_clinical" model="eos.launch.workstream">
+            <field name="sequence">60</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">clinical</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Medical Director, KOLs, training, case support and clinical documentation/outcomes process operational.</field>
+            <field name="owner">Harold</field>
+            <field name="source_key">ID:S8</field>
+        </record>
+        <record id="workstream_singapore_hospitals" model="eos.launch.workstream">
+            <field name="sequence">70</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">hospitals</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Target hospitals approved/contracted/vendor-ready with ordering and first-case pathway.</field>
+            <field name="owner">Sales Lead</field>
+            <field name="source_key">ID:S6|S12</field>
+        </record>
+        <record id="workstream_singapore_commercial" model="eos.launch.workstream">
+            <field name="sequence">80</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">commercial</field>
+            <field name="weight">0.1</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Pricing/cm², margins, CRM, sales coverage, pipeline, contracts and selling tools live.</field>
+            <field name="owner">Greg Walker / Sales Lead</field>
+            <field name="source_key">ID:S7|S13|S14</field>
+        </record>
+        <record id="workstream_singapore_compliance" model="eos.launch.workstream">
+            <field name="sequence">90</field>
+            <field name="market_id" ref="market_singapore"/>
+            <field name="workstream">compliance</field>
+            <field name="weight">0.08</field>
+            <field name="readiness">0.0</field>
+            <field name="status">green</field>
+            <field name="key_gate">Insurance, HCP/anti-bribery, PDPA/data, contracts, complaints/adverse-event/recall controls operational.</field>
+            <field name="owner">Greg Walker / Legal</field>
+            <field name="source_key">ID:S1|S3|S4|S5|S13</field>
+        </record>
+    </data>
+</odoo>

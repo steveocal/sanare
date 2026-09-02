@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="close_step_1" model="eos.close.step">
+            <field name="sequence">1</field>
+            <field name="activity">Close accounting and enter monthly financial actuals.</field>
+            <field name="owner">Finance</field>
+            <field name="due">Business Day 5</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Financial Inputs</field>
+        </record>
+        <record id="close_step_2" model="eos.close.step">
+            <field name="sequence">2</field>
+            <field name="activity">Reconcile bank cash, AR, inventory value and committed-but-unspent obligations.</field>
+            <field name="owner">Finance / Operations</field>
+            <field name="due">Business Day 5</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Financial Inputs / Supply Chain</field>
+        </record>
+        <record id="close_step_3" model="eos.close.step">
+            <field name="sequence">3</field>
+            <field name="activity">Review commercial pipeline, hospital stages, probabilities and cm² assumptions.</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due">Business Day 4</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Commercial Pipeline</field>
+            <field name="issue">Dependent on commercial launch</field>
+        </record>
+        <record id="close_step_4" model="eos.close.step">
+            <field name="sequence">4</field>
+            <field name="activity">Review physician/KOL activity, cases, cm² used and clinical documentation.</field>
+            <field name="owner">Harold</field>
+            <field name="due">Business Day 4</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Clinical &amp; KOL</field>
+            <field name="issue">Dependent on commercial launch</field>
+        </record>
+        <record id="close_step_5" model="eos.close.step">
+            <field name="sequence">5</field>
+            <field name="activity">Reconcile inventory, open POs, landed cost, expiry and stockout risk.</field>
+            <field name="owner">Operations</field>
+            <field name="due">Business Day 4</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Supply Chain</field>
+        </record>
+        <record id="close_step_6" model="eos.close.step">
+            <field name="sequence">6</field>
+            <field name="activity">Review enterprise risks and confirm top-five investor-relevant risks.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 6</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Risk Register</field>
+        </record>
+        <record id="close_step_7" model="eos.close.step">
+            <field name="sequence">7</field>
+            <field name="activity">Review Rock statuses, blockers, next milestones and current-quarter EOS narrative.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 6</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Rock Tracker / EOS Dashboard</field>
+        </record>
+        <record id="close_step_8" model="eos.close.step">
+            <field name="sequence">8</field>
+            <field name="activity">Review objective Thailand/Singapore launch readiness and resolve any Red/Yellow exceptions.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 6</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Launch Readiness</field>
+        </record>
+        <record id="close_step_9" model="eos.close.step">
+            <field name="sequence">9</field>
+            <field name="activity">Review Current KPI Snapshot and lock approved month-end values into Monthly KPI History.</field>
+            <field name="owner">Greg Walker / Finance</field>
+            <field name="due">Business Day 7</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Current KPI Snapshot / Monthly KPI History</field>
+        </record>
+        <record id="close_step_10" model="eos.close.step">
+            <field name="sequence">10</field>
+            <field name="activity">Complete CEO commentary, financial variance explanations, key decisions and next-month priorities.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 8</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Monthly Control</field>
+        </record>
+        <record id="close_step_11" model="eos.close.step">
+            <field name="sequence">11</field>
+            <field name="activity">Review Monthly Report for factual consistency, investor relevance and unresolved exceptions.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 9</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Monthly Report</field>
+        </record>
+        <record id="close_step_12" model="eos.close.step">
+            <field name="sequence">12</field>
+            <field name="activity">Approve report and create final PDF for distribution.</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due">Business Day 10</field>
+            <field name="status">not_started</field>
+            <field name="evidence">Monthly Report / PDF</field>
+        </record>
+    </data>
+</odoo>

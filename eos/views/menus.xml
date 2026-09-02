@@ -1,0 +1,105 @@
+<odoo>
+    <!-- ACTIONS -->
+    <record id="action_eos_market" model="ir.actions.act_window">
+        <field name="name">Markets</field>
+        <field name="res_model">eos.market</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_rock" model="ir.actions.act_window">
+        <field name="name">Rocks</field>
+        <field name="res_model">eos.rock</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_task" model="ir.actions.act_window">
+        <field name="name">Tasks</field>
+        <field name="res_model">eos.task</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_physician" model="ir.actions.act_window">
+        <field name="name">Physicians / KOLs</field>
+        <field name="res_model">eos.physician</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_sku" model="ir.actions.act_window">
+        <field name="name">Supply Chain / Inventory</field>
+        <field name="res_model">eos.sku</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_risk" model="ir.actions.act_window">
+        <field name="name">Risk Register</field>
+        <field name="res_model">eos.risk</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_kpi" model="ir.actions.act_window">
+        <field name="name">KPI Dictionary</field>
+        <field name="res_model">eos.kpi</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_kpi_value" model="ir.actions.act_window">
+        <field name="name">KPI History</field>
+        <field name="res_model">eos.kpi.value</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_launch_workstream" model="ir.actions.act_window">
+        <field name="name">Launch Readiness</field>
+        <field name="res_model">eos.launch.workstream</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_close_step" model="ir.actions.act_window">
+        <field name="name">Month-End Close</field>
+        <field name="res_model">eos.close.step</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_monthly_report" model="ir.actions.act_window">
+        <field name="name">Monthly Reports</field>
+        <field name="res_model">eos.monthly.report</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_milestone" model="ir.actions.act_window">
+        <field name="name">Milestones</field>
+        <field name="res_model">eos.milestone</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_eos_l10" model="ir.actions.act_window">
+        <field name="name">Weekly L10</field>
+        <field name="res_model">eos.l10</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- MENUS -->
+    <menuitem id="menu_eos_root" name="EOS" sequence="50"/>
+
+    <menuitem id="menu_eos_execution" name="Execution" parent="menu_eos_root" sequence="10"/>
+    <menuitem id="menu_eos_market" name="Markets" parent="menu_eos_execution"
+              action="action_eos_market" sequence="10"/>
+    <menuitem id="menu_eos_rock" name="Rocks" parent="menu_eos_execution"
+              action="action_eos_rock" sequence="20"/>
+    <menuitem id="menu_eos_task" name="Tasks" parent="menu_eos_execution"
+              action="action_eos_task" sequence="30"/>
+
+    <menuitem id="menu_eos_commercial" name="Commercial" parent="menu_eos_root" sequence="20"/>
+    <menuitem id="menu_eos_physician" name="Physicians / KOLs" parent="menu_eos_commercial"
+              action="action_eos_physician" sequence="10"/>
+
+    <menuitem id="menu_eos_operations" name="Operations" parent="menu_eos_root" sequence="30"/>
+    <menuitem id="menu_eos_sku" name="Supply Chain / Inventory" parent="menu_eos_operations"
+              action="action_eos_sku" sequence="10"/>
+    <menuitem id="menu_eos_risk" name="Risk Register" parent="menu_eos_operations"
+              action="action_eos_risk" sequence="20"/>
+
+    <menuitem id="menu_eos_reporting" name="Reporting" parent="menu_eos_root" sequence="40"/>
+    <menuitem id="menu_eos_kpi" name="KPI Dictionary" parent="menu_eos_reporting"
+              action="action_eos_kpi" sequence="10"/>
+    <menuitem id="menu_eos_kpi_value" name="KPI History" parent="menu_eos_reporting"
+              action="action_eos_kpi_value" sequence="20"/>
+    <menuitem id="menu_eos_launch_workstream" name="Launch Readiness" parent="menu_eos_reporting"
+              action="action_eos_launch_workstream" sequence="30"/>
+    <menuitem id="menu_eos_close_step" name="Month-End Close" parent="menu_eos_reporting"
+              action="action_eos_close_step" sequence="40"/>
+    <menuitem id="menu_eos_monthly_report" name="Monthly Reports" parent="menu_eos_reporting"
+              action="action_eos_monthly_report" sequence="50"/>
+    <menuitem id="menu_eos_milestone" name="Milestones" parent="menu_eos_reporting"
+              action="action_eos_milestone" sequence="60"/>
+    <menuitem id="menu_eos_l10" name="Weekly L10" parent="menu_eos_reporting"
+              action="action_eos_l10" sequence="70"/>
+</odoo>

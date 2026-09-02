@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="kpi_cm2_sold" model="eos.kpi">
+            <field name="name">cm² sold</field>
+            <field name="code">cm2_sold</field>
+            <field name="definition">Total invoiced graft cm² in the reporting period.</field>
+            <field name="calculation">Sum invoiced cm² by invoice date; exclude credits/cancellations.</field>
+            <field name="source">Commercial / invoicing</field>
+            <field name="owner">Sales + Finance</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Increasing toward approved monthly target</field>
+            <field name="report_section">Commercial</field>
+            <field name="notes">Primary commercial volume metric.</field>
+        </record>
+        <record id="kpi_cm2_used" model="eos.kpi">
+            <field name="name">cm² used</field>
+            <field name="code">cm2_used</field>
+            <field name="definition">Total documented graft cm² clinically applied in the reporting period.</field>
+            <field name="calculation">Sum cm² recorded in completed clinical case documentation.</field>
+            <field name="source">Clinical &amp; KOL</field>
+            <field name="owner">Harold</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Increasing; reconcile to sold volume over time</field>
+            <field name="report_section">Clinical</field>
+            <field name="notes">Clinical utilization metric.</field>
+        </record>
+        <record id="kpi_active_hospitals" model="eos.kpi">
+            <field name="name">Active hospitals</field>
+            <field name="code">active_hospitals</field>
+            <field name="definition">Hospitals with at least one commercial order or clinical case in the trailing 90 days.</field>
+            <field name="calculation">Distinct hospitals meeting trailing-90-day activity rule.</field>
+            <field name="source">Commercial Pipeline / Clinical</field>
+            <field name="owner">Sales Lead</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Increasing</field>
+            <field name="report_section">Commercial</field>
+            <field name="notes">Distinguish contracted from truly active.</field>
+        </record>
+        <record id="kpi_active_physicians" model="eos.kpi">
+            <field name="name">Active physicians</field>
+            <field name="code">active_physicians</field>
+            <field name="definition">Physicians with at least one Sanare-supported clinical case in the trailing 90 days.</field>
+            <field name="calculation">Distinct physicians meeting trailing-90-day case rule.</field>
+            <field name="source">Clinical &amp; KOL</field>
+            <field name="owner">Harold / Sales</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Increasing</field>
+            <field name="report_section">Commercial / Clinical</field>
+            <field name="notes">Measures physician adoption, not just engagement.</field>
+        </record>
+        <record id="kpi_qualified_pipeline_cm2" model="eos.kpi">
+            <field name="name">Qualified pipeline cm²</field>
+            <field name="code">qualified_pipeline_cm2</field>
+            <field name="definition">Probability-weighted annual cm² opportunity for accounts at Evaluating or later.</field>
+            <field name="calculation">Sum(est. annual cm² × probability) for qualified stages.</field>
+            <field name="source">Commercial Pipeline</field>
+            <field name="owner">Sales Lead</field>
+            <field name="frequency">weekly</field>
+            <field name="target">Pipeline coverage target to be set</field>
+            <field name="report_section">Commercial</field>
+            <field name="notes">Do not count early identified/engaged accounts as qualified.</field>
+        </record>
+        <record id="kpi_reorder_rate" model="eos.kpi">
+            <field name="name">Reorder rate</field>
+            <field name="code">reorder_rate</field>
+            <field name="definition">Percent of ordering hospitals that place at least one subsequent order within 90 days of first order.</field>
+            <field name="calculation">Hospitals reordered within 90 days ÷ hospitals eligible for 90-day measurement.</field>
+            <field name="source">Commercial / invoicing</field>
+            <field name="owner">Sales Lead</field>
+            <field name="frequency">monthly</field>
+            <field name="target">Increasing; threshold after launch data exists</field>
+            <field name="report_section">Commercial</field>
+            <field name="notes">Key repeatability metric.</field>
+        </record>
+        <record id="kpi_realized_price_cm2" model="eos.kpi">
+            <field name="name">Realized price/cm²</field>
+            <field name="code">realized_price_cm2</field>
+            <field name="definition">Net invoiced product revenue per cm² sold.</field>
+            <field name="calculation">Net product revenue ÷ cm² sold.</field>
+            <field name="source">Financial Inputs / invoicing</field>
+            <field name="owner">Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">At or above approved floor</field>
+            <field name="report_section">Financial</field>
+            <field name="notes">Use net revenue after credits/discounts.</field>
+        </record>
+        <record id="kpi_cogs_cm2" model="eos.kpi">
+            <field name="name">COGS/cm²</field>
+            <field name="code">cogs_cm2</field>
+            <field name="definition">Product cost of goods sold per cm² sold.</field>
+            <field name="calculation">Product COGS ÷ cm² sold.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">At or below model</field>
+            <field name="report_section">Financial</field>
+            <field name="notes">Monitor landed-cost changes separately.</field>
+        </record>
+        <record id="kpi_gross_margin" model="eos.kpi">
+            <field name="name">Gross margin %</field>
+            <field name="code">gross_margin</field>
+            <field name="definition">Gross profit as a percentage of net revenue.</field>
+            <field name="calculation">(Revenue − COGS) ÷ Revenue.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">At or above approved minimum</field>
+            <field name="report_section">Financial</field>
+        </record>
+        <record id="kpi_dso" model="eos.kpi">
+            <field name="name">DSO</field>
+            <field name="code">dso</field>
+            <field name="definition">Estimated days required to collect accounts receivable.</field>
+            <field name="calculation">AR ÷ trailing 30-day net revenue × 30.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">Within approved threshold</field>
+            <field name="report_section">Financial</field>
+            <field name="notes">Use a broader revenue period if monthly sales are volatile.</field>
+        </record>
+        <record id="kpi_weeks_of_supply" model="eos.kpi">
+            <field name="name">Weeks of supply</field>
+            <field name="code">weeks_of_supply</field>
+            <field name="definition">On-hand inventory expressed as weeks of expected consumption.</field>
+            <field name="calculation">On-hand cm² ÷ average weekly cm² sold (trailing 4 weeks); pre-launch use forecast consumption.</field>
+            <field name="source">Supply Chain</field>
+            <field name="owner">Operations</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Within approved inventory range</field>
+            <field name="report_section">Supply Chain</field>
+        </record>
+        <record id="kpi_open_critical_regulatory_issues" model="eos.kpi">
+            <field name="name">Open critical regulatory issues</field>
+            <field name="code">open_critical_regulatory_issues</field>
+            <field name="definition">Unresolved regulatory items classified as launch-blocking or critical.</field>
+            <field name="calculation">Count unresolved critical regulatory issues.</field>
+            <field name="source">Task Tracker / Risk Register</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="frequency">weekly</field>
+            <field name="target">Zero launch blockers</field>
+            <field name="report_section">Regulatory</field>
+        </record>
+        <record id="kpi_case_documentation" model="eos.kpi">
+            <field name="name">Case documentation %</field>
+            <field name="code">case_documentation</field>
+            <field name="definition">Percent of clinical cases with all required clinical and traceability documentation complete.</field>
+            <field name="calculation">Fully documented cases ÷ total cases.</field>
+            <field name="source">Clinical &amp; KOL</field>
+            <field name="owner">Harold</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">100%</field>
+            <field name="report_section">Clinical</field>
+        </record>
+        <record id="kpi_cash_on_hand" model="eos.kpi">
+            <field name="name">Cash on hand</field>
+            <field name="code">cash_on_hand</field>
+            <field name="definition">Ending unrestricted cash and cash equivalents available to Sanare.</field>
+            <field name="calculation">Ending bank cash excluding restricted funds.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Greg Walker / Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">Above approved minimum cash floor</field>
+            <field name="report_section">Executive / Financial</field>
+        </record>
+        <record id="kpi_monthly_net_burn" model="eos.kpi">
+            <field name="name">Monthly net burn</field>
+            <field name="code">monthly_net_burn</field>
+            <field name="definition">Net reduction in operating cash during the month, excluding financing.</field>
+            <field name="calculation">Operating cash outflows minus operating inflows; inventory purchases shown separately but included in total launch cash consumption.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">At or below approved plan</field>
+            <field name="report_section">Financial</field>
+            <field name="notes">Keep treatment consistent month to month.</field>
+        </record>
+        <record id="kpi_runway" model="eos.kpi">
+            <field name="name">Runway</field>
+            <field name="code">runway</field>
+            <field name="definition">Months of available cash remaining at current burn rate.</field>
+            <field name="calculation">Available cash ÷ trailing 3-month average net burn; before 3 months of history use approved forecast/current burn.</field>
+            <field name="source">Financial Inputs</field>
+            <field name="owner">Greg Walker / Finance</field>
+            <field name="frequency">monthly</field>
+            <field name="target">Above board-approved minimum</field>
+            <field name="report_section">Executive / Financial</field>
+        </record>
+        <record id="kpi_rocks_on_track" model="eos.kpi">
+            <field name="name">Rocks On Track</field>
+            <field name="code">rocks_on_track</field>
+            <field name="definition">Current-quarter Rocks whose management Status is On Track.</field>
+            <field name="calculation">Count current-quarter Rock Tracker rows with Status = On Track.</field>
+            <field name="source">Rock Tracker</field>
+            <field name="owner">Greg Walker</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">≥80% of active Rocks On Track</field>
+            <field name="report_section">EOS Execution</field>
+            <field name="notes">Rock Status is a management judgment, distinct from task completion %.</field>
+        </record>
+        <record id="kpi_thailand_launch_readiness" model="eos.kpi">
+            <field name="name">Thailand Launch Readiness</field>
+            <field name="code">thailand_launch_readiness</field>
+            <field name="definition">Weighted readiness of nine launch-critical Thailand workstreams.</field>
+            <field name="calculation">Weighted average of objective task completion by workstream; Red/Yellow status reflects critical off-track/overdue or at-risk tasks.</field>
+            <field name="source">Launch Readiness / Task Tracker</field>
+            <field name="owner">Greg Walker</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">100% with no Red launch blockers at launch gate</field>
+            <field name="report_section">Executive / Launch Readiness</field>
+            <field name="notes">R25 branding is excluded from readiness weighting to avoid overstating launch mechanics.</field>
+        </record>
+        <record id="kpi_singapore_launch_readiness" model="eos.kpi">
+            <field name="name">Singapore Launch Readiness</field>
+            <field name="code">singapore_launch_readiness</field>
+            <field name="definition">Weighted readiness of nine launch-critical Singapore workstreams.</field>
+            <field name="calculation">Weighted average of mapped Singapore tasks, sharing manufacturer readiness with the global manufacturer Rock.</field>
+            <field name="source">Launch Readiness / Task Tracker</field>
+            <field name="owner">Greg Walker</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">100% with no Red launch blockers at launch gate</field>
+            <field name="report_section">Executive / Launch Readiness</field>
+            <field name="notes">Singapore readiness uses S1–S15 plus global manufacturer readiness.</field>
+        </record>
+    </data>
+</odoo>

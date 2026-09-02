@@ -1,0 +1,12 @@
+<odoo>
+    <data noupdate="1">
+        <record id="market_thailand" model="eos.market">
+            <field name="name">Thailand</field>
+            <field name="code">TH</field>
+        </record>
+        <record id="market_singapore" model="eos.market">
+            <field name="name">Singapore</field>
+            <field name="code">SG</field>
+        </record>
+    </data>
+</odoo>

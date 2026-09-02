@@ -1,0 +1,237 @@
+<odoo>
+    <!-- LAUNCH READINESS -->
+    <record id="view_eos_launch_workstream_tree" model="ir.ui.view">
+        <field name="name">eos.launch.workstream.tree</field>
+        <field name="model">eos.launch.workstream</field>
+        <field name="arch" type="xml">
+            <list string="Launch Readiness" decoration-danger="status == 'red'" decoration-warning="status == 'yellow'">
+                <field name="market_id"/>
+                <field name="workstream"/>
+                <field name="weight"/>
+                <field name="readiness" widget="progressbar"/>
+                <field name="status"/>
+                <field name="owner"/>
+                <field name="source_key"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_launch_workstream_form" model="ir.ui.view">
+        <field name="name">eos.launch.workstream.form</field>
+        <field name="model">eos.launch.workstream</field>
+        <field name="arch" type="xml">
+            <form string="Launch Workstream">
+                <sheet>
+                    <group>
+                        <field name="market_id"/>
+                        <field name="workstream"/>
+                        <field name="weight"/>
+                        <field name="readiness"/>
+                        <field name="status"/>
+                        <field name="owner"/>
+                        <field name="source_key"/>
+                    </group>
+                    <group string="Key Gate / Evidence">
+                        <field name="key_gate" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- MONTH-END CLOSE -->
+    <record id="view_eos_close_step_tree" model="ir.ui.view">
+        <field name="name">eos.close.step.tree</field>
+        <field name="model">eos.close.step</field>
+        <field name="arch" type="xml">
+            <list string="Month-End Close">
+                <field name="sequence"/>
+                <field name="activity"/>
+                <field name="owner"/>
+                <field name="due"/>
+                <field name="status"/>
+                <field name="issue"/>
+                <field name="completed_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_close_step_form" model="ir.ui.view">
+        <field name="name">eos.close.step.form</field>
+        <field name="model">eos.close.step</field>
+        <field name="arch" type="xml">
+            <form string="Close Step">
+                <sheet>
+                    <group>
+                        <field name="sequence"/>
+                        <field name="activity"/>
+                        <field name="owner"/>
+                        <field name="due"/>
+                        <field name="status"/>
+                        <field name="evidence"/>
+                        <field name="issue"/>
+                        <field name="completed_date"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- MONTHLY REPORT / CONTROL -->
+    <record id="view_eos_monthly_report_tree" model="ir.ui.view">
+        <field name="name">eos.monthly.report.tree</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="arch" type="xml">
+            <list string="Monthly Reports">
+                <field name="name"/>
+                <field name="reporting_month"/>
+                <field name="prepared_by_id"/>
+                <field name="report_status"/>
+                <field name="active_quarter"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_monthly_report_form" model="ir.ui.view">
+        <field name="name">eos.monthly.report.form</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="arch" type="xml">
+            <form string="Monthly Report">
+                <header>
+                    <field name="report_status" widget="statusbar"
+                           statusbar_visible="draft,ceo_review,approved,sent"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="reporting_month"/>
+                            <field name="report_date"/>
+                            <field name="prepared_by_id"/>
+                            <field name="active_quarter"/>
+                            <field name="current_quarter"/>
+                        </group>
+                        <group>
+                            <field name="overall_health"/>
+                            <field name="thailand_launch_health"/>
+                            <field name="singapore_launch_health"/>
+                            <field name="financial_health"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Executive Summary" name="executive_summary">
+                            <field name="executive_summary" nolabel="1"/>
+                        </page>
+                        <page string="What Went Well" name="what_went_well">
+                            <field name="what_went_well" nolabel="1"/>
+                        </page>
+                        <page string="Misses / Slippage" name="misses_slippage">
+                            <field name="misses_slippage" nolabel="1"/>
+                        </page>
+                        <page string="Corrective Actions" name="corrective_actions">
+                            <field name="corrective_actions" nolabel="1"/>
+                        </page>
+                        <page string="Key Decisions" name="key_decisions">
+                            <field name="key_decisions" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- MILESTONES -->
+    <record id="view_eos_milestone_tree" model="ir.ui.view">
+        <field name="name">eos.milestone.tree</field>
+        <field name="model">eos.milestone</field>
+        <field name="arch" type="xml">
+            <list string="Milestones">
+                <field name="sequence"/>
+                <field name="name"/>
+                <field name="target_date"/>
+                <field name="owner"/>
+                <field name="status"/>
+                <field name="percent_complete" widget="progressbar"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_milestone_form" model="ir.ui.view">
+        <field name="name">eos.milestone.form</field>
+        <field name="model">eos.milestone</field>
+        <field name="arch" type="xml">
+            <form string="Milestone">
+                <sheet>
+                    <group>
+                        <field name="sequence"/>
+                        <field name="name"/>
+                        <field name="target_date"/>
+                        <field name="owner"/>
+                        <field name="status"/>
+                        <field name="percent_complete"/>
+                    </group>
+                    <group string="Definition">
+                        <field name="definition" nolabel="1"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- WEEKLY L10 -->
+    <record id="view_eos_l10_tree" model="ir.ui.view">
+        <field name="name">eos.l10.tree</field>
+        <field name="model">eos.l10</field>
+        <field name="arch" type="xml">
+            <list string="Weekly L10">
+                <field name="week_of"/>
+                <field name="attendees"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_l10_form" model="ir.ui.view">
+        <field name="name">eos.l10.form</field>
+        <field name="model">eos.l10</field>
+        <field name="arch" type="xml">
+            <form string="Weekly L10">
+                <sheet>
+                    <group>
+                        <field name="week_of"/>
+                        <field name="attendees"/>
+                    </group>
+                    <notebook>
+                        <page string="Scorecard" name="scorecard">
+                            <field name="scorecard_notes" nolabel="1"/>
+                        </page>
+                        <page string="Rock Review" name="rock_review">
+                            <field name="rock_review_notes" nolabel="1"/>
+                        </page>
+                        <page string="Customer / Clinical" name="customer">
+                            <field name="customer_notes" nolabel="1"/>
+                        </page>
+                        <page string="People" name="people">
+                            <field name="people_notes" nolabel="1"/>
+                        </page>
+                        <page string="IDS" name="ids">
+                            <field name="ids_line_ids">
+                                <list editable="bottom">
+                                    <field name="issue"/>
+                                    <field name="owner"/>
+                                    <field name="resolution"/>
+                                    <field name="due_date"/>
+                                    <field name="complete"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

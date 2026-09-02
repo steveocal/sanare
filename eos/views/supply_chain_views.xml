@@ -1,0 +1,61 @@
+<odoo>
+    <record id="view_eos_sku_tree" model="ir.ui.view">
+        <field name="name">eos.sku.tree</field>
+        <field name="model">eos.sku</field>
+        <field name="arch" type="xml">
+            <list string="Supply Chain / Inventory" decoration-danger="stockout_risk == 'red'" decoration-warning="stockout_risk == 'yellow'">
+                <field name="name"/>
+                <field name="market_id"/>
+                <field name="product_id"/>
+                <field name="manufacturer"/>
+                <field name="inventory_cm2"/>
+                <field name="inventory_value"/>
+                <field name="weeks_supply"/>
+                <field name="earliest_expiry"/>
+                <field name="stockout_risk"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_sku_form" model="ir.ui.view">
+        <field name="name">eos.sku.form</field>
+        <field name="model">eos.sku</field>
+        <field name="arch" type="xml">
+            <form string="SKU">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="market_id"/>
+                            <field name="product_id"/>
+                            <field name="manufacturer"/>
+                            <field name="owner"/>
+                        </group>
+                        <group>
+                            <field name="inventory_cm2"/>
+                            <field name="inventory_value"/>
+                            <field name="open_po_cm2"/>
+                            <field name="open_po_amount"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="avg_landed_cost_cm2"/>
+                            <field name="weeks_supply"/>
+                        </group>
+                        <group>
+                            <field name="earliest_expiry"/>
+                            <field name="last_receipt"/>
+                            <field name="stockout_risk"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

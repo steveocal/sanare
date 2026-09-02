@@ -1,0 +1,139 @@
+<odoo>
+    <!-- ROCKS -->
+    <record id="view_eos_rock_tree" model="ir.ui.view">
+        <field name="name">eos.rock.tree</field>
+        <field name="model">eos.rock</field>
+        <field name="arch" type="xml">
+            <list string="Rocks" decoration-danger="health == 'red'" decoration-warning="health == 'yellow'">
+                <field name="rock_id"/>
+                <field name="name"/>
+                <field name="quarter"/>
+                <field name="accountable_owner"/>
+                <field name="due_date"/>
+                <field name="status"/>
+                <field name="health"/>
+                <field name="percent_complete" widget="progressbar"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_rock_form" model="ir.ui.view">
+        <field name="name">eos.rock.form</field>
+        <field name="model">eos.rock</field>
+        <field name="arch" type="xml">
+            <form string="Rock">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h2><field name="rock_id"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="quarter"/>
+                            <field name="phase"/>
+                            <field name="market_id"/>
+                            <field name="accountable_owner"/>
+                            <field name="due_date"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="health"/>
+                            <field name="percent_complete" widget="progressbar"/>
+                            <field name="last_update"/>
+                            <field name="ids_required"/>
+                        </group>
+                    </group>
+                    <group string="Definition of Done">
+                        <field name="definition_of_done" nolabel="1"/>
+                    </group>
+                    <group>
+                        <field name="next_milestone"/>
+                        <field name="top_issue"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Tasks" name="tasks">
+                            <field name="task_ids">
+                                <list editable="bottom">
+                                    <field name="task_id"/>
+                                    <field name="name"/>
+                                    <field name="priority"/>
+                                    <field name="owner"/>
+                                    <field name="due_date"/>
+                                    <field name="status"/>
+                                    <field name="percent_complete" widget="progressbar"/>
+                                    <field name="health"/>
+                                    <field name="critical_path"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- TASKS -->
+    <record id="view_eos_task_tree" model="ir.ui.view">
+        <field name="name">eos.task.tree</field>
+        <field name="model">eos.task</field>
+        <field name="arch" type="xml">
+            <list string="Tasks" decoration-danger="health == 'red'" decoration-warning="health == 'yellow'">
+                <field name="task_id"/>
+                <field name="name"/>
+                <field name="rock_id"/>
+                <field name="priority"/>
+                <field name="owner"/>
+                <field name="due_date"/>
+                <field name="status"/>
+                <field name="percent_complete" widget="progressbar"/>
+                <field name="health"/>
+                <field name="critical_path"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_task_form" model="ir.ui.view">
+        <field name="name">eos.task.form</field>
+        <field name="model">eos.task</field>
+        <field name="arch" type="xml">
+            <form string="Task">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h2><field name="task_id"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="rock_id"/>
+                            <field name="priority"/>
+                            <field name="owner"/>
+                            <field name="due_date"/>
+                            <field name="critical_path"/>
+                            <field name="task_type"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="percent_complete" widget="progressbar"/>
+                            <field name="health"/>
+                            <field name="last_update"/>
+                        </group>
+                    </group>
+                    <group string="Dependency &amp; Next Action">
+                        <field name="dependency"/>
+                        <field name="next_action"/>
+                        <field name="blocker"/>
+                    </group>
+                    <group string="Definition of Done / Completion Criteria">
+                        <field name="definition_of_done" nolabel="1"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="milestone_1_sanare_thailand_established" model="eos.milestone">
+            <field name="sequence">1</field>
+            <field name="name">1. Sanare Thailand Established</field>
+            <field name="definition">Company formed, ownership finalized, bank opened, office secured</field>
+            <field name="target_date">2026-09-15</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+        <record id="milestone_2_regulatory_infrastructure" model="eos.milestone">
+            <field name="sequence">2</field>
+            <field name="name">2. Regulatory Infrastructure</field>
+            <field name="definition">TFDA pathway, importer establishment and tissue-bank strategy established</field>
+            <field name="target_date">2026-10-15</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+        <record id="milestone_3_commercial_infrastructure" model="eos.milestone">
+            <field name="sequence">3</field>
+            <field name="name">3. Commercial Infrastructure</field>
+            <field name="definition">Medical Director, EA, clinical and initial sales team in place</field>
+            <field name="target_date">2026-11-15</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+        <record id="milestone_4_market_ready" model="eos.milestone">
+            <field name="sequence">4</field>
+            <field name="name">4. Market Ready</field>
+            <field name="definition">Approvals, inventory, insurance, training and hospital onboarding ready</field>
+            <field name="target_date">2027-01-15</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+        <record id="milestone_5_commercial_launch" model="eos.milestone">
+            <field name="sequence">5</field>
+            <field name="name">5. Commercial Launch</field>
+            <field name="definition">First hospitals ordering and treating patients</field>
+            <field name="target_date">2027-02-01</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+        <record id="milestone_6_50_000_cm2_month" model="eos.milestone">
+            <field name="sequence">6</field>
+            <field name="name">6. 50,000 cm² / Month</field>
+            <field name="definition">Six consecutive months at 50,000 cm² monthly volume</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+            <field name="notes">Equity milestone</field>
+        </record>
+        <record id="milestone_7_100_000_cm2_month" model="eos.milestone">
+            <field name="sequence">7</field>
+            <field name="name">7. 100,000 cm² / Month</field>
+            <field name="definition">Reach 100,000 cm² monthly volume</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+            <field name="notes">Equity milestone</field>
+        </record>
+        <record id="milestone_8_national_thailand_platform" model="eos.milestone">
+            <field name="sequence">8</field>
+            <field name="name">8. National Thailand Platform</field>
+            <field name="definition">Bangkok plus regional distribution network established</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="percent_complete">0.0</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_eos_market,eos.market,model_eos_market,base.group_user,1,1,1,1
+access_eos_rock,eos.rock,model_eos_rock,base.group_user,1,1,1,1
+access_eos_task,eos.task,model_eos_task,base.group_user,1,1,1,1
+access_eos_physician,eos.physician,model_eos_physician,base.group_user,1,1,1,1
+access_eos_sku,eos.sku,model_eos_sku,base.group_user,1,1,1,1
+access_eos_risk,eos.risk,model_eos_risk,base.group_user,1,1,1,1
+access_eos_kpi,eos.kpi,model_eos_kpi,base.group_user,1,1,1,1
+access_eos_kpi_value,eos.kpi.value,model_eos_kpi_value,base.group_user,1,1,1,1
+access_eos_launch_workstream,eos.launch.workstream,model_eos_launch_workstream,base.group_user,1,1,1,1
+access_eos_close_step,eos.close.step,model_eos_close_step,base.group_user,1,1,1,1
+access_eos_monthly_report,eos.monthly.report,model_eos_monthly_report,base.group_user,1,1,1,1
+access_eos_milestone,eos.milestone,model_eos_milestone,base.group_user,1,1,1,1
+access_eos_l10,eos.l10,model_eos_l10,base.group_user,1,1,1,1
+access_eos_ids,eos.ids,model_eos_ids,base.group_user,1,1,1,1

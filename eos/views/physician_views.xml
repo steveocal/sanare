@@ -1,0 +1,61 @@
+<odoo>
+    <record id="view_eos_physician_tree" model="ir.ui.view">
+        <field name="name">eos.physician.tree</field>
+        <field name="model">eos.physician</field>
+        <field name="arch" type="xml">
+            <list string="Physicians / KOLs">
+                <field name="name"/>
+                <field name="market_id"/>
+                <field name="hospital_id"/>
+                <field name="specialty"/>
+                <field name="relationship_stage"/>
+                <field name="training_status"/>
+                <field name="cases_mtd"/>
+                <field name="cm2_mtd"/>
+                <field name="repeat_user"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_physician_form" model="ir.ui.view">
+        <field name="name">eos.physician.form</field>
+        <field name="model">eos.physician</field>
+        <field name="arch" type="xml">
+            <form string="Physician / KOL">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="market_id"/>
+                            <field name="hospital_id"/>
+                            <field name="specialty"/>
+                            <field name="owner"/>
+                        </group>
+                        <group>
+                            <field name="relationship_stage"/>
+                            <field name="training_status"/>
+                            <field name="first_case_date"/>
+                            <field name="repeat_user"/>
+                        </group>
+                    </group>
+                    <group string="Activity (month-to-date / year-to-date)">
+                        <group>
+                            <field name="cases_mtd"/>
+                            <field name="cm2_mtd"/>
+                        </group>
+                        <group>
+                            <field name="cases_ytd"/>
+                            <field name="cm2_ytd"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="notes" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

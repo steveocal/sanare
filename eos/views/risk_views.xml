@@ -1,0 +1,55 @@
+<odoo>
+    <record id="view_eos_risk_tree" model="ir.ui.view">
+        <field name="name">eos.risk.tree</field>
+        <field name="model">eos.risk</field>
+        <field name="arch" type="xml">
+            <list string="Risk Register" decoration-danger="rating == 'red'" decoration-warning="rating == 'yellow'">
+                <field name="risk_id"/>
+                <field name="name"/>
+                <field name="market_id"/>
+                <field name="category"/>
+                <field name="probability"/>
+                <field name="impact"/>
+                <field name="rating"/>
+                <field name="risk_score"/>
+                <field name="trend"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_risk_form" model="ir.ui.view">
+        <field name="name">eos.risk.form</field>
+        <field name="model">eos.risk</field>
+        <field name="arch" type="xml">
+            <form string="Risk">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                        <h2><field name="risk_id"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="market_id"/>
+                            <field name="category"/>
+                            <field name="probability"/>
+                            <field name="impact"/>
+                            <field name="owner"/>
+                        </group>
+                        <group>
+                            <field name="rating"/>
+                            <field name="risk_score"/>
+                            <field name="trend"/>
+                            <field name="status"/>
+                            <field name="last_update"/>
+                            <field name="target_resolution"/>
+                        </group>
+                    </group>
+                    <group string="Mitigation">
+                        <field name="mitigation" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

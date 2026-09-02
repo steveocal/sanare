@@ -1,0 +1,2129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="task_37" model="eos.task">
+            <field name="task_id">37</field>
+            <field name="name">Set up Microsoft 365 or Google Workspace</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-08-19</field>
+            <field name="status">complete</field>
+            <field name="dependency">#36 Establish corporate email accounts</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">send GW master folder structure and invitations</field>
+        </record>
+        <record id="task_46" model="eos.task">
+            <field name="task_id">46</field>
+            <field name="name">Retain Thai corporate attorney</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-21</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_2" model="eos.task">
+            <field name="task_id">2</field>
+            <field name="name">Reserve company name with DBD</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#1 Finalize Sanare Regenerative (Thailand) company name</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">signing contract today 8-24</field>
+        </record>
+        <record id="task_1" model="eos.task">
+            <field name="task_id">1</field>
+            <field name="name">Finalize Sanare Regenerative (Thailand) company name</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#46 Retain Thai corporate attorney</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">retained atty, 8-26 suppose to give us update</field>
+            <field name="notes">COUNSEL HAS EVERYTHING, WAITING ON THEM</field>
+        </record>
+        <record id="task_3" model="eos.task">
+            <field name="task_id">3</field>
+            <field name="name">Finalize shareholder structure</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#2 Reserve company name with DBD; #48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">resolving Bio Lab deal</field>
+            <field name="notes">HAVE ON PAPER, FINAL STRUCTURE WILL NOT HAPPEN UNTIL ALL IMVESTORS ARE IN</field>
+        </record>
+        <record id="task_4" model="eos.task">
+            <field name="task_id">4</field>
+            <field name="name">Finalize Thai physician partner ownership / vesting agreement</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="dependency">#49 Finalize Medical Director / physician partner role</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">contract executed</field>
+        </record>
+        <record id="task_5" model="eos.task">
+            <field name="task_id">5</field>
+            <field name="name">Prepare Memorandum and Articles of Association</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#3 Finalize shareholder structure; #4 Finalize Thai physician partner ownership / vesting agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">too early</field>
+        </record>
+        <record id="task_6" model="eos.task">
+            <field name="task_id">6</field>
+            <field name="name">Register company with DBD</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#2 Reserve company name with DBD; #5 Prepare Memorandum and Articles of Association</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">sending resumes to Harold to review week of 8-24</field>
+        </record>
+        <record id="task_7" model="eos.task">
+            <field name="task_id">7</field>
+            <field name="name">Obtain company registration certificate and affidavit</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#6 Register company with DBD</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="next_action">too early</field>
+            <field name="notes">90 DAYS AFTER COMPANY FORMED, THAI BANK REG</field>
+        </record>
+        <record id="task_13" model="eos.task">
+            <field name="task_id">13</field>
+            <field name="name">Confirm foreign ownership / Treaty of Amity structure as applicable</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#3 Finalize shareholder structure; #48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_17" model="eos.task">
+            <field name="task_id">17</field>
+            <field name="name">Select accounting / bookkeeping firm</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_21" model="eos.task">
+            <field name="task_id">21</field>
+            <field name="name">Create 12-month cash flow forecast</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="dependency">#16 Fund startup operating account</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_22" model="eos.task">
+            <field name="task_id">22</field>
+            <field name="name">Finalize 3-year financial model and startup budget</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="dependency">#21 Create 12-month cash flow forecast</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_23" model="eos.task">
+            <field name="task_id">23</field>
+            <field name="name">Create monthly management reporting package</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#18 Set up accounting system and chart of accounts; #22 Finalize 3-year financial model and startup budget</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_36" model="eos.task">
+            <field name="task_id">36</field>
+            <field name="name">Establish corporate email accounts</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_38" model="eos.task">
+            <field name="task_id">38</field>
+            <field name="name">Create shared company drive and folder structure</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#37 Set up Microsoft 365 or Google Workspace</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_39" model="eos.task">
+            <field name="task_id">39</field>
+            <field name="name">Implement multi-factor authentication</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">complete</field>
+            <field name="dependency">#37 Set up Microsoft 365 or Google Workspace</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_69" model="eos.task">
+            <field name="task_id">69</field>
+            <field name="name">Confirm Biolabs as primary manufacturing partner</field>
+            <field name="rock_id" ref="rock_r5"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-08-31</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_8" model="eos.task">
+            <field name="task_id">8</field>
+            <field name="name">Obtain tax ID / complete tax registrations</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-01</field>
+            <field name="status">on_track</field>
+            <field name="dependency">#7 Obtain company registration certificate and affidavit; #47 Identify and Retain accountant / tax firm</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_9" model="eos.task">
+            <field name="task_id">9</field>
+            <field name="name">Confirm VAT registration timing</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-09-02</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#8 Obtain tax ID / complete tax registrations</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_44" model="eos.task">
+            <field name="task_id">44</field>
+            <field name="name">Create Executive Assistant / Office Manager job description</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-09-02</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_10" model="eos.task">
+            <field name="task_id">10</field>
+            <field name="name">Establish registered office address</field>
+            <field name="rock_id" ref="rock_r1"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-03</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_49" model="eos.task">
+            <field name="task_id">49</field>
+            <field name="name">Finalize Medical Director / physician partner role</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-04</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_71" model="eos.task">
+            <field name="task_id">71</field>
+            <field name="name">Finalize manufacturer / distribution agreement</field>
+            <field name="rock_id" ref="rock_r5"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-04</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_72" model="eos.task">
+            <field name="task_id">72</field>
+            <field name="name">Confirm territory, exclusivity, pricing and payment terms</field>
+            <field name="rock_id" ref="rock_r5"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-04</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_18" model="eos.task">
+            <field name="task_id">18</field>
+            <field name="name">Set up accounting system and chart of accounts</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2026-09-05</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#17 Select accounting / bookkeeping firm</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_19" model="eos.task">
+            <field name="task_id">19</field>
+            <field name="name">Set up payroll process</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2026-09-05</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#18 Set up accounting system and chart of accounts; #54 Set up required employee payroll / social security administration</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_27" model="eos.task">
+            <field name="task_id">27</field>
+            <field name="name">Negotiate and execute office lease</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-09-14</field>
+            <field name="status">complete</field>
+            <field name="dependency">#26</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_28" model="eos.task">
+            <field name="task_id">28</field>
+            <field name="name">Obtain landlord documents needed for registrations</field>
+            <field name="rock_id" ref="rock_r3"/>
+            <field name="priority">high</field>
+            <field name="owner">Harold</field>
+            <field name="due_date">2026-09-14</field>
+            <field name="status">complete</field>
+            <field name="dependency">#27 Negotiate and execute office lease</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_52" model="eos.task">
+            <field name="task_id">52</field>
+            <field name="name">Prepare employment and contractor agreement templates</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2026-09-14</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#46 Retain Thai corporate attorney</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_166" model="eos.task">
+            <field name="task_id">166</field>
+            <field name="name">Finalize brand identity (name, tagline, visual direction)</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_167" model="eos.task">
+            <field name="task_id">167</field>
+            <field name="name">Design primary + secondary logos</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_168" model="eos.task">
+            <field name="task_id">168</field>
+            <field name="name">Build brand style guide (colors, fonts, usage rules)</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_169" model="eos.task">
+            <field name="task_id">169</field>
+            <field name="name">Develop core messaging framework (positioning, key messages, elevator pitch)</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">on_track</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_170" model="eos.task">
+            <field name="task_id">170</field>
+            <field name="name">Design and build corporate website</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_171" model="eos.task">
+            <field name="task_id">171</field>
+            <field name="name">Produce digital collateral / digital books (company overview, investor deck design, product one-pagers)</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">on_track</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_172" model="eos.task">
+            <field name="task_id">172</field>
+            <field name="name">Create marketing asset templates (email, social, presentation)</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_173" model="eos.task">
+            <field name="task_id">173</field>
+            <field name="name">Launch branded email signatures and letterhead</field>
+            <field name="rock_id" ref="rock_r25"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">complete</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+            <field name="notes">Added 8/24/2026 per Greg Shindler request</field>
+        </record>
+        <record id="task_20" model="eos.task">
+            <field name="task_id">20</field>
+            <field name="name">Create expense reimbursement and purchasing policy</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">medium</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#18 Set up accounting system and chart of accounts</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_45" model="eos.task">
+            <field name="task_id">45</field>
+            <field name="name">Recruit and hire Executive Assistant / Office Manager</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#44 Create Executive Assistant / Office Manager job description</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_47" model="eos.task">
+            <field name="task_id">47</field>
+            <field name="name">Identify and Retain accountant / tax firm</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_48" model="eos.task">
+            <field name="task_id">48</field>
+            <field name="name">Retain Thai regulatory consultant</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">deferred</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_50" model="eos.task">
+            <field name="task_id">50</field>
+            <field name="name">Determine initial clinical nurse / trainer staffing</field>
+            <field name="rock_id" ref="rock_r4"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#49 Finalize Medical Director / physician partner role</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_55" model="eos.task">
+            <field name="task_id">55</field>
+            <field name="name">Confirm regulatory classification/pathway for each product</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_56" model="eos.task">
+            <field name="task_id">56</field>
+            <field name="name">Obtain Thai FDA SKYNET access / applicant rights as needed</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#55 Confirm regulatory classification/pathway for each product</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_57" model="eos.task">
+            <field name="task_id">57</field>
+            <field name="name">Register medical-device importer establishment before product filing, if applicable</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#55 Confirm regulatory classification/pathway for each product</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_58" model="eos.task">
+            <field name="task_id">58</field>
+            <field name="name">Appoint qualified import controller / responsible person as required</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#57 Register medical-device importer establishment before product filing, if applicable</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_59" model="eos.task">
+            <field name="task_id">59</field>
+            <field name="name">Confirm importer location and storage-site requirements</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#57 Register medical-device importer establishment before product filing, if applicable</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_60" model="eos.task">
+            <field name="task_id">60</field>
+            <field name="name">Determine tissue-bank requirements for amniotic products</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#55 Confirm regulatory classification/pathway for each product</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_61" model="eos.task">
+            <field name="task_id">61</field>
+            <field name="name">Establish temporary tissue-bank relationship if required</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Thai Physician Partner</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#60 Determine tissue-bank requirements for amniotic products</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_62" model="eos.task">
+            <field name="task_id">62</field>
+            <field name="name">Assess Sanare-owned tissue-bank licensing strategy</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">high</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#60 Determine tissue-bank requirements for amniotic products</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_63" model="eos.task">
+            <field name="task_id">63</field>
+            <field name="name">Collect manufacturer authorization and regulatory documents</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Manufacturer</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_64" model="eos.task">
+            <field name="task_id">64</field>
+            <field name="name">Collect Free Sale / market history / quality certificates as applicable</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">high</field>
+            <field name="owner">Manufacturer</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#63 Collect manufacturer authorization and regulatory documents</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_65" model="eos.task">
+            <field name="task_id">65</field>
+            <field name="name">Prepare product dossiers and Thai labeling / IFU</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#63 Collect manufacturer authorization and regulatory documents; #64 Collect Free Sale / market history / quality certificates as applicable</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_66" model="eos.task">
+            <field name="task_id">66</field>
+            <field name="name">Submit product registration applications</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#65 Prepare product dossiers and Thai labeling / IFU; #59 Confirm importer location and storage-site requirements</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_67" model="eos.task">
+            <field name="task_id">67</field>
+            <field name="name">Track and answer TFDA questions / deficiencies</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#66 Submit product registration applications</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_68" model="eos.task">
+            <field name="task_id">68</field>
+            <field name="name">Obtain product approvals before commercial placement on market</field>
+            <field name="rock_id" ref="rock_r6"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#67 Track and answer TFDA questions / deficiencies</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_70" model="eos.task">
+            <field name="task_id">70</field>
+            <field name="name">Establish promotional / advertising review process</field>
+            <field name="rock_id" ref="rock_r5"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_14" model="eos.task">
+            <field name="task_id">14</field>
+            <field name="name">Open Thai corporate bank account</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-11-16</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#7 Obtain company registration certificate and affidavit; #17 Select accounting / bookkeeping firm</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_15" model="eos.task">
+            <field name="task_id">15</field>
+            <field name="name">Establish online banking and approval authorities</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2026-11-16</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#14 Open Thai corporate bank account</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_16" model="eos.task">
+            <field name="task_id">16</field>
+            <field name="name">Fund startup operating account</field>
+            <field name="rock_id" ref="rock_r2"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="due_date">2026-11-23</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#14 Open Thai corporate bank account</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_73" model="eos.task">
+            <field name="task_id">73</field>
+            <field name="name">Establish forecast and ordering process</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Manufacturer</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_74" model="eos.task">
+            <field name="task_id">74</field>
+            <field name="name">Select freight forwarder</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_75" model="eos.task">
+            <field name="task_id">75</field>
+            <field name="name">Select Thai customs broker</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_76" model="eos.task">
+            <field name="task_id">76</field>
+            <field name="name">Confirm importer of record and customs documentation</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#57 Register medical-device importer establishment before product filing, if applicable; #75 Select Thai customs broker</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_77" model="eos.task">
+            <field name="task_id">77</field>
+            <field name="name">Confirm HS codes, duties and import taxes</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#76 Confirm importer of record and customs documentation</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_78" model="eos.task">
+            <field name="task_id">78</field>
+            <field name="name">Define shipping / temperature / chain-of-custody requirements</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Manufacturer</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement; #60 Determine tissue-bank requirements for amniotic products</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_79" model="eos.task">
+            <field name="task_id">79</field>
+            <field name="name">Set up receiving, lot and expiration tracking</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">critical</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#78 Define shipping / temperature / chain-of-custody requirements</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_80" model="eos.task">
+            <field name="task_id">80</field>
+            <field name="name">Create inventory management and reorder-point process</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#79 Set up receiving, lot and expiration tracking</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_81" model="eos.task">
+            <field name="task_id">81</field>
+            <field name="name">Set safety-stock targets</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">medium</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#80 Create inventory management and reorder-point process</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_82" model="eos.task">
+            <field name="task_id">82</field>
+            <field name="name">Create damaged-product, returns and recall traceability procedures</field>
+            <field name="rock_id" ref="rock_r7"/>
+            <field name="priority">high</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#69 Confirm Biolabs as primary manufacturing partner; #79 Set up receiving, lot and expiration tracking</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_83" model="eos.task">
+            <field name="task_id">83</field>
+            <field name="name">Obtain Thailand commercial general liability quote</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_84" model="eos.task">
+            <field name="task_id">84</field>
+            <field name="name">Obtain product liability insurance quote</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_85" model="eos.task">
+            <field name="task_id">85</field>
+            <field name="name">Evaluate professional / clinical liability coverage</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_86" model="eos.task">
+            <field name="task_id">86</field>
+            <field name="name">Evaluate D&amp;O and employer coverage</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_87" model="eos.task">
+            <field name="task_id">87</field>
+            <field name="name">Evaluate cyber insurance</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_88" model="eos.task">
+            <field name="task_id">88</field>
+            <field name="name">Obtain cargo / transit insurance as appropriate</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_89" model="eos.task">
+            <field name="task_id">89</field>
+            <field name="name">Coordinate Thai coverage with US parent / umbrella coverage</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#84 Obtain product liability insurance quote</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_90" model="eos.task">
+            <field name="task_id">90</field>
+            <field name="name">Finalize Sanare Regenerative brand identity</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_91" model="eos.task">
+            <field name="task_id">91</field>
+            <field name="name">Secure domain names and trademarks</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_92" model="eos.task">
+            <field name="task_id">92</field>
+            <field name="name">Build Sanare Thailand website</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">medium</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity; #91 Secure domain names and trademarks</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_93" model="eos.task">
+            <field name="task_id">93</field>
+            <field name="name">Create business cards, letterhead and email signatures</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">medium</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_94" model="eos.task">
+            <field name="task_id">94</field>
+            <field name="name">Create corporate overview / Why We Exist one-pager</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_95" model="eos.task">
+            <field name="task_id">95</field>
+            <field name="name">Create hospital and physician presentations</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity; #96 Create product information sheets and clinical evidence package</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_96" model="eos.task">
+            <field name="task_id">96</field>
+            <field name="name">Create product information sheets and clinical evidence package</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement; #99 Build Medical Advisory Board / KOL strategy</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_97" model="eos.task">
+            <field name="task_id">97</field>
+            <field name="name">Prepare compliant conference / booth materials</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">medium</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#90 Finalize Sanare Regenerative brand identity; #140 Create anti-bribery / anti-corruption policy</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_98" model="eos.task">
+            <field name="task_id">98</field>
+            <field name="name">Appoint Medical Director</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#49 Finalize Medical Director / physician partner role</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_99" model="eos.task">
+            <field name="task_id">99</field>
+            <field name="name">Build Medical Advisory Board / KOL strategy</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#98 Appoint Medical Director</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_100" model="eos.task">
+            <field name="task_id">100</field>
+            <field name="name">Prioritize 20 Thai physician / KOL targets</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#99 Build Medical Advisory Board / KOL strategy</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_101" model="eos.task">
+            <field name="task_id">101</field>
+            <field name="name">Build physician education program</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#98 Appoint Medical Director; #96 Create product information sheets and clinical evidence package</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_102" model="eos.task">
+            <field name="task_id">102</field>
+            <field name="name">Build nurse / clinical specialist program</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#101 Build physician education program</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_103" model="eos.task">
+            <field name="task_id">103</field>
+            <field name="name">Build Train-the-Trainer program</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#102 Build nurse / clinical specialist program</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_104" model="eos.task">
+            <field name="task_id">104</field>
+            <field name="name">Schedule manufacturer training team visit</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Manufacturer</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_105" model="eos.task">
+            <field name="task_id">105</field>
+            <field name="name">Train Sanare nurses / clinical specialists</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#103 Build Train-the-Trainer program; #104 Schedule manufacturer training team visit</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_106" model="eos.task">
+            <field name="task_id">106</field>
+            <field name="name">Establish clinical photography / consent procedures</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#98 Appoint Medical Director</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_107" model="eos.task">
+            <field name="task_id">107</field>
+            <field name="name">Establish case study and outcomes tracking</field>
+            <field name="rock_id" ref="rock_r8"/>
+            <field name="priority">medium</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#106 Establish clinical photography / consent procedures</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_108" model="eos.task">
+            <field name="task_id">108</field>
+            <field name="name">Finalize first 9 rollout hospitals</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_109" model="eos.task">
+            <field name="task_id">109</field>
+            <field name="name">Map clinical, procurement, admin and tissue-bank contacts at each</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#108 Finalize first 9 rollout hospitals</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_110" model="eos.task">
+            <field name="task_id">110</field>
+            <field name="name">Identify hospital vendor-registration requirements</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#109 Map clinical, procurement, admin and tissue-bank contacts at each</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_111" model="eos.task">
+            <field name="task_id">111</field>
+            <field name="name">Complete initial vendor registrations</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#110 Identify hospital vendor-registration requirements; #68 Obtain product approvals before commercial placement on market</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_112" model="eos.task">
+            <field name="task_id">112</field>
+            <field name="name">Establish hospital pricing and volume tiers</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#132 Finalize price per cm² and by graft size</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_113" model="eos.task">
+            <field name="task_id">113</field>
+            <field name="name">Define product evaluation / trial process</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">high</field>
+            <field name="owner">Medical Director</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#96 Create product information sheets and clinical evidence package; #68 Obtain product approvals before commercial placement on market</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_114" model="eos.task">
+            <field name="task_id">114</field>
+            <field name="name">Set hospital training and case-support process</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">high</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#103 Build Train-the-Trainer program</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_115" model="eos.task">
+            <field name="task_id">115</field>
+            <field name="name">Establish hospital follow-up cadence</field>
+            <field name="rock_id" ref="rock_r9"/>
+            <field name="priority">medium</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#111 Complete initial vendor registrations</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_116" model="eos.task">
+            <field name="task_id">116</field>
+            <field name="name">Define initial sales territories</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#108 Finalize first 9 rollout hospitals</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_117" model="eos.task">
+            <field name="task_id">117</field>
+            <field name="name">Hire first medical-device sales representatives</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#51 Determine first sales hires and compensation; #116 Define initial sales territories</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_118" model="eos.task">
+            <field name="task_id">118</field>
+            <field name="name">Finalize base salary, commission and bonus plan</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#51 Determine first sales hires and compensation</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_119" model="eos.task">
+            <field name="task_id">119</field>
+            <field name="name">Set quotas and activity expectations</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#117 Hire first medical-device sales representatives</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_120" model="eos.task">
+            <field name="task_id">120</field>
+            <field name="name">Implement CRM</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_121" model="eos.task">
+            <field name="task_id">121</field>
+            <field name="name">Load hospitals, physicians and opportunities into CRM</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#109 Map clinical, procurement, admin and tissue-bank contacts at each; #120 Implement CRM</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_122" model="eos.task">
+            <field name="task_id">122</field>
+            <field name="name">Create weekly pipeline review</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">medium</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#117 Hire first medical-device sales representatives; #120 Implement CRM</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_123" model="eos.task">
+            <field name="task_id">123</field>
+            <field name="name">Create sales training manual and competitive materials</field>
+            <field name="rock_id" ref="rock_r10"/>
+            <field name="priority">medium</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#95 Create hospital and physician presentations; #117 Hire first medical-device sales representatives</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_132" model="eos.task">
+            <field name="task_id">132</field>
+            <field name="name">Finalize price per cm² and by graft size</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#71 Finalize manufacturer / distribution agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_133" model="eos.task">
+            <field name="task_id">133</field>
+            <field name="name">Calculate landed cost and gross margin</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">critical</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#132 Finalize price per cm² and by graft size; #77 Confirm HS codes, duties and import taxes</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_134" model="eos.task">
+            <field name="task_id">134</field>
+            <field name="name">Set minimum acceptable gross margin</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#133 Calculate landed cost and gross margin</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_135" model="eos.task">
+            <field name="task_id">135</field>
+            <field name="name">Map public, private-pay and insurance reimbursement pathways</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#55 Confirm regulatory classification/pathway for each product</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_136" model="eos.task">
+            <field name="task_id">136</field>
+            <field name="name">Create hospital ROI / economic model</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#132 Finalize price per cm² and by graft size; #133 Calculate landed cost and gross margin</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_137" model="eos.task">
+            <field name="task_id">137</field>
+            <field name="name">Create pricing approval authority</field>
+            <field name="rock_id" ref="rock_r11"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#134 Set minimum acceptable gross margin</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_138" model="eos.task">
+            <field name="task_id">138</field>
+            <field name="name">Create corporate compliance calendar</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_139" model="eos.task">
+            <field name="task_id">139</field>
+            <field name="name">Create contract approval procedures</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#138 Create corporate compliance calendar</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_140" model="eos.task">
+            <field name="task_id">140</field>
+            <field name="name">Create anti-bribery / anti-corruption policy</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_141" model="eos.task">
+            <field name="task_id">141</field>
+            <field name="name">Create healthcare professional interaction / gifts policy</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#140 Create anti-bribery / anti-corruption policy</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_142" model="eos.task">
+            <field name="task_id">142</field>
+            <field name="name">Prepare physician consulting / KOL agreement templates</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_143" model="eos.task">
+            <field name="task_id">143</field>
+            <field name="name">Prepare NDA and distributor / hospital templates</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_144" model="eos.task">
+            <field name="task_id">144</field>
+            <field name="name">Complete Thailand PDPA compliance review</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_145" model="eos.task">
+            <field name="task_id">145</field>
+            <field name="name">Create document retention policy</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#138 Create corporate compliance calendar</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_146" model="eos.task">
+            <field name="task_id">146</field>
+            <field name="name">Establish weekly management meeting</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_147" model="eos.task">
+            <field name="task_id">147</field>
+            <field name="name">Establish weekly sales pipeline meeting</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#120 Implement CRM</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_148" model="eos.task">
+            <field name="task_id">148</field>
+            <field name="name">Establish weekly regulatory update</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#48 Retain Thai regulatory consultant</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_149" model="eos.task">
+            <field name="task_id">149</field>
+            <field name="name">Establish monthly financial and inventory reviews</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#18 Set up accounting system and chart of accounts</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_150" model="eos.task">
+            <field name="task_id">150</field>
+            <field name="name">Create KPI dashboard</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">high</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_151" model="eos.task">
+            <field name="task_id">151</field>
+            <field name="name">Create approval authority matrix</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_152" model="eos.task">
+            <field name="task_id">152</field>
+            <field name="name">Set up vendor approval and purchase-order process</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_153" model="eos.task">
+            <field name="task_id">153</field>
+            <field name="name">Create contract, regulatory and HR repositories</field>
+            <field name="rock_id" ref="rock_r12"/>
+            <field name="priority">medium</field>
+            <field name="owner">Executive Assistant</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_154" model="eos.task">
+            <field name="task_id">154</field>
+            <field name="name">Confirm company legally operational</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#7 Obtain company registration certificate and affidavit</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_155" model="eos.task">
+            <field name="task_id">155</field>
+            <field name="name">Confirm bank and office operational</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#14 Open Thai corporate bank account; #27 Negotiate and execute office lease</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_156" model="eos.task">
+            <field name="task_id">156</field>
+            <field name="name">Confirm core staff and Medical Director in place</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#45 Recruit and hire Executive Assistant / Office Manager; #98 Appoint Medical Director</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_157" model="eos.task">
+            <field name="task_id">157</field>
+            <field name="name">Confirm regulatory approvals and import permissions in place</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#68 Obtain product approvals before commercial placement on market</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_158" model="eos.task">
+            <field name="task_id">158</field>
+            <field name="name">Confirm tissue-bank arrangement in place if required</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#61 Establish temporary tissue-bank relationship if required; #62 Assess Sanare-owned tissue-bank licensing strategy</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_159" model="eos.task">
+            <field name="task_id">159</field>
+            <field name="name">Confirm commercial inventory received and traceable</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#79 Set up receiving, lot and expiration tracking; #73 Establish forecast and ordering process</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_160" model="eos.task">
+            <field name="task_id">160</field>
+            <field name="name">Confirm product liability insurance active</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#84 Obtain product liability insurance quote</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_161" model="eos.task">
+            <field name="task_id">161</field>
+            <field name="name">Confirm sales and clinical teams trained</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Clinical Lead</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#105 Train Sanare nurses / clinical specialists; #123 Create sales training manual and competitive materials</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_162" model="eos.task">
+            <field name="task_id">162</field>
+            <field name="name">Confirm pricing and compliant sales materials approved</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#137 Create pricing approval authority</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_163" model="eos.task">
+            <field name="task_id">163</field>
+            <field name="name">Confirm first hospital launch schedule</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#111 Complete initial vendor registrations; #115 Establish hospital follow-up cadence</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_164" model="eos.task">
+            <field name="task_id">164</field>
+            <field name="name">Confirm complaint / adverse-event process operational</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Consultant</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#69 Confirm Biolabs as primary manufacturing partner</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_165" model="eos.task">
+            <field name="task_id">165</field>
+            <field name="name">Confirm invoicing / collections process operational</field>
+            <field name="rock_id" ref="rock_r13"/>
+            <field name="priority">critical</field>
+            <field name="owner">Accountant / CFO</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#18 Set up accounting system and chart of accounts; #133 Calculate landed cost and gross margin</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_124" model="eos.task">
+            <field name="task_id">124</field>
+            <field name="name">Decide direct-sales vs distributor model by region</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_125" model="eos.task">
+            <field name="task_id">125</field>
+            <field name="name">Identify regional distributor candidates</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#124 Decide direct-sales vs distributor model by region</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_126" model="eos.task">
+            <field name="task_id">126</field>
+            <field name="name">Create distributor qualification criteria</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#124 Decide direct-sales vs distributor model by region</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_127" model="eos.task">
+            <field name="task_id">127</field>
+            <field name="name">Conduct distributor due diligence</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#125 Identify regional distributor candidates</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_128" model="eos.task">
+            <field name="task_id">128</field>
+            <field name="name">Set distributor pricing, minimums and performance standards</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#126 Create distributor qualification criteria</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_129" model="eos.task">
+            <field name="task_id">129</field>
+            <field name="name">Prepare distributor agreement</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Thai Counsel</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#127 Conduct distributor due diligence</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_130" model="eos.task">
+            <field name="task_id">130</field>
+            <field name="name">Build national Thailand distribution plan</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#129 Prepare distributor agreement</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_131" model="eos.task">
+            <field name="task_id">131</field>
+            <field name="name">Build neighboring-country / ASEAN expansion framework</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">medium</field>
+            <field name="owner">Greg / CEO</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="status">not_started</field>
+            <field name="dependency">#130 Build national Thailand distribution plan</field>
+            <field name="critical_path">parallel</field>
+            <field name="task_type">source</field>
+        </record>
+        <record id="task_a1" model="eos.task">
+            <field name="task_id">A1</field>
+            <field name="name">Build ASEAN market screening scorecard</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a10" model="eos.task">
+            <field name="task_id">A10</field>
+            <field name="name">Define 50,000 cm² milestone operating plan</field>
+            <field name="rock_id" ref="rock_r19"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a11" model="eos.task">
+            <field name="task_id">A11</field>
+            <field name="name">Build 100,000 cm²/month path and identify capacity constraints</field>
+            <field name="rock_id" ref="rock_r19"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a12" model="eos.task">
+            <field name="task_id">A12</field>
+            <field name="name">Create 2028 market-by-market expansion business case</field>
+            <field name="rock_id" ref="rock_r24"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a13" model="eos.task">
+            <field name="task_id">A13</field>
+            <field name="name">Create 2028 capital requirement and funding plan</field>
+            <field name="rock_id" ref="rock_r24"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg / Finance</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a14" model="eos.task">
+            <field name="task_id">A14</field>
+            <field name="name">Complete annual EOS review and set 2028 Rocks</field>
+            <field name="rock_id" ref="rock_r24"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a2" model="eos.task">
+            <field name="task_id">A2</field>
+            <field name="name">Rank Malaysia, Indonesia, Vietnam, Philippines and other candidate markets</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a3" model="eos.task">
+            <field name="task_id">A3</field>
+            <field name="name">Define distributor qualification and due-diligence framework</field>
+            <field name="rock_id" ref="rock_r18"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a4" model="eos.task">
+            <field name="task_id">A4</field>
+            <field name="name">Build Thailand regional expansion account map</field>
+            <field name="rock_id" ref="rock_r20"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a5" model="eos.task">
+            <field name="task_id">A5</field>
+            <field name="name">Select first regional Thailand expansion market(s)</field>
+            <field name="rock_id" ref="rock_r20"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a6" model="eos.task">
+            <field name="task_id">A6</field>
+            <field name="name">Activate regional Thailand sales coverage</field>
+            <field name="rock_id" ref="rock_r20"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a7" model="eos.task">
+            <field name="task_id">A7</field>
+            <field name="name">Establish cm² forecasting by hospital and physician</field>
+            <field name="rock_id" ref="rock_r15"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a8" model="eos.task">
+            <field name="task_id">A8</field>
+            <field name="name">Establish weekly commercial scorecard for cm², cases, hospitals and reorders</field>
+            <field name="rock_id" ref="rock_r15"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_a9" model="eos.task">
+            <field name="task_id">A9</field>
+            <field name="name">Reconcile actuals to financial model and update forecast</field>
+            <field name="rock_id" ref="rock_r16"/>
+            <field name="priority">critical</field>
+            <field name="owner">Finance</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s1" model="eos.task">
+            <field name="task_id">S1</field>
+            <field name="name">Engage Singapore corporate counsel and regulatory specialist</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s10" model="eos.task">
+            <field name="task_id">S10</field>
+            <field name="name">Advance required Singapore product registrations</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s11" model="eos.task">
+            <field name="task_id">S11</field>
+            <field name="name">Establish Singapore supply-chain and inventory plan</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s12" model="eos.task">
+            <field name="task_id">S12</field>
+            <field name="name">Complete first Singapore hospital contracting/vendor registration</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s13" model="eos.task">
+            <field name="task_id">S13</field>
+            <field name="name">Complete Singapore launch-readiness gate</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s14" model="eos.task">
+            <field name="task_id">S14</field>
+            <field name="name">Execute first Singapore commercial order/revenue if approvals permit</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">critical</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s15" model="eos.task">
+            <field name="task_id">S15</field>
+            <field name="name">If blocked, document regulatory critical path and revised launch date</field>
+            <field name="rock_id" ref="rock_r21"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s2" model="eos.task">
+            <field name="task_id">S2</field>
+            <field name="name">Determine Singapore entity structure, ownership and tax setup</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s3" model="eos.task">
+            <field name="task_id">S3</field>
+            <field name="name">Confirm Singapore product classification and regulatory pathway</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s4" model="eos.task">
+            <field name="task_id">S4</field>
+            <field name="name">Determine Singapore importer, storage and tissue-bank requirements</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">critical</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s5" model="eos.task">
+            <field name="task_id">S5</field>
+            <field name="name">Establish Singapore regulatory dossier/submission plan</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">high</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s6" model="eos.task">
+            <field name="task_id">S6</field>
+            <field name="name">Build first Singapore target hospital and physician map</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">high</field>
+            <field name="owner">Sales Lead</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s7" model="eos.task">
+            <field name="task_id">S7</field>
+            <field name="name">Develop Singapore direct-sales model and price/cm²</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s8" model="eos.task">
+            <field name="task_id">S8</field>
+            <field name="name">Establish Singapore clinical/KOL launch strategy</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">high</field>
+            <field name="owner">Harold</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+        <record id="task_s9" model="eos.task">
+            <field name="task_id">S9</field>
+            <field name="name">Complete Singapore entity registration, banking and infrastructure</field>
+            <field name="rock_id" ref="rock_r17"/>
+            <field name="priority">critical</field>
+            <field name="owner">Greg Walker</field>
+            <field name="status">not_started</field>
+            <field name="critical_path">critical</field>
+            <field name="task_type">eos</field>
+        </record>
+    </data>
+</odoo>

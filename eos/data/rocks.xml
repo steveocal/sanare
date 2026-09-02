@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="rock_r25" model="eos.rock">
+            <field name="name">Corporate Branding, Messaging &amp; Marketing Completed</field>
+            <field name="rock_id">R25</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Brand identity, messaging, and core marketing assets (website, digital collateral, logos) finalized and live for Thailand launch</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-24</field>
+            <field name="next_milestone">Logo/brand identity finalized</field>
+            <field name="ids_required">False</field>
+            <field name="notes">New Q1 Rock added 8/24/2026 per Greg Shindler — website, digital books, messaging, logos</field>
+        </record>
+        <record id="rock_r1" model="eos.rock">
+            <field name="name">Thailand Corporate Platform Established</field>
+            <field name="rock_id">R1</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-17</field>
+            <field name="next_milestone">file with govt</field>
+            <field name="ids_required">True</field>
+            <field name="notes">passports given to atty</field>
+        </record>
+        <record id="rock_r2" model="eos.rock">
+            <field name="name">Thailand Finance &amp; Capital Infrastructure Live</field>
+            <field name="rock_id">R2</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-19</field>
+            <field name="next_milestone">GA docs signed, bring cap in</field>
+            <field name="ids_required">False</field>
+            <field name="notes">40% committed, need ITG docs signed</field>
+        </record>
+        <record id="rock_r3" model="eos.rock">
+            <field name="name">Operating Infrastructure Ready</field>
+            <field name="rock_id">R3</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Shindler</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-25</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r4" model="eos.rock">
+            <field name="name">Core Team &amp; Professional Advisors Installed</field>
+            <field name="rock_id">R4</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-19</field>
+            <field name="next_milestone">hire executive asst thailand</field>
+            <field name="ids_required">False</field>
+            <field name="notes">setting up preliminary interviews</field>
+        </record>
+        <record id="rock_r5" model="eos.rock">
+            <field name="name">Manufacturer Selected &amp; Commercial Supply Agreement Executed</field>
+            <field name="rock_id">R5</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-17</field>
+            <field name="next_milestone">ITG agreement signed</field>
+            <field name="ids_required">False</field>
+            <field name="notes">SLR handling Bio lab</field>
+        </record>
+        <record id="rock_r6" model="eos.rock">
+            <field name="name">Thailand Regulatory Pathway Locked</field>
+            <field name="rock_id">R6</field>
+            <field name="quarter">q1</field>
+            <field name="phase">Aug–Oct 2026</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2026-10-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">on_track</field>
+            <field name="health">green</field>
+            <field name="last_update">2026-08-17</field>
+            <field name="next_milestone">Bio Lab handling</field>
+            <field name="ids_required">False</field>
+            <field name="notes">Bio Lab working directly with Clinixir</field>
+        </record>
+        <record id="rock_r7" model="eos.rock">
+            <field name="name">Thailand Supply Chain &amp; Import System Operational</field>
+            <field name="rock_id">R7</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r8" model="eos.rock">
+            <field name="name">Clinical Authority &amp; Education Platform Built</field>
+            <field name="rock_id">R8</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Harold</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r9" model="eos.rock">
+            <field name="name">First 9 Thailand Hospitals Contracted &amp; Launch-Ready</field>
+            <field name="rock_id">R9</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r10" model="eos.rock">
+            <field name="name">Thailand Direct Sales Engine Live</field>
+            <field name="rock_id">R10</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r11" model="eos.rock">
+            <field name="name">Commercial Economics &amp; Compliant Go-to-Market Locked</field>
+            <field name="rock_id">R11</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r12" model="eos.rock">
+            <field name="name">Launch Governance, Insurance &amp; Compliance Ready</field>
+            <field name="rock_id">R12</field>
+            <field name="quarter">q2</field>
+            <field name="phase">Nov 2026–Jan 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-01-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r13" model="eos.rock">
+            <field name="name">Thailand Commercial Launch Completed</field>
+            <field name="rock_id">R13</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-02-28</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r14" model="eos.rock">
+            <field name="name">Clinical Case &amp; Repeat-Utilization Engine Proven</field>
+            <field name="rock_id">R14</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Harold</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r15" model="eos.rock">
+            <field name="name">Thailand Hospital Pipeline &amp; Revenue Engine Expanded</field>
+            <field name="rock_id">R15</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r16" model="eos.rock">
+            <field name="name">Thailand Unit Economics &amp; Working Capital Validated</field>
+            <field name="rock_id">R16</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r17" model="eos.rock">
+            <field name="name">Singapore Entity &amp; Regulatory Pathway Activated</field>
+            <field name="rock_id">R17</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r18" model="eos.rock">
+            <field name="name">Thailand National &amp; ASEAN Expansion Strategy Built</field>
+            <field name="rock_id">R18</field>
+            <field name="quarter">q3</field>
+            <field name="phase">Feb–Apr 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-04-30</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r19" model="eos.rock">
+            <field name="name">Thailand 50,000 cm²/Month Run-Rate Achieved</field>
+            <field name="rock_id">R19</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r20" model="eos.rock">
+            <field name="name">Thailand Regional Expansion Activated</field>
+            <field name="rock_id">R20</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r21" model="eos.rock">
+            <field name="name">Singapore Commercial Readiness &amp; First Revenue</field>
+            <field name="rock_id">R21</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r22" model="eos.rock">
+            <field name="name">KOL &amp; Evidence Platform Established Across Thailand/Singapore</field>
+            <field name="rock_id">R22</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Harold</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r23" model="eos.rock">
+            <field name="name">Sanare International Operating Dashboard &amp; EOS Cadence Live</field>
+            <field name="rock_id">R23</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+        <record id="rock_r24" model="eos.rock">
+            <field name="name">2028 Expansion &amp; Capital Plan Approved</field>
+            <field name="rock_id">R24</field>
+            <field name="quarter">q4</field>
+            <field name="phase">May–Jul 2027</field>
+            <field name="accountable_owner">Greg Walker</field>
+            <field name="due_date">2027-07-31</field>
+            <field name="definition_of_done">Outcome complete and measurable; see EOS plan</field>
+            <field name="status">not_started</field>
+            <field name="health">green</field>
+            <field name="ids_required">False</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,68 @@
+<odoo>
+    <!-- crm.stage: add Sanare stage mapping -->
+    <record id="view_crm_stage_form_eos" model="ir.ui.view">
+        <field name="name">crm.stage.form.eos</field>
+        <field name="model">crm.stage</field>
+        <field name="inherit_id" ref="crm.crm_stage_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='requirements']" position="after">
+                <separator string="Sanare"/>
+                <group>
+                    <field name="sanare_stage"/>
+                    <field name="sanare_probability"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- crm.lead: add Sanare page -->
+    <record id="view_crm_lead_form_eos" model="ir.ui.view">
+        <field name="name">crm.lead.form.eos</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="eos_sanare" string="Sanare">
+                    <group>
+                        <group>
+                            <field name="market_id"/>
+                            <field name="hospital_id"/>
+                            <field name="primary_physician_id"/>
+                            <field name="sanare_stage"/>
+                        </group>
+                        <group>
+                            <field name="est_annual_cm2"/>
+                            <field name="expected_first_order"/>
+                            <field name="next_action"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="contracted"/>
+                        <field name="ordering"/>
+                        <field name="repeat_ordering"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- res.partner: add EOS / Sanare page -->
+    <record id="view_partner_form_eos" model="ir.ui.view">
+        <field name="name">res.partner.form.eos</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="eos" string="EOS / Sanare">
+                    <group>
+                        <field name="is_hospital"/>
+                        <field name="is_physician"/>
+                        <field name="market_id"/>
+                        <field name="hospital_type"/>
+                        <field name="vendor_registration_status"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
