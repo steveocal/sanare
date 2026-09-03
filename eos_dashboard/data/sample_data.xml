@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Illustrative seed data so Reports 04/05/06/09 render populated.
+         noupdate="1": safe to edit/delete in the UI; not re-imported on upgrade. -->
+    <data noupdate="1">
+
+        <!-- Hospitals (res.partner) -->
+        <record id="hosp_bangkok_general" model="res.partner">
+            <field name="name">Bangkok General Hospital</field>
+            <field name="is_hospital" eval="True"/>
+            <field name="is_company" eval="True"/>
+            <field name="city">Bangkok</field>
+            <field name="hospital_type">private</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+        </record>
+        <record id="hosp_chiangmai_uni" model="res.partner">
+            <field name="name">Chiang Mai University Hospital</field>
+            <field name="is_hospital" eval="True"/>
+            <field name="is_company" eval="True"/>
+            <field name="city">Chiang Mai</field>
+            <field name="hospital_type">university</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+        </record>
+        <record id="hosp_phuket_intl" model="res.partner">
+            <field name="name">Phuket International Hospital</field>
+            <field name="is_hospital" eval="True"/>
+            <field name="is_company" eval="True"/>
+            <field name="city">Phuket</field>
+            <field name="hospital_type">private</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+        </record>
+
+        <!-- Physicians / KOLs (eos.physician) -->
+        <record id="phys_somchai" model="eos.physician">
+            <field name="name">Dr. Somchai Pattanakul</field>
+            <field name="specialty">Plastic &amp; Reconstructive Surgery</field>
+            <field name="hospital_id" ref="hosp_bangkok_general"/>
+            <field name="relationship_stage">kol</field>
+            <field name="training_status">certified</field>
+            <field name="first_case_date">2026-08-12</field>
+            <field name="cases_ytd">6</field>
+            <field name="cm2_ytd">184.0</field>
+            <field name="repeat_user" eval="True"/>
+            <field name="owner">Harold</field>
+        </record>
+        <record id="phys_naruemon" model="eos.physician">
+            <field name="name">Dr. Naruemon Wattana</field>
+            <field name="specialty">Vascular Surgery</field>
+            <field name="hospital_id" ref="hosp_chiangmai_uni"/>
+            <field name="relationship_stage">active</field>
+            <field name="training_status">trained</field>
+            <field name="first_case_date">2026-08-25</field>
+            <field name="cases_ytd">2</field>
+            <field name="cm2_ytd">54.0</field>
+            <field name="owner">Harold</field>
+        </record>
+        <record id="phys_apinya" model="eos.physician">
+            <field name="name">Dr. Apinya Srisai</field>
+            <field name="specialty">Wound Care / Endocrinology</field>
+            <field name="hospital_id" ref="hosp_phuket_intl"/>
+            <field name="relationship_stage">engaged</field>
+            <field name="training_status">scheduled</field>
+            <field name="cases_ytd">0</field>
+            <field name="cm2_ytd">0.0</field>
+            <field name="owner">Sales Lead</field>
+        </record>
+        <record id="phys_thanawat" model="eos.physician">
+            <field name="name">Dr. Thanawat Boonmee</field>
+            <field name="specialty">Orthopaedics</field>
+            <field name="hospital_id" ref="hosp_bangkok_general"/>
+            <field name="relationship_stage">evaluating</field>
+            <field name="training_status">not_scheduled</field>
+            <field name="cases_ytd">0</field>
+            <field name="cm2_ytd">0.0</field>
+            <field name="owner">Sales Lead</field>
+        </record>
+
+        <!-- Commercial pipeline (crm.lead) -->
+        <record id="lead_bangkok_general" model="crm.lead">
+            <field name="name">Bangkok General Hospital — allograft programme</field>
+            <field name="type">opportunity</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+            <field name="hospital_id" ref="hosp_bangkok_general"/>
+            <field name="primary_physician_id" ref="phys_somchai"/>
+            <field name="stage_id" ref="eos.sanare_stage_ordering"/>
+            <field name="probability">100</field>
+            <field name="est_annual_cm2">2400</field>
+            <field name="expected_first_order">2026-08-10</field>
+            <field name="contracted" eval="True"/>
+            <field name="ordering" eval="True"/>
+            <field name="next_action">Schedule Q4 re-order review with theatre team</field>
+        </record>
+        <record id="lead_chiangmai" model="crm.lead">
+            <field name="name">Chiang Mai University — vascular pilot</field>
+            <field name="type">opportunity</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+            <field name="hospital_id" ref="hosp_chiangmai_uni"/>
+            <field name="primary_physician_id" ref="phys_naruemon"/>
+            <field name="stage_id" ref="eos.sanare_stage_contracting"/>
+            <field name="probability">75</field>
+            <field name="est_annual_cm2">1500</field>
+            <field name="expected_first_order">2026-10-01</field>
+            <field name="next_action">Finalise vendor registration &amp; pricing schedule</field>
+        </record>
+        <record id="lead_phuket" model="crm.lead">
+            <field name="name">Phuket International — wound care evaluation</field>
+            <field name="type">opportunity</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+            <field name="hospital_id" ref="hosp_phuket_intl"/>
+            <field name="primary_physician_id" ref="phys_apinya"/>
+            <field name="stage_id" ref="eos.sanare_stage_evaluating"/>
+            <field name="probability">50</field>
+            <field name="est_annual_cm2">900</field>
+            <field name="expected_first_order">2026-12-01</field>
+            <field name="next_action">Deliver clinical evidence pack; book evaluation cases</field>
+        </record>
+        <record id="lead_bangkok_ortho" model="crm.lead">
+            <field name="name">Bangkok General — orthopaedics extension</field>
+            <field name="type">opportunity</field>
+            <field name="market_id" ref="eos.market_thailand"/>
+            <field name="hospital_id" ref="hosp_bangkok_general"/>
+            <field name="primary_physician_id" ref="phys_thanawat"/>
+            <field name="stage_id" ref="eos.sanare_stage_engaged"/>
+            <field name="probability">25</field>
+            <field name="est_annual_cm2">600</field>
+            <field name="next_action">Intro meeting with orthopaedic department head</field>
+        </record>
+
+        <!-- Enterprise risks (eos.risk) -->
+        <record id="risk_reg_delay" model="eos.risk">
+            <field name="name">Thai FDA dossier review slower than planned</field>
+            <field name="risk_id">RK1</field>
+            <field name="category">regulatory</field>
+            <field name="probability">medium</field>
+            <field name="impact">high</field>
+            <field name="owner">Regulatory Lead</field>
+            <field name="mitigation">Pre-submission meeting booked; local consultant engaged; parallel dossier QA.</field>
+            <field name="trend">stable</field>
+            <field name="status">open</field>
+        </record>
+        <record id="risk_manufacturer" model="eos.risk">
+            <field name="name">Single-source manufacturer / supply agreement not executed</field>
+            <field name="risk_id">RK2</field>
+            <field name="category">supply_chain</field>
+            <field name="probability">high</field>
+            <field name="impact">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="mitigation">BioLabs term sheet agreed; legal red-lines in progress; back-up supplier scoped.</field>
+            <field name="trend">improving</field>
+            <field name="status">open</field>
+        </record>
+        <record id="risk_funding" model="eos.risk">
+            <field name="name">Remaining raise ($400K of $750K) not closed before runway pressure</field>
+            <field name="risk_id">RK3</field>
+            <field name="category">financial</field>
+            <field name="probability">medium</field>
+            <field name="impact">high</field>
+            <field name="owner">Greg Walker</field>
+            <field name="mitigation">Two term sheets in diligence; bridge option held; monthly burn capped.</field>
+            <field name="trend">stable</field>
+            <field name="status">open</field>
+        </record>
+        <record id="risk_kol_capacity" model="eos.risk">
+            <field name="name">KOL onboarding / training capacity limits first-case throughput</field>
+            <field name="risk_id">RK4</field>
+            <field name="category">clinical</field>
+            <field name="probability">medium</field>
+            <field name="impact">medium</field>
+            <field name="owner">Harold</field>
+            <field name="mitigation">Train-the-trainer model; proctor roster; case-support scheduling tool.</field>
+            <field name="trend">stable</field>
+            <field name="status">monitoring</field>
+        </record>
+        <record id="risk_pdpa" model="eos.risk">
+            <field name="name">PDPA / data-handling controls incomplete for clinical outcomes capture</field>
+            <field name="risk_id">RK5</field>
+            <field name="category">compliance</field>
+            <field name="probability">low</field>
+            <field name="impact">medium</field>
+            <field name="owner">Greg Walker / Legal</field>
+            <field name="mitigation">DPA templates drafted; consent workflow defined; vendor review underway.</field>
+            <field name="trend">improving</field>
+            <field name="status">open</field>
+        </record>
+
+        <!-- Supply chain SKUs (eos.sku) -->
+        <record id="sku_membrane_2x3" model="eos.sku">
+            <field name="name">Placental Membrane Allograft 2x3 cm</field>
+            <field name="manufacturer">BioLabs</field>
+            <field name="cm2_per_unit">6.0</field>
+            <field name="weeks_supply">3.5</field>
+            <field name="earliest_expiry">2027-02-28</field>
+            <field name="stockout_risk">yellow</field>
+            <field name="owner">Operations</field>
+        </record>
+        <record id="sku_membrane_4x4" model="eos.sku">
+            <field name="name">Placental Membrane Allograft 4x4 cm</field>
+            <field name="manufacturer">BioLabs</field>
+            <field name="cm2_per_unit">16.0</field>
+            <field name="weeks_supply">6.0</field>
+            <field name="earliest_expiry">2027-05-31</field>
+            <field name="stockout_risk">green</field>
+            <field name="owner">Operations</field>
+        </record>
+        <record id="sku_amnio_particulate" model="eos.sku">
+            <field name="name">Amniotic Particulate 1cc</field>
+            <field name="manufacturer">BioLabs</field>
+            <field name="cm2_per_unit">1.0</field>
+            <field name="weeks_supply">1.5</field>
+            <field name="earliest_expiry">2026-12-15</field>
+            <field name="stockout_risk">red</field>
+            <field name="owner">Operations</field>
+        </record>
+
+    </data>
+</odoo>

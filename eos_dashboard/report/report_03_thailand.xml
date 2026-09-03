@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- Report 03 printed from the interactive board (eos.thailand.readiness).
+         Shares the body template + layout with the monthly-pack version. -->
     <record id="action_report_03_thailand" model="ir.actions.report">
         <field name="name">Report 03 — Thailand</field>
         <field name="model">eos.thailand.readiness</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">eos_dashboard.report_03_thailand</field>
         <field name="report_file">eos_dashboard.report_03_thailand</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
         <field name="binding_model_id" ref="model_eos_thailand_readiness"/>
         <field name="binding_type">report</field>
     </record>
@@ -14,71 +17,25 @@
     <template id="report_03_thailand">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.external_layout">
-                    <t t-set="cmap"
-                       t-value="{'red': ('#d9534f', 'Red'), 'yellow': ('#f0ad4e', 'Yellow'), 'green': ('#5cb85c', 'Green')}"/>
-                    <div class="page">
-                        <h2 class="mt-0">SANARE REGENERATIVE — THAILAND LAUNCH</h2>
-                        <p class="text-muted">
-                            <span t-esc="o.month_label"/>
-                            <span> | Objective Launch Readiness</span>
-                        </p>
-
-                        <h4 class="mt-4">THAILAND READINESS</h4>
-                        <table class="table table-sm" style="width:auto;">
-                            <tr>
-                                <th class="pe-4">Overall Weighted Readiness</th>
-                                <td class="text-end">
-                                    <strong t-esc="'{:.1f}%'.format(o.overall_readiness)"/>
-                                </td>
-                                <th class="ps-5 pe-4">Red Workstreams</th>
-                                <td class="text-end"><strong t-esc="o.red_count"/></td>
-                                <th class="ps-5 pe-4">Yellow Workstreams</th>
-                                <td class="text-end"><strong t-esc="o.yellow_count"/></td>
-                            </tr>
-                        </table>
-
-                        <table class="table table-sm table-bordered mt-3">
-                            <thead>
-                                <tr>
-                                    <th>Workstream</th>
-                                    <th class="text-end">Weight</th>
-                                    <th class="text-end">Readiness</th>
-                                    <th class="text-center">Health</th>
-                                    <th>Evidence / Current State</th>
-                                    <th>Owner</th>
-                                    <th>Remaining Gate</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="o.line_ids" t-as="l">
-                                    <td t-esc="l.name"/>
-                                    <td class="text-end" t-esc="'{:.0f}%'.format(l.weight)"/>
-                                    <td class="text-end" t-esc="'{:.1f}%'.format(l.readiness)"/>
-                                    <td class="text-center">
-                                        <t t-set="c" t-value="cmap.get(l.status, ('#cccccc', l.status or ''))"/>
-                                        <span t-attf-style="display:inline-block;min-width:56px;padding:2px 8px;border-radius:3px;color:#fff;background:{{c[0]}};"
-                                              t-esc="c[1]"/>
-                                    </td>
-                                    <td t-esc="l.key_gate"/>
-                                    <td t-esc="l.owner"/>
-                                    <td/>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <h4 class="mt-4">LAUNCH MANAGEMENT COMMENTARY</h4>
-                        <table class="table table-sm">
-                            <tr>
-                                <th style="width:220px;">What changed materially?</th>
-                                <td style="white-space:pre-line;" t-esc="o.commentary_changed or ''"/>
-                            </tr>
-                            <tr>
-                                <th>Critical corrective actions</th>
-                                <td style="white-space:pre-line;" t-esc="o.commentary_actions or ''"/>
-                            </tr>
-                        </table>
-                    </div>
+                <t t-call="eos_dashboard.report_page">
+                    <t t-set="title">SANARE REGENERATIVE — THAILAND LAUNCH</t>
+                    <t t-set="subtitle"><t t-esc="o.month_label"/> | Objective Launch Readiness</t>
+                    <t t-set="d" t-value="{
+                        'overall_readiness': (o.overall_readiness or 0.0) / 100.0,
+                        'red_count': o.red_count,
+                        'yellow_count': o.yellow_count,
+                        'rows': [{
+                            'label': l.name,
+                            'weight': (l.weight or 0.0) / 100.0,
+                            'readiness': (l.readiness or 0.0) / 100.0,
+                            'status': (l.status or '').capitalize(),
+                            'key_gate': l.key_gate or '',
+                            'owner': l.owner or '',
+                        } for l in o.line_ids],
+                    }"/>
+                    <t t-set="c_changed" t-value="o.commentary_changed"/>
+                    <t t-set="c_actions" t-value="o.commentary_actions"/>
+                    <t t-call="eos_dashboard.report_03_body"/>
                 </t>
             </t>
         </t>

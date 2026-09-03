@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Tight margins, title sits at the very top (no company letterhead). -->
+    <record id="paperformat_eos_report" model="report.paperformat">
+        <field name="name">EOS Board Report A4</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">14</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <template id="report_styles">
+        <style>
+            .eos-report { font-family:"Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
+                          color:#2b2f33; font-size:10.5px; line-height:1.4; }
+            .eos-report h1,.eos-report h2,.eos-report h3 { margin:0; }
+            .eos-titlebar { border-bottom:3px solid #1f3b57; padding-bottom:5px; margin-bottom:14px; }
+            .eos-title { font-size:17px; font-weight:700; color:#1f3b57; letter-spacing:.4px; }
+            .eos-subtitle { font-size:9.5px; color:#6b7785; text-transform:uppercase;
+                            letter-spacing:1.2px; margin-top:3px; }
+            .eos-section { font-size:12px; font-weight:700; color:#1f3b57; text-transform:uppercase;
+                           letter-spacing:.7px; border-left:4px solid #1f3b57; padding-left:8px;
+                           margin:18px 0 8px; }
+            .eos-section:first-of-type { margin-top:4px; }
+
+            .eos-tiles { margin:0 0 6px; }
+            .eos-tile { display:inline-block; box-sizing:border-box; width:23%; min-height:42px;
+                        margin:0 1% 8px 0; padding:6px 9px; border:1px solid #dfe4ea;
+                        border-radius:5px; background:#f6f8fa; vertical-align:top; }
+            .eos-tile.w3 { width:32%; } .eos-tile.w2 { width:48.5%; } .eos-tile.w5 { width:18.2%; }
+            .eos-tile .k { font-size:8px; text-transform:uppercase; letter-spacing:.5px; color:#7a8794; }
+            .eos-tile .v { font-size:15px; font-weight:700; color:#1f3b57; margin-top:2px; }
+            .eos-tile.red   { background:#fbecec; border-color:#e3b4b4; } .eos-tile.red .v   { color:#b0271f; }
+            .eos-tile.amber { background:#fdf3e3; border-color:#eecfa0; } .eos-tile.amber .v { color:#a9711a; }
+            .eos-tile.green { background:#eaf4ec; border-color:#aed6b8; } .eos-tile.green .v { color:#2c7a3d; }
+
+            table.eos { width:100%; border-collapse:collapse; margin:2px 0 10px; }
+            table.eos th { background:#1f3b57; color:#fff; font-size:8px; font-weight:700;
+                           text-transform:uppercase; letter-spacing:.4px; padding:5px 6px;
+                           text-align:left; border:1px solid #1f3b57; }
+            table.eos td { border:1px solid #e2e6ea; padding:4px 6px; vertical-align:top; }
+            table.eos tbody tr:nth-child(even) td { background:#f6f8fa; }
+            table.eos td.num, table.eos th.num { text-align:right; white-space:nowrap; }
+            table.eos .muted { color:#9aa5b1; font-style:italic; }
+
+            .pill { display:inline-block; min-width:50px; text-align:center; padding:2px 7px;
+                    border-radius:9px; font-size:8px; font-weight:700; text-transform:uppercase;
+                    letter-spacing:.3px; color:#fff; white-space:nowrap; }
+            table.eos td.st { white-space:nowrap; }
+            .pill.red { background:#c0392b; } .pill.yellow,.pill.amber { background:#dd8b12; }
+            .pill.green { background:#3a9d4e; } .pill.grey { background:#95a5a6; }
+
+            .bar { position:relative; height:11px; background:#e7ecf0; border-radius:6px; overflow:hidden; }
+            .bar > span { position:absolute; top:0; left:0; bottom:0; background:#3f6ea5; }
+
+            .eos-comm { margin:4px 0 6px; }
+            .eos-comm .box { border:1px solid #dfe4ea; border-radius:5px; background:#fcfcfd;
+                             padding:7px 10px; margin-bottom:6px; white-space:pre-line; }
+            .eos-comm .lbl { display:block; font-weight:700; color:#1f3b57; font-size:8.5px;
+                             text-transform:uppercase; letter-spacing:.5px; margin-bottom:2px; }
+            .eos-note { color:#9aa5b1; font-size:8.5px; font-style:italic; margin-top:2px; }
+            .eos-pagebreak { page-break-before:always; }
+        </style>
+    </template>
+
+    <!-- One printed page. Wraps the caller body (t-out=0) in Odoo's
+         letterhead-free `web.basic_layout` (which supplies the <html>/<body>
+         skeleton, the report CSS reset and the `article` wrapper wkhtmltopdf
+         paginates on). Expects `o` (the record), `title`, `subtitle`. -->
+    <template id="report_page">
+        <div class="article eos-report"
+             t-att-data-oe-model="o and o._name"
+             t-att-data-oe-id="o and o.id"
+             t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <t t-call="eos_dashboard.report_styles"/>
+            <div class="eos-titlebar">
+                <div class="eos-title"><t t-esc="title"/></div>
+                <div class="eos-subtitle"><t t-esc="subtitle"/></div>
+            </div>
+            <t t-out="0"/>
+        </div>
+    </template>
+
+</odoo>

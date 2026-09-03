@@ -19,11 +19,14 @@
                    "one-page layout. The parity checker loads the real .xlsx, runs "
                    "the ported functions against the Task Tracker rows and asserts "
                    "every figure matches the workbook's own cached cell values.",
-    "depends": ["eos", "web"],
+    "depends": ["eos", "eos_account", "web"],
     "data": [
         "security/ir.model.access.csv",
+        "report/report_layout.xml",
+        "report/monthly_reports.xml",
         "report/report_03_thailand.xml",
         "views/thailand_readiness_views.xml",
+        "data/sample_data.xml",
     ],
     "installable": True,
     "application": False,

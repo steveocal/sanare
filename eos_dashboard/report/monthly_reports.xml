@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Status pill. Caller MUST set `pv` (a selection value / colour word). -->
+    <template id="healthpill">
+        <t t-set="_m" t-value="{'red':'red','yellow':'yellow','green':'green','off_track':'red','at_risk':'yellow','on_track':'green','complete':'green','not_started':'grey','deferred':'grey','improving':'green','stable':'grey','worsening':'red','high':'red','medium':'yellow','low':'green'}"/>
+        <span t-attf-class="pill {{_m.get((pv or '').lower(), 'grey')}}"
+              t-esc="((pv or '—')[:1].upper() + (pv or '')[1:]).replace('_', ' ')"/>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 01 · Executive                                                      -->
+    <!-- ================================================================== -->
+    <template id="report_01_body">
+        <t t-set="Rock" t-value="o.env['eos.rock']"/>
+        <t t-set="Lead" t-value="o.env['crm.lead']"/>
+        <t t-set="q" t-value="o._report_quarter()"/>
+        <t t-set="thai" t-value="o._thailand_readiness_data()"/>
+        <t t-set="ccy" t-value="o.currency_id or o.env.company.currency_id"/>
+        <t t-set="eng" t-value="Lead.search([('sanare_stage','in',['engaged','evaluating','contracting','approved','ordering','repeat_ordering'])])"/>
+        <t t-set="ordr" t-value="Lead.search([('sanare_stage','in',['ordering','repeat_ordering'])])"/>
+        <t t-set="qual" t-value="Lead.search([('probability','>=',50)])"/>
+        <t t-set="at_risk_n" t-value="Rock.search_count([('quarter','=',q),('status','=','at_risk')])"/>
+
+        <h2 class="eos-section">01 · Executive Snapshot</h2>
+        <div class="eos-tiles">
+            <div class="eos-tile"><div class="k">Overall Health</div><div class="v" t-esc="dict(o._fields['overall_health'].selection).get(o.overall_health) or '—'"/></div>
+            <div class="eos-tile"><div class="k">Thailand Readiness</div><div class="v" t-esc="'{:.1f}%'.format(thai['overall_readiness']*100.0)"/></div>
+            <div class="eos-tile"><div class="k">Active EOS Quarter</div><div class="v" t-esc="o._quarter_label()"/></div>
+            <div class="eos-tile"><div class="k">Report Status</div><div class="v" t-esc="dict(o._fields['report_status'].selection).get(o.report_status) or '—'"/></div>
+        </div>
+        <div class="eos-tiles">
+            <div class="eos-tile green"><div class="k">Rocks On Track</div><div class="v" t-esc="Rock.search_count([('quarter','=',q),('status','=','on_track')])"/></div>
+            <div t-attf-class="eos-tile {{'amber' if at_risk_n else ''}}"><div class="k">Rocks At Risk</div><div class="v" t-esc="at_risk_n"/></div>
+            <div class="eos-tile"><div class="k">Ending Cash</div><div class="v"><span t-esc="o.ending_cash" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile"><div class="k">Runway (Months)</div><div class="v" t-esc="'{:.1f}'.format(o.runway_months or 0.0)"/></div>
+        </div>
+
+        <h2 class="eos-section">Commercial Snapshot</h2>
+        <div class="eos-tiles">
+            <div class="eos-tile w3"><div class="k">Hospitals Engaged+</div><div class="v" t-esc="len(eng)"/></div>
+            <div class="eos-tile w3"><div class="k">Ordering Hospitals</div><div class="v" t-esc="len(ordr)"/></div>
+            <div class="eos-tile w3"><div class="k">Qualified Pipeline cm²</div><div class="v" t-esc="'{:.0f}'.format(sum(l.est_annual_cm2*(l.probability/100.0) for l in qual))"/></div>
+        </div>
+
+        <h2 class="eos-section">CEO / Management Commentary</h2>
+        <div class="eos-comm">
+            <div class="box"><span class="lbl">Executive Summary</span><t t-esc="o.executive_summary or '—'"/></div>
+            <div class="box"><span class="lbl">What Went Well</span><t t-esc="o.what_went_well or '—'"/></div>
+            <div class="box"><span class="lbl">Misses / Slippage</span><t t-esc="o.misses_slippage or '—'"/></div>
+            <div class="box"><span class="lbl">Corrective Actions</span><t t-esc="o.corrective_actions or '—'"/></div>
+            <div class="box"><span class="lbl">Key Decisions</span><t t-esc="o.key_decisions or '—'"/></div>
+        </div>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 02 · EOS Execution                                                  -->
+    <!-- ================================================================== -->
+    <template id="report_02_body">
+        <t t-set="Rock" t-value="o.env['eos.rock']"/>
+        <t t-set="q" t-value="o._report_quarter()"/>
+        <t t-set="rocks" t-value="Rock.search([('quarter','=',q)], order='rock_id')"/>
+        <h2 class="eos-section">02 · <t t-esc="o._quarter_label()"/> Operating Priorities</h2>
+        <table class="eos">
+            <thead><tr>
+                <th>Rock ID</th><th>Rock</th><th>Owner</th><th>Status</th><th>Health</th>
+                <th class="num">% Complete</th><th class="num">Due</th><th>Next Milestone / Action</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="rocks" t-as="r">
+                    <td t-esc="r.rock_id"/>
+                    <td t-esc="r.name"/>
+                    <td t-esc="r.accountable_owner or ''"/>
+                    <td class="st" t-esc="dict(r._fields['status'].selection).get(r.status) or ''"/>
+                    <td class="st"><t t-call="eos_dashboard.healthpill"><t t-set="pv" t-value="r.health or r.status"/></t></td>
+                    <td class="num" style="min-width:74px;">
+                        <div class="bar"><span t-attf-style="width:{{ '{:.1f}%'.format(max(0.0, min(100.0, r.percent_complete or 0.0))) }}"/></div>
+                        <div style="font-size:8px;text-align:right;" t-esc="'{:.0f}%'.format(r.percent_complete or 0.0)"/>
+                    </td>
+                    <td class="num" t-esc="r.due_date or ''"/>
+                    <td t-esc="r.next_milestone or ''"/>
+                </tr>
+                <tr t-if="not rocks"><td colspan="8" class="muted">No rocks for this quarter.</td></tr>
+            </tbody>
+        </table>
+        <h2 class="eos-section">Execution Summary</h2>
+        <div class="eos-tiles">
+            <div class="eos-tile green"><div class="k">On Track</div><div class="v" t-esc="Rock.search_count([('quarter','=',q),('status','=','on_track')])"/></div>
+            <div class="eos-tile amber"><div class="k">At Risk</div><div class="v" t-esc="Rock.search_count([('quarter','=',q),('status','=','at_risk')])"/></div>
+            <div class="eos-tile red"><div class="k">Off Track</div><div class="v" t-esc="Rock.search_count([('quarter','=',q),('status','=','off_track')])"/></div>
+            <div class="eos-tile"><div class="k">Complete</div><div class="v" t-esc="Rock.search_count([('quarter','=',q),('status','=','complete')])"/></div>
+        </div>
+        <div class="eos-comm">
+            <div class="box"><span class="lbl">What Went Well</span><t t-esc="o.what_went_well or '—'"/></div>
+            <div class="box"><span class="lbl">Misses / Slippage</span><t t-esc="o.misses_slippage or '—'"/></div>
+            <div class="box"><span class="lbl">Corrective Actions</span><t t-esc="o.corrective_actions or '—'"/></div>
+        </div>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 03 · Thailand Launch Readiness  (body shared with the board)        -->
+    <!-- expects: d (dict), c_changed, c_actions                            -->
+    <!-- ================================================================== -->
+    <template id="report_03_body">
+        <t t-set="cmap" t-value="{'Red':'red','Yellow':'yellow','Green':'green'}"/>
+        <h2 class="eos-section">03 · Thailand Launch Readiness</h2>
+        <div class="eos-tiles">
+            <div class="eos-tile w3"><div class="k">Overall Weighted Readiness</div><div class="v" t-esc="'{:.1f}%'.format(d['overall_readiness']*100.0)"/></div>
+            <div t-attf-class="eos-tile w3 {{'red' if d['red_count'] else ''}}"><div class="k">Red Workstreams</div><div class="v" t-esc="d['red_count']"/></div>
+            <div t-attf-class="eos-tile w3 {{'amber' if d['yellow_count'] else ''}}"><div class="k">Yellow Workstreams</div><div class="v" t-esc="d['yellow_count']"/></div>
+        </div>
+        <table class="eos">
+            <thead><tr>
+                <th>Workstream</th><th class="num">Weight</th><th class="num">Readiness</th>
+                <th>Health</th><th>Evidence / Current State</th><th>Owner</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="d['rows']" t-as="w">
+                    <td t-esc="w['label']"/>
+                    <td class="num" t-esc="'{:.0f}%'.format(w['weight']*100.0)"/>
+                    <td class="num" style="min-width:66px;">
+                        <div class="bar"><span t-attf-style="width:{{ '{:.1f}%'.format(w['readiness']*100.0) }}"/></div>
+                        <div style="font-size:8px;text-align:right;" t-esc="'{:.1f}%'.format(w['readiness']*100.0)"/>
+                    </td>
+                    <td><span t-attf-class="pill {{cmap.get(w['status'],'grey')}}" t-esc="w['status']"/></td>
+                    <td t-esc="w['key_gate']"/>
+                    <td t-esc="w['owner']"/>
+                </tr>
+            </tbody>
+        </table>
+        <h2 class="eos-section">Launch Management Commentary</h2>
+        <div class="eos-comm">
+            <div class="box"><span class="lbl">What changed materially?</span><t t-esc="c_changed or '—'"/></div>
+            <div class="box"><span class="lbl">Critical corrective actions</span><t t-esc="c_actions or '—'"/></div>
+        </div>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 04 · Commercial                                                     -->
+    <!-- ================================================================== -->
+    <template id="report_04_body">
+        <t t-set="Lead" t-value="o.env['crm.lead']"/>
+        <t t-set="stages" t-value="[('identified','Identified'),('engaged','Engaged'),('evaluating','Evaluating'),('contracting','Contracting'),('approved','Approved'),('ordering','Ordering'),('repeat_ordering','Repeat Ordering')]"/>
+        <t t-set="pipe" t-value="Lead.search([('sanare_stage','!=','identified'),('sanare_stage','!=',False)], order='est_annual_cm2 desc', limit=16)"/>
+        <h2 class="eos-section">04 · Hospital Funnel</h2>
+        <table class="eos" style="width:auto;">
+            <thead><tr><t t-foreach="stages" t-as="s"><th class="num" t-esc="s[1]"/></t><th class="num">Contracted</th></tr></thead>
+            <tbody><tr>
+                <t t-foreach="stages" t-as="s"><td class="num" t-esc="Lead.search_count([('sanare_stage','=',s[0])])"/></t>
+                <td class="num" t-esc="Lead.search_count([('contracted','=',True)])"/>
+            </tr></tbody>
+        </table>
+        <div class="eos-tiles">
+            <div class="eos-tile w2"><div class="k">Qualified Pipeline cm²</div><div class="v" t-esc="'{:.0f}'.format(sum(l.est_annual_cm2*(l.probability/100.0) for l in Lead.search([('probability','>=',50)])))"/></div>
+            <div class="eos-tile w2"><div class="k">Ordering / Repeat Hospitals</div><div class="v" t-esc="Lead.search_count([('sanare_stage','in',['ordering','repeat_ordering'])])"/></div>
+        </div>
+        <h2 class="eos-section">Active Commercial Pipeline</h2>
+        <table class="eos">
+            <thead><tr>
+                <th>Hospital / Account</th><th>City</th><th>Physician / KOL</th><th>Stage</th>
+                <th class="num">Prob.</th><th class="num">Annual cm²</th><th class="num">First Order</th>
+                <th>Owner</th><th>Next Action</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="pipe" t-as="l">
+                    <td t-esc="l.hospital_id.display_name or l.partner_id.display_name or l.name"/>
+                    <td t-esc="l.hospital_id.city or l.city or ''"/>
+                    <td t-esc="l.primary_physician_id.display_name or ''"/>
+                    <td t-esc="l.stage_id.name or ''"/>
+                    <td class="num" t-esc="'{:.0f}%'.format(l.probability or 0.0)"/>
+                    <td class="num" t-esc="'{:.0f}'.format(l.est_annual_cm2 or 0.0)"/>
+                    <td class="num" t-esc="l.expected_first_order or ''"/>
+                    <td t-esc="l.user_id.name or ''"/>
+                    <td t-esc="l.next_action or ''"/>
+                </tr>
+                <tr t-if="not pipe"><td colspan="9" class="muted">No active pipeline beyond Identified.</td></tr>
+            </tbody>
+        </table>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 05 · Clinical &amp; KOL                                             -->
+    <!-- ================================================================== -->
+    <template id="report_05_body">
+        <t t-set="Phys" t-value="o.env['eos.physician']"/>
+        <t t-set="rows" t-value="Phys.search([], order='name')"/>
+        <h2 class="eos-section">05 · Clinical &amp; KOL</h2>
+        <div class="eos-tiles">
+            <div class="eos-tile w5"><div class="k">KOL / Advisors</div><div class="v" t-esc="Phys.search_count([('relationship_stage','=','kol')])"/></div>
+            <div class="eos-tile w5"><div class="k">Active</div><div class="v" t-esc="Phys.search_count([('relationship_stage','=','active')])"/></div>
+            <div class="eos-tile w5"><div class="k">Trained / Certified</div><div class="v" t-esc="Phys.search_count([('training_status','in',['trained','certified'])])"/></div>
+            <div class="eos-tile w5"><div class="k">Cases YTD</div><div class="v" t-esc="int(sum(rows.mapped('cases_ytd')))"/></div>
+            <div class="eos-tile w5"><div class="k">cm² YTD</div><div class="v" t-esc="'{:.0f}'.format(sum(rows.mapped('cm2_ytd')))"/></div>
+        </div>
+        <table class="eos">
+            <thead><tr>
+                <th>Physician / KOL</th><th>Hospital</th><th>Specialty</th><th>Relationship</th>
+                <th>Training</th><th class="num">First Case</th><th class="num">Cases YTD</th>
+                <th class="num">cm² YTD</th><th>Owner</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="rows" t-as="p">
+                    <td t-esc="p.display_name"/>
+                    <td t-esc="p.hospital_id.display_name or ''"/>
+                    <td t-esc="p.specialty or ''"/>
+                    <td t-esc="dict(p._fields['relationship_stage'].selection).get(p.relationship_stage) or ''"/>
+                    <td t-esc="dict(p._fields['training_status'].selection).get(p.training_status) or ''"/>
+                    <td class="num" t-esc="p.first_case_date or ''"/>
+                    <td class="num" t-esc="p.cases_ytd or 0"/>
+                    <td class="num" t-esc="'{:.0f}'.format(p.cm2_ytd or 0.0)"/>
+                    <td t-esc="p.owner or ''"/>
+                </tr>
+                <tr t-if="not rows"><td colspan="9" class="muted">No physician / KOL records yet.</td></tr>
+            </tbody>
+        </table>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 06 · Regulatory &amp; Supply                                        -->
+    <!-- ================================================================== -->
+    <template id="report_06_body">
+        <t t-set="Rock" t-value="o.env['eos.rock']"/>
+        <t t-set="Sku" t-value="o.env['eos.sku']"/>
+        <t t-set="reg" t-value="Rock.search([('rock_id','in',['R6','R06'])], limit=1)"/>
+        <t t-set="reg_tasks" t-value="reg.task_ids.sorted(key=lambda t: (t.due_date or datetime.date.max, t.sequence)) if reg else o.env['eos.task']"/>
+        <h2 class="eos-section">06 · Regulatory Pathway</h2>
+        <div class="eos-tiles" t-if="reg">
+            <div t-attf-class="eos-tile {{reg.health or ''}}"><div class="k">Regulatory Rock</div><div class="v" t-esc="dict(reg._fields['status'].selection).get(reg.status) or ''"/></div>
+            <div class="eos-tile"><div class="k">Tasks Complete</div><div class="v" t-esc="len(reg.task_ids.filtered(lambda t: t.status=='complete'))"/></div>
+            <div class="eos-tile"><div class="k">Tasks Open</div><div class="v" t-esc="len(reg.task_ids.filtered(lambda t: t.status not in ('complete','deferred')))"/></div>
+            <div class="eos-tile"><div class="k">% Complete</div><div class="v" t-esc="'{:.0f}%'.format(reg.percent_complete or 0.0)"/></div>
+        </div>
+        <table class="eos">
+            <thead><tr><th>Regulatory Task</th><th>Owner</th><th class="num">Due</th><th>Status</th><th>Next Action</th></tr></thead>
+            <tbody>
+                <tr t-foreach="reg_tasks" t-as="t">
+                    <td t-esc="t.name"/>
+                    <td t-esc="t.owner or ''"/>
+                    <td class="num" t-esc="t.due_date or ''"/>
+                    <td><t t-call="eos_dashboard.healthpill"><t t-set="pv" t-value="t.status"/></t></td>
+                    <td t-esc="t.next_action or ''"/>
+                </tr>
+                <tr t-if="not reg_tasks"><td colspan="5" class="muted">No regulatory tasks found.</td></tr>
+            </tbody>
+        </table>
+
+        <h2 class="eos-section">Supply Chain</h2>
+        <table class="eos">
+            <thead><tr>
+                <th>SKU / Product</th><th>Manufacturer</th><th class="num">Inventory cm²</th>
+                <th class="num">Weeks Supply</th><th class="num">Earliest Expiry</th>
+                <th>Stockout Risk</th><th>Owner</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="Sku.search([], order='name')" t-as="sku">
+                    <td t-esc="sku.name"/>
+                    <td t-esc="sku.manufacturer or ''"/>
+                    <td class="num" t-esc="'{:.0f}'.format(sku.inventory_cm2 or 0.0)"/>
+                    <td class="num" t-esc="'{:.1f}'.format(sku.weeks_supply or 0.0)"/>
+                    <td class="num" t-esc="sku.earliest_expiry or ''"/>
+                    <td><t t-call="eos_dashboard.healthpill"><t t-set="pv" t-value="sku.stockout_risk"/></t></td>
+                    <td t-esc="sku.owner or ''"/>
+                </tr>
+                <tr t-if="not Sku.search_count([])"><td colspan="7" class="muted">No SKU records yet.</td></tr>
+            </tbody>
+        </table>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 07 · Financial Performance                                          -->
+    <!-- ================================================================== -->
+    <template id="report_07_body">
+        <t t-set="fp" t-value="o._financial_period()"/>
+        <t t-set="ccy" t-value="o.currency_id or o.env.company.currency_id"/>
+        <h2 class="eos-section">07 · Financial Snapshot</h2>
+        <div class="eos-tiles" t-if="fp">
+            <div class="eos-tile w5"><div class="k">Ending Cash</div><div class="v"><span t-esc="fp.ending_cash" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile w5"><div class="k">Available Capital</div><div class="v"><span t-esc="fp.available_capital" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile w5"><div class="k">Net Cash Burn</div><div class="v"><span t-esc="fp.net_cash_burn" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile w5"><div class="k">Runway (Months)</div><div class="v" t-esc="'{:.1f}'.format(fp.runway_months or 0.0)"/></div>
+            <div class="eos-tile w5"><div class="k">Gross Margin %</div><div class="v" t-esc="'{:.1f}%'.format(fp.gross_margin_pct or 0.0)"/></div>
+        </div>
+        <h2 class="eos-section">Profit &amp; Loss — Actual vs Budget</h2>
+        <table class="eos" t-if="fp">
+            <thead><tr>
+                <th>Category</th><th class="num">Month Actual</th><th class="num">Month Budget</th>
+                <th class="num">Var $</th><th class="num">Var %</th>
+                <th class="num">YTD Actual</th><th class="num">YTD Budget</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="fp.line_ids" t-as="fl">
+                    <td t-esc="dict(fl._fields['category'].selection).get(fl.category)"/>
+                    <td class="num"><span t-esc="fl.actual" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="fl.budget" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="fl.variance" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num" t-esc="'{:.0f}%'.format(fl.variance_pct or 0.0)"/>
+                    <td class="num"><span t-esc="fl.ytd_actual" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="fl.ytd_budget" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                </tr>
+                <tr t-if="not fp.line_ids"><td colspan="7" class="muted">No category lines — refresh the financial period.</td></tr>
+            </tbody>
+            <tfoot><tr>
+                <th>Operating Result</th>
+                <th class="num"><span t-esc="fp.operating_result" t-options="{'widget':'monetary','display_currency':ccy}"/></th>
+                <th colspan="5"/>
+            </tr></tfoot>
+        </table>
+        <p class="eos-note" t-if="not fp">No financial period found. Create one under EOS ▸ Financial.</p>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 08 · Capital &amp; Use of Funds                                     -->
+    <!-- ================================================================== -->
+    <template id="report_08_body">
+        <t t-set="Uof" t-value="o.env['eos.use.of.funds']"/>
+        <t t-set="fp" t-value="o._financial_period()"/>
+        <t t-set="ccy" t-value="o.currency_id or o.env.company.currency_id"/>
+        <t t-set="rows" t-value="Uof.search([], order='sequence, id')"/>
+        <h2 class="eos-section">08 · Use of Funds</h2>
+        <table class="eos">
+            <thead><tr>
+                <th>Category</th><th class="num">Approved Budget</th><th class="num">Spent to Date</th>
+                <th class="num">Committed</th><th class="num">Remaining</th><th class="num">% Used</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="rows" t-as="u">
+                    <td t-esc="dict(u._fields['category'].selection).get(u.category)"/>
+                    <td class="num"><span t-esc="u.approved_budget" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="u.spent_to_date" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="u.committed" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num"><span t-esc="u.remaining" t-options="{'widget':'monetary','display_currency':ccy}"/></td>
+                    <td class="num" style="min-width:62px;">
+                        <div class="bar"><span t-attf-style="width:{{ '{:.1f}%'.format(max(0.0, min(100.0, u.percent_used or 0.0))) }}"/></div>
+                        <div style="font-size:8px;text-align:right;" t-esc="'{:.0f}%'.format(u.percent_used or 0.0)"/>
+                    </td>
+                </tr>
+                <tr t-if="not rows"><td colspan="6" class="muted">No use-of-funds buckets yet.</td></tr>
+            </tbody>
+        </table>
+        <h2 class="eos-section">Capital Position</h2>
+        <div class="eos-tiles" t-if="fp">
+            <div class="eos-tile w3"><div class="k">Capital Received</div><div class="v"><span t-esc="fp.capital_received" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile w3"><div class="k">Committed but Unspent</div><div class="v"><span t-esc="fp.committed_unspent" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+            <div class="eos-tile w3"><div class="k">Available Capital</div><div class="v"><span t-esc="fp.available_capital" t-options="{'widget':'monetary','display_currency':ccy}"/></div></div>
+        </div>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- 09 · Enterprise Risks                                               -->
+    <!-- ================================================================== -->
+    <template id="report_09_body">
+        <t t-set="Risk" t-value="o.env['eos.risk']"/>
+        <t t-set="top" t-value="Risk.search([('status','!=','resolved')], order='risk_score desc, risk_id', limit=10)"/>
+        <t t-set="red_n" t-value="Risk.search_count([('rating','=','red'),('status','!=','resolved')])"/>
+        <t t-set="yel_n" t-value="Risk.search_count([('rating','=','yellow'),('status','!=','resolved')])"/>
+        <h2 class="eos-section">09 · Top Enterprise Risks</h2>
+        <table class="eos">
+            <thead><tr>
+                <th>Risk</th><th>Category</th><th>Prob.</th><th>Impact</th><th>Rating</th>
+                <th>Owner</th><th>Mitigation</th><th>Trend</th>
+            </tr></thead>
+            <tbody>
+                <tr t-foreach="top" t-as="rk">
+                    <td t-esc="rk.name"/>
+                    <td t-esc="dict(rk._fields['category'].selection).get(rk.category) or ''"/>
+                    <td t-esc="dict(rk._fields['probability'].selection).get(rk.probability) or ''"/>
+                    <td t-esc="dict(rk._fields['impact'].selection).get(rk.impact) or ''"/>
+                    <td><t t-call="eos_dashboard.healthpill"><t t-set="pv" t-value="rk.rating"/></t></td>
+                    <td t-esc="rk.owner or ''"/>
+                    <td t-esc="rk.mitigation or ''"/>
+                    <td><t t-call="eos_dashboard.healthpill"><t t-set="pv" t-value="rk.trend"/></t></td>
+                </tr>
+                <tr t-if="not top"><td colspan="8" class="muted">No open risks recorded.</td></tr>
+            </tbody>
+        </table>
+        <h2 class="eos-section">Risk Governance</h2>
+        <div class="eos-tiles">
+            <div t-attf-class="eos-tile w3 {{'red' if red_n else ''}}"><div class="k">Open Red Risks</div><div class="v" t-esc="red_n"/></div>
+            <div t-attf-class="eos-tile w3 {{'amber' if yel_n else ''}}"><div class="k">Open Yellow Risks</div><div class="v" t-esc="yel_n"/></div>
+            <div class="eos-tile w3"><div class="k">Worsening Risks</div><div class="v" t-esc="Risk.search_count([('trend','=','worsening'),('status','!=','resolved')])"/></div>
+        </div>
+        <h2 class="eos-section">Key Decisions / Investor Awareness</h2>
+        <div class="eos-comm"><div class="box"><t t-esc="o.key_decisions or '—'"/></div></div>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- Per-report wrappers (one printed page each)                         -->
+    <!-- ================================================================== -->
+    <template id="report_01_executive">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — MONTHLY MANAGEMENT REPORT</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Executive Dashboard</t>
+                <t t-call="eos_dashboard.report_01_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_02_eos">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — EOS EXECUTION</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | <t t-esc="o._quarter_label()"/> Operating Priorities</t>
+                <t t-call="eos_dashboard.report_02_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_03_thailand_monthly">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — THAILAND LAUNCH</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Objective Launch Readiness</t>
+                <t t-set="d" t-value="o._thailand_readiness_data()"/>
+                <t t-set="c_changed" t-value="o.executive_summary"/>
+                <t t-set="c_actions" t-value="o.corrective_actions"/>
+                <t t-call="eos_dashboard.report_03_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_04_commercial">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — COMMERCIAL DEVELOPMENT</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Hospital Funnel &amp; Pipeline</t>
+                <t t-call="eos_dashboard.report_04_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_05_clinical">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — CLINICAL &amp; KOL</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Medical Engagement &amp; Utilisation</t>
+                <t t-call="eos_dashboard.report_05_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_06_reg_supply">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — REGULATORY &amp; SUPPLY</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Pathway, Dossier &amp; Inventory</t>
+                <t t-call="eos_dashboard.report_06_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_07_financial">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — FINANCIAL PERFORMANCE</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Monthly &amp; YTD Financial Position</t>
+                <t t-call="eos_dashboard.report_07_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_08_use_of_funds">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — CAPITAL &amp; USE OF FUNDS</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Investor Capital Deployment</t>
+                <t t-call="eos_dashboard.report_08_body"/>
+            </t>
+        </t></t>
+    </template>
+    <template id="report_09_risks">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — ENTERPRISE RISKS</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Top Risks, Mitigation &amp; Decisions</t>
+                <t t-call="eos_dashboard.report_09_body"/>
+            </t>
+        </t></t>
+    </template>
+
+    <template id="report_monthly_pack_doc">
+        <t t-call="web.html_container"><t t-foreach="docs" t-as="o">
+            <t t-call="eos_dashboard.report_page">
+                <t t-set="title">SANARE REGENERATIVE — MONTHLY MANAGEMENT REPORT</t>
+                <t t-set="subtitle"><t t-esc="o._period_label()"/> | Board &amp; Investor Pack</t>
+                <t t-call="eos_dashboard.report_01_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_02_body"/>
+                <div class="eos-pagebreak"/>
+                <t t-set="d" t-value="o._thailand_readiness_data()"/>
+                <t t-set="c_changed" t-value="o.executive_summary"/>
+                <t t-set="c_actions" t-value="o.corrective_actions"/>
+                <t t-call="eos_dashboard.report_03_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_04_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_05_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_06_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_07_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_08_body"/>
+                <div class="eos-pagebreak"/><t t-call="eos_dashboard.report_09_body"/>
+            </t>
+        </t></t>
+    </template>
+
+    <!-- ================================================================== -->
+    <!-- ir.actions.report                                                   -->
+    <!-- ================================================================== -->
+    <record id="action_report_01_executive" model="ir.actions.report">
+        <field name="name">01 — Executive</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_01_executive</field>
+        <field name="report_file">eos_dashboard.report_01_executive</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_02_eos" model="ir.actions.report">
+        <field name="name">02 — EOS Execution</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_02_eos</field>
+        <field name="report_file">eos_dashboard.report_02_eos</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_03_thailand_monthly" model="ir.actions.report">
+        <field name="name">03 — Thailand Readiness</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_03_thailand_monthly</field>
+        <field name="report_file">eos_dashboard.report_03_thailand_monthly</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_04_commercial" model="ir.actions.report">
+        <field name="name">04 — Commercial</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_04_commercial</field>
+        <field name="report_file">eos_dashboard.report_04_commercial</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_05_clinical" model="ir.actions.report">
+        <field name="name">05 — Clinical &amp; KOL</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_05_clinical</field>
+        <field name="report_file">eos_dashboard.report_05_clinical</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_06_reg_supply" model="ir.actions.report">
+        <field name="name">06 — Regulatory &amp; Supply</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_06_reg_supply</field>
+        <field name="report_file">eos_dashboard.report_06_reg_supply</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_07_financial" model="ir.actions.report">
+        <field name="name">07 — Financial</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_07_financial</field>
+        <field name="report_file">eos_dashboard.report_07_financial</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_08_use_of_funds" model="ir.actions.report">
+        <field name="name">08 — Use of Funds</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_08_use_of_funds</field>
+        <field name="report_file">eos_dashboard.report_08_use_of_funds</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_09_risks" model="ir.actions.report">
+        <field name="name">09 — Enterprise Risks</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_09_risks</field>
+        <field name="report_file">eos_dashboard.report_09_risks</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+    <record id="action_report_monthly_pack" model="ir.actions.report">
+        <field name="name">Monthly Report Pack (01–09)</field>
+        <field name="model">eos.monthly.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">eos_dashboard.report_monthly_pack_doc</field>
+        <field name="report_file">eos_dashboard.report_monthly_pack_doc</field>
+        <field name="paperformat_id" ref="eos_dashboard.paperformat_eos_report"/>
+        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_print_monthly_pack_srv" model="ir.actions.server">
+        <field name="name">Monthly Report Pack</field>
+        <field name="model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_print_monthly_pack()</field>
+    </record>
+    <menuitem id="menu_eos_monthly_pack"
+              name="Monthly Report Pack (print)"
+              parent="eos.menu_eos_reporting"
+              action="action_print_monthly_pack_srv"
+              sequence="55"/>
+
+</odoo>
