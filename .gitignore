@@ -2,8 +2,9 @@
 *.pyc
 __pycache__/
 
-# Third-party addon vendored as a zip artifact only
+# Third-party addons vendored as zip artifacts only
 base_accounting_kit/
+base_account_budget/
 
 # Source / working files kept out of the module repo
 Sanare_Management_Reporting_Engine_v2_ORDERED.xlsx
