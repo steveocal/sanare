@@ -1,12 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- ============================ workstream line views ================= -->
+    <record id="view_eos_thailand_readiness_line_list" model="ir.ui.view">
+        <field name="name">eos.thailand.readiness.line.list</field>
+        <field name="model">eos.thailand.readiness.line</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false" edit="false"
+                  decoration-danger="status == 'red'"
+                  decoration-warning="status == 'yellow'"
+                  decoration-success="status == 'green'">
+                <field name="name" string="Workstream"/>
+                <field name="weight" string="Weight" widget="progressbar"/>
+                <field name="readiness" string="Readiness" widget="progressbar"/>
+                <field name="status" string="Health"/>
+                <field name="key_gate" string="Evidence / Current State"/>
+                <field name="owner"/>
+                <field name="source_key" string="Source Key" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_thailand_readiness_line_graph" model="ir.ui.view">
+        <field name="name">eos.thailand.readiness.line.graph</field>
+        <field name="model">eos.thailand.readiness.line</field>
+        <field name="arch" type="xml">
+            <graph string="Readiness by Workstream" type="bar" sample="1">
+                <field name="name" type="row"/>
+                <field name="readiness" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ============================ board form =========================== -->
     <record id="view_eos_thailand_readiness_form" model="ir.ui.view">
         <field name="name">eos.thailand.readiness.form</field>
         <field name="model">eos.thailand.readiness</field>
         <field name="arch" type="xml">
             <form string="Thailand Launch Readiness">
+                <header>
+                    <button name="action_recompute" type="object" string="Recompute"
+                            class="btn-primary" icon="fa-refresh"/>
+                    <button name="action_pull_commentary" type="object"
+                            string="Pull Commentary from Monthly Report" icon="fa-download"/>
+                    <button name="action_view_chart" type="object"
+                            string="Bar Chart" icon="fa-bar-chart"/>
+                </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_chart" type="object"
+                                class="oe_stat_button" icon="fa-bar-chart">
+                            <field name="overall_readiness" widget="statinfo"
+                                   string="Overall Readiness %"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <h1>Sanare Regenerative &#8212; Thailand Launch</h1>
                         <h3>
@@ -22,9 +69,15 @@
                         </group>
                         <group>
                             <field name="as_of_date"/>
+                            <field name="computed_on" readonly="1"/>
+                            <field name="monthly_report_id"
+                                   options="{'no_create': True}"/>
                         </group>
                     </group>
-                    <field name="line_ids" readonly="1">
+
+                    <separator string="Workstreams"/>
+                    <field name="line_ids" nolabel="1" readonly="1"
+                           context="{'default_readiness_id': id}">
                         <list create="false" delete="false" edit="false"
                               decoration-danger="status == 'red'"
                               decoration-warning="status == 'yellow'"
@@ -35,14 +88,14 @@
                             <field name="status" string="Health"/>
                             <field name="key_gate" string="Evidence / Current State"/>
                             <field name="owner"/>
-                            <field name="source_key" string="Source Key" optional="hide"/>
                         </list>
                     </field>
+
                     <group string="Launch Management Commentary">
-                        <field name="commentary_changed" readonly="1" nolabel="1"
-                               placeholder="What changed materially this month?"/>
+                        <field name="commentary_changed" nolabel="1"
+                               placeholder="What changed materially this month? Summarise the 3-5 developments investors should understand."/>
                         <separator string="Critical corrective actions"/>
-                        <field name="commentary_actions" readonly="1" nolabel="1"
+                        <field name="commentary_actions" nolabel="1"
                                placeholder="What is management doing about misses, risks or delays?"/>
                     </group>
                 </sheet>
@@ -50,17 +103,44 @@
         </field>
     </record>
 
-    <record id="action_eos_thailand_readiness" model="ir.actions.act_window">
-        <field name="name">Report 03 &#8212; Thailand Readiness</field>
+    <record id="view_eos_thailand_readiness_list" model="ir.ui.view">
+        <field name="name">eos.thailand.readiness.list</field>
+        <field name="model">eos.thailand.readiness</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="as_of_date"/>
+                <field name="overall_readiness" widget="progressbar"/>
+                <field name="red_count"/>
+                <field name="yellow_count"/>
+                <field name="computed_on"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================ actions + menu ====================== -->
+    <record id="action_eos_thailand_readiness_open" model="ir.actions.server">
+        <field name="name">Report 03 — Thailand Readiness</field>
+        <field name="model_id" ref="model_eos_thailand_readiness"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_board()</field>
+    </record>
+
+    <record id="action_eos_thailand_readiness_all" model="ir.actions.act_window">
+        <field name="name">Thailand Readiness — History</field>
         <field name="res_model">eos.thailand.readiness</field>
-        <field name="view_mode">form</field>
-        <field name="target">current</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_eos_thailand_readiness"
               name="Report 03 &#8212; Thailand Readiness"
               parent="eos.menu_eos_reporting"
-              action="action_eos_thailand_readiness"
+              action="action_eos_thailand_readiness_open"
               sequence="35"/>
+    <menuitem id="menu_eos_thailand_readiness_all"
+              name="Thailand Readiness &#8212; History"
+              parent="eos.menu_eos_reporting"
+              action="action_eos_thailand_readiness_all"
+              sequence="36"/>
 
 </odoo>

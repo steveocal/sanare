@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
-from odoo.fields import Command
 
 from .readiness_engine import TaskRow, compute_thailand_readiness
 
@@ -33,43 +32,55 @@ def task_rows_from_db(env):
     return rows
 
 
-class EosThailandReadiness(models.TransientModel):
+class EosThailandReadiness(models.Model):
     _name = "eos.thailand.readiness"
-    _description = "Report 03 - Thailand Launch Readiness (live view)"
+    _description = "Report 03 - Thailand Launch Readiness"
+    _order = "as_of_date desc, id desc"
 
+    name = fields.Char(required=True, default="Thailand Launch Readiness")
     as_of_date = fields.Date(
         string="As of", required=True, default=fields.Date.context_today,
         help="Date used for the overdue-task test in the Health column "
-             "(the spreadsheet's TODAY()).")
-    month_label = fields.Char(string="Period", compute="_compute_readiness")
+             "(the spreadsheet's TODAY()). Change it and the board recomputes.")
+    month_label = fields.Char(string="Period", compute="_compute_month_label")
+
     overall_readiness = fields.Float(
-        string="Overall Weighted Readiness", compute="_compute_readiness",
+        string="Overall Weighted Readiness", readonly=True,
         help="SUMPRODUCT(weight x readiness) / SUM(weight) over the 9 Thailand "
              "workstreams, on a 0-100 scale.")
-    red_count = fields.Integer(string="Red Workstreams", compute="_compute_readiness")
-    yellow_count = fields.Integer(string="Yellow Workstreams", compute="_compute_readiness")
-    line_ids = fields.One2many(
-        "eos.thailand.readiness.line", "readiness_id",
-        string="Workstreams", compute="_compute_readiness")
-    commentary_changed = fields.Text(
-        string="What changed materially?", compute="_compute_readiness")
-    commentary_actions = fields.Text(
-        string="Critical corrective actions", compute="_compute_readiness")
+    red_count = fields.Integer(string="Red Workstreams", readonly=True)
+    yellow_count = fields.Integer(string="Yellow Workstreams", readonly=True)
+    computed_on = fields.Datetime(string="Last Recomputed", readonly=True)
 
+    line_ids = fields.One2many(
+        "eos.thailand.readiness.line", "readiness_id", string="Workstreams")
+
+    monthly_report_id = fields.Many2one(
+        "eos.monthly.report", string="Monthly Report",
+        help="Optional. 'Pull Commentary' copies this report's Executive Summary "
+             "and Corrective Actions into the commentary fields below; leave "
+             "blank to use the most recent monthly report.")
+    commentary_changed = fields.Text(string="What changed materially?")
+    commentary_actions = fields.Text(string="Critical corrective actions")
+
+    # ------------------------------------------------------------------ compute
     @api.depends("as_of_date")
-    def _compute_readiness(self):
+    def _compute_month_label(self):
+        for rec in self:
+            d = rec.as_of_date or fields.Date.context_today(rec)
+            rec.month_label = d.strftime("%B %Y")
+
+    # ------------------------------------------------------------------ engine
+    def _recompute_lines(self):
         tasks = task_rows_from_db(self.env)
-        report = self.env["eos.monthly.report"].search(
-            [], order="reporting_month desc", limit=1)
-        for wiz in self:
-            as_of = wiz.as_of_date or fields.Date.context_today(wiz)
+        Line = self.env["eos.thailand.readiness.line"]
+        for rec in self:
+            as_of = rec.as_of_date or fields.Date.context_today(rec)
             data = compute_thailand_readiness(tasks, today=as_of)
-            wiz.month_label = as_of.strftime("%B %Y")
-            wiz.overall_readiness = data["overall_readiness"] * 100.0
-            wiz.red_count = data["red_count"]
-            wiz.yellow_count = data["yellow_count"]
-            wiz.line_ids = [Command.clear()] + [
-                Command.create({
+            rec.line_ids.unlink()
+            for idx, r in enumerate(data["rows"]):
+                Line.create({
+                    "readiness_id": rec.id,
                     "sequence": idx * 10,
                     "workstream": r["key"],
                     "name": r["label"],
@@ -80,19 +91,85 @@ class EosThailandReadiness(models.TransientModel):
                     "owner": r["owner"],
                     "source_key": r["source_key"],
                 })
-                for idx, r in enumerate(data["rows"])
-            ]
-            wiz.commentary_changed = report.executive_summary or ""
-            wiz.commentary_actions = report.corrective_actions or ""
+            rec.overall_readiness = data["overall_readiness"] * 100.0
+            rec.red_count = data["red_count"]
+            rec.yellow_count = data["yellow_count"]
+            rec.computed_on = fields.Datetime.now()
+
+    def _pull_commentary(self):
+        for rec in self:
+            report = rec.monthly_report_id or self.env["eos.monthly.report"].search(
+                [], order="reporting_month desc", limit=1)
+            if not report:
+                continue
+            if report.executive_summary:
+                rec.commentary_changed = report.executive_summary
+            if report.corrective_actions:
+                rec.commentary_actions = report.corrective_actions
+
+    # ------------------------------------------------------------------ CRUD
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._recompute_lines()
+        for rec in records:
+            if not rec.commentary_changed and not rec.commentary_actions:
+                rec._pull_commentary()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "as_of_date" in vals:
+            self._recompute_lines()
+        return res
+
+    # ------------------------------------------------------------------ buttons
+    def action_recompute(self):
+        self._recompute_lines()
+        return True
+
+    def action_pull_commentary(self):
+        self._pull_commentary()
+        return True
+
+    def action_view_chart(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Readiness by Workstream",
+            "res_model": "eos.thailand.readiness.line",
+            "view_mode": "graph,list",
+            "domain": [("readiness_id", "=", self.id)],
+            "target": "current",
+        }
+
+    @api.model
+    def action_open_board(self):
+        """Menu entry point: open the latest board (refreshed) or make the first one."""
+        rec = self.search([], order="as_of_date desc, id desc", limit=1)
+        if rec:
+            rec._recompute_lines()
+        else:
+            rec = self.create({})
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Report 03 — Thailand Readiness",
+            "res_model": "eos.thailand.readiness",
+            "res_id": rec.id,
+            "view_mode": "form",
+            "views": [(False, "form")],
+            "target": "current",
+        }
 
 
-class EosThailandReadinessLine(models.TransientModel):
+class EosThailandReadinessLine(models.Model):
     _name = "eos.thailand.readiness.line"
     _description = "Report 03 - Thailand Launch Readiness workstream line"
     _order = "sequence, id"
 
     readiness_id = fields.Many2one(
-        "eos.thailand.readiness", string="Readiness Board", ondelete="cascade")
+        "eos.thailand.readiness", string="Readiness Board",
+        required=True, ondelete="cascade", index=True)
     sequence = fields.Integer()
     workstream = fields.Selection([
         ("corporate", "Corporate"),
@@ -106,8 +183,8 @@ class EosThailandReadinessLine(models.TransientModel):
         ("compliance", "Compliance"),
     ], string="Workstream Key")
     name = fields.Char(string="Workstream")
-    weight = fields.Float(string="Weight")
-    readiness = fields.Float(string="Readiness")
+    weight = fields.Float(string="Weight", aggregator="sum")
+    readiness = fields.Float(string="Readiness", aggregator="avg")
     status = fields.Selection([
         ("green", "Green"),
         ("yellow", "Yellow"),
@@ -116,45 +193,3 @@ class EosThailandReadinessLine(models.TransientModel):
     key_gate = fields.Text(string="Evidence / Current State")
     owner = fields.Char(string="Owner")
     source_key = fields.Char(string="Source Key")
-
-
-class ReportEosDashboardReport03Thailand(models.AbstractModel):
-    _name = "report.eos_dashboard.report_03_thailand"
-    _description = "Report 03 - Thailand QWeb data provider"
-
-    @api.model
-    def _get_report_values(self, docids, data=None):
-        reports = self.env["eos.monthly.report"].browse(docids)
-        tasks = task_rows_from_db(self.env)
-        payload = {}
-        for rep in reports:
-            as_of = rep.reporting_month or fields.Date.context_today(self)
-            data_ = compute_thailand_readiness(tasks, today=as_of)
-            # Pre-format every number here: '%' formatting inside a QWeb t-esc
-            # expression collides with Odoo's lazy-translation '%'-substitution.
-            payload[rep.id] = {
-                "period_label": as_of.strftime("%B %Y"),
-                "overall_pct": "%.1f%%" % (data_["overall_readiness"] * 100.0),
-                "red_count": data_["red_count"],
-                "yellow_count": data_["yellow_count"],
-                "rows": [
-                    {
-                        "label": r["label"],
-                        "weight_pct": "%.0f%%" % (r["weight"] * 100.0),
-                        "readiness_pct": "%.1f%%" % (r["readiness"] * 100.0),
-                        "status": r["status"],
-                        "status_color": {
-                            "Red": "#d9534f", "Yellow": "#f0ad4e", "Green": "#5cb85c",
-                        }.get(r["status"], "#cccccc"),
-                        "key_gate": r["key_gate"],
-                        "owner": r["owner"],
-                    }
-                    for r in data_["rows"]
-                ],
-            }
-        return {
-            "doc_ids": docids,
-            "doc_model": "eos.monthly.report",
-            "docs": reports,
-            "payload": payload,
-        }

@@ -3,11 +3,11 @@
 
     <record id="action_report_03_thailand" model="ir.actions.report">
         <field name="name">Report 03 — Thailand</field>
-        <field name="model">eos.monthly.report</field>
+        <field name="model">eos.thailand.readiness</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">eos_dashboard.report_03_thailand</field>
         <field name="report_file">eos_dashboard.report_03_thailand</field>
-        <field name="binding_model_id" ref="eos.model_eos_monthly_report"/>
+        <field name="binding_model_id" ref="model_eos_thailand_readiness"/>
         <field name="binding_type">report</field>
     </record>
 
@@ -15,11 +15,12 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.external_layout">
-                    <t t-set="d" t-value="payload.get(o.id)"/>
+                    <t t-set="cmap"
+                       t-value="{'red': ('#d9534f', 'Red'), 'yellow': ('#f0ad4e', 'Yellow'), 'green': ('#5cb85c', 'Green')}"/>
                     <div class="page">
                         <h2 class="mt-0">SANARE REGENERATIVE — THAILAND LAUNCH</h2>
                         <p class="text-muted">
-                            <span t-esc="d['period_label']"/>
+                            <span t-esc="o.month_label"/>
                             <span> | Objective Launch Readiness</span>
                         </p>
 
@@ -27,11 +28,13 @@
                         <table class="table table-sm" style="width:auto;">
                             <tr>
                                 <th class="pe-4">Overall Weighted Readiness</th>
-                                <td class="text-end"><strong t-esc="d['overall_pct']"/></td>
+                                <td class="text-end">
+                                    <strong t-esc="'{:.1f}%'.format(o.overall_readiness)"/>
+                                </td>
                                 <th class="ps-5 pe-4">Red Workstreams</th>
-                                <td class="text-end"><strong t-esc="d['red_count']"/></td>
+                                <td class="text-end"><strong t-esc="o.red_count"/></td>
                                 <th class="ps-5 pe-4">Yellow Workstreams</th>
-                                <td class="text-end"><strong t-esc="d['yellow_count']"/></td>
+                                <td class="text-end"><strong t-esc="o.yellow_count"/></td>
                             </tr>
                         </table>
 
@@ -48,16 +51,17 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr t-foreach="d['rows']" t-as="r">
-                                    <td t-esc="r['label']"/>
-                                    <td class="text-end" t-esc="r['weight_pct']"/>
-                                    <td class="text-end" t-esc="r['readiness_pct']"/>
+                                <tr t-foreach="o.line_ids" t-as="l">
+                                    <td t-esc="l.name"/>
+                                    <td class="text-end" t-esc="'{:.0f}%'.format(l.weight)"/>
+                                    <td class="text-end" t-esc="'{:.1f}%'.format(l.readiness)"/>
                                     <td class="text-center">
-                                        <span t-attf-style="display:inline-block;min-width:56px;padding:2px 8px;border-radius:3px;color:#fff;background:{{r['status_color']}};"
-                                              t-esc="r['status']"/>
+                                        <t t-set="c" t-value="cmap.get(l.status, ('#cccccc', l.status or ''))"/>
+                                        <span t-attf-style="display:inline-block;min-width:56px;padding:2px 8px;border-radius:3px;color:#fff;background:{{c[0]}};"
+                                              t-esc="c[1]"/>
                                     </td>
-                                    <td t-esc="r['key_gate']"/>
-                                    <td t-esc="r['owner']"/>
+                                    <td t-esc="l.key_gate"/>
+                                    <td t-esc="l.owner"/>
                                     <td/>
                                 </tr>
                             </tbody>
@@ -67,11 +71,11 @@
                         <table class="table table-sm">
                             <tr>
                                 <th style="width:220px;">What changed materially?</th>
-                                <td style="white-space:pre-line;" t-esc="o.executive_summary or ''"/>
+                                <td style="white-space:pre-line;" t-esc="o.commentary_changed or ''"/>
                             </tr>
                             <tr>
                                 <th>Critical corrective actions</th>
-                                <td style="white-space:pre-line;" t-esc="o.corrective_actions or ''"/>
+                                <td style="white-space:pre-line;" t-esc="o.commentary_actions or ''"/>
                             </tr>
                         </table>
                     </div>
