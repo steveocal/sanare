@@ -48,6 +48,7 @@ two ``SUMIFS`` and the two ``COUNTIFS`` before dividing, which is what
 from __future__ import annotations
 
 import datetime
+import re
 
 # --- canonical 'Task Tracker' status strings (column K) -----------------------
 COMPLETE = "Complete"
@@ -103,6 +104,22 @@ THAILAND_WORKSTREAMS = (
 STATUS_TO_ODOO = {"Red": "red", "Yellow": "yellow", "Green": "green"}
 
 
+_ROCK_RE = re.compile(r"^\s*R0*(\d+)\s*$", re.IGNORECASE)
+
+
+def normalize_rock(code):
+    """Canonicalise a Rock ID so ``R01`` / ``r1`` / ``R1`` all compare equal.
+
+    The workbook's ``Task Tracker`` writes ``R1``..``R12`` unpadded; the Odoo
+    ``eos`` data set on some deployments zero-pads single digits (``R01``). Strip
+    the padding to ``R<n>`` and leave anything unrecognised untouched.
+    """
+    if not code:
+        return ""
+    m = _ROCK_RE.match(str(code))
+    return ("R" + m.group(1)) if m else str(code).strip()
+
+
 def _as_date(value):
     """Coerce a due-date-ish value (datetime, date, ISO string, blank) to date|None."""
     if value is None or value == "":
@@ -122,7 +139,7 @@ class TaskRow:
     __slots__ = ("rock", "status", "due", "priority", "critical_path")
 
     def __init__(self, rock, status, due=None, priority=None, critical_path=None):
-        self.rock = (rock or "").strip()
+        self.rock = normalize_rock(rock)
         self.status = (status or "").strip()
         self.due = _as_date(due)
         self.priority = (priority or "").strip()
@@ -152,7 +169,7 @@ def task_percent(status):
 
 def workstream_readiness(tasks, rock_ids):
     """``'Launch Readiness'!D`` - ``IFERROR(SUMIFS/COUNTIFS, 0)`` as a 0..1 fraction."""
-    wanted = set(rock_ids)
+    wanted = {normalize_rock(x) for x in rock_ids}
     considered = [t for t in tasks if t.rock in wanted and t.status != DEFERRED]
     if not considered:
         return 0.0
@@ -171,7 +188,7 @@ def _is_overdue_open(task, today):
 
 def workstream_status(tasks, rock_ids, today):
     """``'Launch Readiness'!E`` - ``"Red"`` / ``"Yellow"`` / ``"Green"``."""
-    wanted = set(rock_ids)
+    wanted = {normalize_rock(x) for x in rock_ids}
     rows = [t for t in tasks if t.rock in wanted]
     red_hits = 0
     for t in rows:
