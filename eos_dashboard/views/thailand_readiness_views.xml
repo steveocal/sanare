@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_eos_thailand_readiness_form" model="ir.ui.view">
+        <field name="name">eos.thailand.readiness.form</field>
+        <field name="model">eos.thailand.readiness</field>
+        <field name="arch" type="xml">
+            <form string="Thailand Launch Readiness">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Sanare Regenerative &#8212; Thailand Launch</h1>
+                        <h3>
+                            <field name="month_label" readonly="1" nolabel="1"/>
+                            <span> | Objective Launch Readiness</span>
+                        </h3>
+                    </div>
+                    <group>
+                        <group string="Thailand Readiness">
+                            <field name="overall_readiness" widget="progressbar" readonly="1"/>
+                            <field name="red_count" readonly="1"/>
+                            <field name="yellow_count" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="as_of_date"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="1">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="status == 'red'"
+                              decoration-warning="status == 'yellow'"
+                              decoration-success="status == 'green'">
+                            <field name="name" string="Workstream"/>
+                            <field name="weight" string="Weight" widget="progressbar"/>
+                            <field name="readiness" string="Readiness" widget="progressbar"/>
+                            <field name="status" string="Health"/>
+                            <field name="key_gate" string="Evidence / Current State"/>
+                            <field name="owner"/>
+                            <field name="source_key" string="Source Key" optional="hide"/>
+                        </list>
+                    </field>
+                    <group string="Launch Management Commentary">
+                        <field name="commentary_changed" readonly="1" nolabel="1"
+                               placeholder="What changed materially this month?"/>
+                        <separator string="Critical corrective actions"/>
+                        <field name="commentary_actions" readonly="1" nolabel="1"
+                               placeholder="What is management doing about misses, risks or delays?"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eos_thailand_readiness" model="ir.actions.act_window">
+        <field name="name">Report 03 &#8212; Thailand Readiness</field>
+        <field name="res_model">eos.thailand.readiness</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+
+    <menuitem id="menu_eos_thailand_readiness"
+              name="Report 03 &#8212; Thailand Readiness"
+              parent="eos.menu_eos_reporting"
+              action="action_eos_thailand_readiness"
+              sequence="35"/>
+
+</odoo>
