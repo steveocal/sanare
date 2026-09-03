@@ -9,7 +9,7 @@
               action="action_eos_financial_period_line" sequence="20"/>
     <menuitem id="menu_eos_budget" name="Budgets"
               parent="menu_eos_finance_root"
-              action="action_eos_budget_line" sequence="30"/>
+              action="base_account_budget.act_budget_view" sequence="30"/>
     <menuitem id="menu_eos_use_of_funds" name="Use of Funds"
               parent="menu_eos_finance_root"
               action="action_eos_use_of_funds" sequence="40"/>
@@ -19,4 +19,7 @@
     <menuitem id="menu_eos_account_map" name="Account Mapping"
               parent="menu_eos_finance_config"
               action="action_eos_account_map" sequence="10"/>
+    <menuitem id="menu_eos_budget_post" name="EOS Budget Buckets"
+              parent="menu_eos_finance_config"
+              action="action_eos_budget_post" sequence="20"/>
 </odoo>

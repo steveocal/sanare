@@ -1,0 +1,36 @@
+<odoo>
+    <!-- Surface the EOS category tag on base_account_budget's budgetary positions. -->
+    <record id="view_budget_post_form_eos" model="ir.ui.view">
+        <field name="name">account.budget.post.form.eos</field>
+        <field name="model">account.budget.post</field>
+        <field name="inherit_id" ref="base_account_budget.view_budget_post_form"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="eos_category"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_budget_post_tree_eos" model="ir.ui.view">
+        <field name="name">account.budget.post.list.eos</field>
+        <field name="model">account.budget.post</field>
+        <field name="inherit_id" ref="base_account_budget.view_budget_post_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="eos_category"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="action_eos_budget_post" model="ir.actions.act_window">
+        <field name="name">EOS Budget Buckets</field>
+        <field name="res_model">account.budget.post</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('eos_category', '!=', False)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">One budgetary position per EOS P&amp;L category</p>
+            <p>Seeded on install from the account mapping. Add budget figures under
+               <b>Budgets</b> and the monthly financial period will prorate them.</p>
+        </field>
+    </record>
+</odoo>

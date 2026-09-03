@@ -2,5 +2,6 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_eos_account_map,eos.account.map,model_eos_account_map,base.group_user,1,1,1,1
 access_eos_financial_period,eos.financial.period,model_eos_financial_period,base.group_user,1,1,1,1
 access_eos_financial_period_line,eos.financial.period.line,model_eos_financial_period_line,base.group_user,1,1,1,1
-access_eos_budget_line,eos.budget.line,model_eos_budget_line,base.group_user,1,1,1,1
 access_eos_use_of_funds,eos.use.of.funds,model_eos_use_of_funds,base.group_user,1,1,1,1
+access_eos_budget_post_read,account.budget.post eos read,base_account_budget.model_account_budget_post,base.group_user,1,0,0,0
+access_eos_budget_lines_read,budget.lines eos read,base_account_budget.model_budget_lines,base.group_user,1,0,0,0

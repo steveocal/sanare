@@ -225,7 +225,6 @@ class EosFinancialPeriod(models.Model):
     def _rebuild_lines(self):
         self.ensure_one()
         self.line_ids.unlink()
-        Budget = self.env['eos.budget.line']
         ytd_from = self.date_from.replace(month=1, day=1)
         vals = []
         for code, _label in PL_CATEGORIES:
@@ -233,13 +232,45 @@ class EosFinancialPeriod(models.Model):
                 'period_id': self.id,
                 'category': code,
                 'actual': self[code],
-                'budget': Budget._budget_for(self.company_id, code,
-                                             self.date_from, self.date_to),
+                'budget': self._budget_for(code, self.date_from, self.date_to),
                 'ytd_actual': self._category_ytd(code, ytd_from, self.date_to),
-                'ytd_budget': Budget._budget_for(self.company_id, code,
-                                                 ytd_from, self.date_to),
+                'ytd_budget': self._budget_for(code, ytd_from, self.date_to),
             })
         self.env['eos.financial.period.line'].create(vals)
+
+    def _budget_for(self, category, date_from, date_to):
+        """Planned amount for one EOS category over ``[date_from, date_to]``.
+
+        Reads ``base_account_budget`` lines under the budgetary position
+        tagged with this ``eos_category`` and prorates each line by the
+        fraction of its own span that overlaps the requested window.
+        """
+        self.ensure_one()
+        post = self.env['account.budget.post'].search([
+            ('eos_category', '=', category),
+            ('company_id', '=', self.company_id.id),
+        ], limit=1)
+        if not post:
+            return 0.0
+        lines = self.env['budget.lines'].search([
+            ('general_budget_id', '=', post.id),
+            ('date_from', '<=', date_to),
+            ('date_to', '>=', date_from),
+        ])
+        total = 0.0
+        for line in lines:
+            if not (line.date_from and line.date_to):
+                continue
+            span_days = (line.date_to - line.date_from).days + 1
+            if span_days <= 0:
+                continue
+            lo = max(line.date_from, date_from)
+            hi = min(line.date_to, date_to)
+            overlap_days = (hi - lo).days + 1
+            if overlap_days <= 0:
+                continue
+            total += line.planned_amount * overlap_days / span_days
+        return total
 
     def _category_ytd(self, code, date_from, date_to):
         self.ensure_one()
