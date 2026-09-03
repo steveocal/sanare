@@ -5,6 +5,7 @@ __pycache__/
 # Third-party addons vendored as zip artifacts only
 base_accounting_kit/
 base_account_budget/
+advanced_dynamic_dashboard/
 
 # Source / working files kept out of the module repo
 Sanare_Management_Reporting_Engine_v2_ORDERED.xlsx
