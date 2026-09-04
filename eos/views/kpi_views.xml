@@ -132,12 +132,12 @@
         <field name="model">eos.kpi.board.line</field>
         <field name="arch" type="xml">
             <list string="KPI Measures" editable="bottom" create="0" delete="0">
-                <field name="kpi_id" readonly="1"/>
-                <field name="market_id" readonly="1"/>
+                <field name="kpi_id" readonly="1" force_save="1"/>
+                <field name="market_id" readonly="1" force_save="1"/>
                 <field name="source" readonly="1" optional="hide"/>
-                <field name="week_value" readonly="not week_is_manual"/>
+                <field name="week_value" readonly="not week_is_manual" force_save="1"/>
                 <field name="week_is_manual" column_invisible="1"/>
-                <field name="month_value" readonly="not month_is_manual"/>
+                <field name="month_value" readonly="not month_is_manual" force_save="1"/>
                 <field name="month_is_manual" column_invisible="1"/>
             </list>
         </field>
