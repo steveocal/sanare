@@ -137,8 +137,13 @@
                 <field name="previous_value" readonly="1" force_save="1"
                        decoration-muted="not previous_exists"/>
                 <field name="previous_exists" column_invisible="1"/>
-                <field name="current_value" readonly="not is_manual" force_save="1"/>
-                <field name="is_manual" column_invisible="1"/>
+                <field name="this_value" force_save="1"
+                       decoration-muted="not this_exists"/>
+                <field name="this_notes" force_save="1" optional="show"/>
+                <field name="this_exists" column_invisible="1"/>
+                <field name="current_value" readonly="1" force_save="1"
+                       decoration-muted="current_is_manual"/>
+                <field name="current_is_manual" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -151,7 +156,7 @@
                 <header>
                     <button name="action_refresh" type="object" string="Refresh"
                             class="btn-secondary"/>
-                    <button name="action_save_period" type="object" string="Save Period"
+                    <button name="action_save_this_period" type="object" string="Save to History"
                             class="btn-primary"/>
                 </header>
                 <sheet>
@@ -168,19 +173,25 @@
                             <field name="prev_period_start" readonly="1"/>
                             <field name="prev_period_end" readonly="1"/>
                         </group>
+                        <group string="This Period (in history)">
+                            <field name="this_period_start" readonly="1"/>
+                            <field name="this_period_end" readonly="1"/>
+                        </group>
                         <group string="Current Period">
-                            <field name="period_start" readonly="1"/>
-                            <field name="period_end" string="To Date" readonly="1"/>
+                            <field name="current_period_start" readonly="1"/>
+                            <field name="current_period_end" string="To Date" readonly="1"/>
                         </group>
                     </group>
                     <field name="line_ids"/>
                     <p class="text-muted">
-                        <b>Previous Period</b> is the last figure locked into KPI History for the
-                        period just before the one above (blank/greyed if never saved).
-                        <b>This Period (to date)</b> is live-calculated as of today for the
-                        period in progress; white cells have no formula yet and must be entered
-                        manually (matches the source workbook). <b>Save Period</b> locks the
-                        current figures into KPI History at the current period's beginning date.
+                        <b>Previous Period</b> is the last locked figure before the one being
+                        edited (blank/greyed if never saved). <b>This Period</b> is the period
+                        last locked into KPI History - normally the one the week/month-end cron
+                        just closed; every cell here is editable, including notes, so you can
+                        correct a computed figure or fill in a KPI with no formula.
+                        <b>Current, To Date</b> is a live, read-only preview of the period still
+                        in progress. <b>Save to History</b> writes This Period's figures back to
+                        KPI History.
                     </p>
                 </sheet>
             </form>

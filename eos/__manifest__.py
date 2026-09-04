@@ -29,6 +29,7 @@ financial reports in a later phase.
         'data/rocks.xml',
         'data/tasks.xml',
         'data/kpi_dict.xml',
+        'data/kpi_cron.xml',
         'data/launch_workstreams.xml',
         'data/close_steps.xml',
         'data/milestones.xml',

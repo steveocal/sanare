@@ -51,6 +51,27 @@ class EosKpi(models.Model):
             return method(market, date_from, date_to)
         return None
 
+    @api.model
+    def _period_bounds(self, period_type, as_of):
+        """(start, end) of the calendar week (Mon-Sun) or month containing
+        ``as_of``. Shared by the KPI board and the week/month-end cron so
+        both compute periods the same way."""
+        d = as_of or fields.Date.context_today(self)
+        if period_type == 'week':
+            start = d - timedelta(days=d.weekday())
+            end = start + timedelta(days=6)
+        else:
+            start = d.replace(day=1)
+            next_month = start.replace(day=28) + timedelta(days=4)
+            end = next_month - timedelta(days=next_month.day)
+        return start, end
+
+    @api.model
+    def _period_before(self, period_type, start):
+        """(start, end) of the period immediately preceding the one that
+        begins on ``start``."""
+        return self._period_bounds(period_type, start - timedelta(days=1))
+
     def _live_cm2_used(self, market, date_from, date_to):
         physicians = self.env['eos.physician'].search([('market_id', '=', market.id)])
         return sum(physicians.mapped('cm2_mtd'))
@@ -159,3 +180,54 @@ class EosKpiValue(models.Model):
             else:
                 next_month = rec.period.replace(day=28) + timedelta(days=4)
                 rec.period_end = next_month - timedelta(days=next_month.day)
+
+    def _upsert(self, market, kpi, period_type, period_start, value, notes=None):
+        """Create or update the one value row for (market, kpi, period_type,
+        period_start). Shared by the board's manual save and the cron."""
+        vals = {'value': value}
+        if notes is not None:
+            vals['notes'] = notes
+        existing = self.search([
+            ('period', '=', period_start), ('period_type', '=', period_type),
+            ('market_id', '=', market.id), ('kpi_id', '=', kpi.id),
+        ], limit=1)
+        if existing:
+            existing.write(vals)
+            return existing
+        vals.update({
+            'period': period_start, 'period_type': period_type,
+            'market_id': market.id, 'kpi_id': kpi.id,
+        })
+        return self.create(vals)
+
+    @api.model
+    def _cron_snapshot(self):
+        """Lock the just-finished week and/or month into history, using each
+        KPI's live formula. Runs daily; internally only acts on the actual
+        last day of a week (Sunday) and/or a month, so it fires once at each
+        boundary regardless of month length. KPIs with no live formula
+        (cm2_sold, case_documentation, ...) are left alone - matches the
+        source workbook's "enter confirmed total" - so a human fills those
+        in via the KPI Snapshot board afterwards without a cron run
+        clobbering a manual figure with zero."""
+        today = fields.Date.context_today(self)
+        due = []
+        if today.weekday() == 6:  # Sunday: the week ending today is done
+            due.append('week')
+        tomorrow = today + timedelta(days=1)
+        if tomorrow.day == 1:  # today is the last day of its month
+            due.append('month')
+        if not due:
+            return
+
+        Kpi = self.env['eos.kpi']
+        kpis = Kpi.search([('frequency', '!=', False)])
+        markets = self.env['eos.market'].search([])
+        for period_type in due:
+            start, end = Kpi._period_bounds(period_type, today)
+            for market in markets:
+                for kpi in kpis:
+                    value = kpi._compute_live(market, start, end)
+                    if value is None:
+                        continue
+                    self._upsert(market, kpi, period_type, start, value)
