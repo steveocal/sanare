@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="web.NavBar.AppsMenu" t-inherit-mode="extension">
+        <xpath expr="//t[@t-set-slot='content']" position="replace">
+            <t t-set-slot="content">
+                <div class="o_enterprise_apps_menu">
+                    <div class="o_enterprise_apps_search position-relative">
+                        <i class="fa fa-search position-absolute" />
+                        <input
+                            class="form-control rounded-pill"
+                            type="search"
+                            placeholder="Search apps..."
+                            t-att-value="appsMenu.query"
+                            t-on-input="(ev) => this.appsMenu.query = ev.target.value"
+                        />
+                    </div>
+                    <div class="o_enterprise_apps_grid">
+                        <a
+                            t-foreach="filteredApps"
+                            t-as="app"
+                            t-key="app.id"
+                            class="o_enterprise_app_card"
+                            t-attf-href="{{ getMenuItemHref(app) }}"
+                            t-on-click.prevent="() => this.onNavBarDropdownItemSelection(app)"
+                            t-att-data-menu-xmlid="app.xmlid"
+                        >
+                            <span
+                                class="o_enterprise_app_icon"
+                                t-attf-style="color: {{ app.webIcon ? app.webIcon.color : '#714B67' }}; background-color: {{ app.webIcon ? app.webIcon.backgroundColor : '#eef0f6' }};"
+                            >
+                                <t t-if="app.webIconData">
+                                    <img t-att-src="app.webIconData" t-att-alt="app.name" />
+                                </t>
+                                <t t-elif="app.webIcon">
+                                    <i t-att-class="app.webIcon.iconClass" />
+                                </t>
+                                <t t-else="">
+                                    <i class="fa fa-cube" />
+                                </t>
+                            </span>
+                            <span class="o_enterprise_app_name" t-esc="app.name" />
+                        </a>
+                    </div>
+                    <div t-if="!filteredApps.length" class="o_enterprise_apps_empty text-center text-muted py-4">
+                        No apps found
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </t>
+</templates>
