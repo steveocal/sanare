@@ -133,14 +133,14 @@
     </record>
 
     <menuitem id="menu_eos_thailand_readiness"
-              name="Report 03 &#8212; Thailand Readiness"
-              parent="eos.menu_eos_reporting"
+              name="03 &#183; Thailand Readiness"
+              parent="menu_eos_dashboards"
               action="action_eos_thailand_readiness_open"
-              sequence="35"/>
+              sequence="3"/>
     <menuitem id="menu_eos_thailand_readiness_all"
-              name="Thailand Readiness &#8212; History"
-              parent="eos.menu_eos_reporting"
+              name="03 &#183; Thailand &#8212; Snapshots"
+              parent="menu_eos_dashboards"
               action="action_eos_thailand_readiness_all"
-              sequence="36"/>
+              sequence="19"/>
 
 </odoo>

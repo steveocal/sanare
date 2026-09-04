@@ -24,6 +24,8 @@
         "security/ir.model.access.csv",
         "report/report_layout.xml",
         "report/monthly_reports.xml",
+        "report/board_screen.xml",
+        "views/dashboard_board_views.xml",
         "report/report_03_thailand.xml",
         "views/thailand_readiness_views.xml",
         "data/sample_data.xml",

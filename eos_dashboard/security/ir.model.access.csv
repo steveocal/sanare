@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_eos_thailand_readiness,eos.thailand.readiness,model_eos_thailand_readiness,base.group_user,1,1,1,1
 access_eos_thailand_readiness_line,eos.thailand.readiness.line,model_eos_thailand_readiness_line,base.group_user,1,1,1,1
+access_eos_dashboard_board,eos.dashboard.board,model_eos_dashboard_board,base.group_user,1,1,1,1

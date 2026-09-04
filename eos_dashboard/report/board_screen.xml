@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Screen mirror of a printed report tab, rendered into board_html on
+         eos.dashboard.board. Expects `o` (an eos.monthly.report), `report_key`,
+         and for the thailand key: `d`, `c_changed`, `c_actions`. -->
+    <template id="board_screen_doc">
+        <div class="eos-report">
+            <t t-call="eos_dashboard.report_styles"/>
+            <t t-if="report_key == 'exec'"><t t-call="eos_dashboard.report_01_body"/></t>
+            <t t-elif="report_key == 'eos'"><t t-call="eos_dashboard.report_02_body"/></t>
+            <t t-elif="report_key == 'thailand'"><t t-call="eos_dashboard.report_03_body"/></t>
+            <t t-elif="report_key == 'commercial'"><t t-call="eos_dashboard.report_04_body"/></t>
+            <t t-elif="report_key == 'clinical'"><t t-call="eos_dashboard.report_05_body"/></t>
+            <t t-elif="report_key == 'reg_supply'"><t t-call="eos_dashboard.report_06_body"/></t>
+            <t t-elif="report_key == 'financial'"><t t-call="eos_dashboard.report_07_body"/></t>
+            <t t-elif="report_key == 'use_of_funds'"><t t-call="eos_dashboard.report_08_body"/></t>
+            <t t-elif="report_key == 'risks'"><t t-call="eos_dashboard.report_09_body"/></t>
+        </div>
+    </template>
+
+</odoo>
