@@ -88,6 +88,8 @@
               action="action_eos_risk" sequence="20"/>
 
     <menuitem id="menu_eos_reporting" name="Reporting" parent="menu_eos_root" sequence="40"/>
+    <menuitem id="menu_eos_kpi_board" name="Current KPI Snapshot" parent="menu_eos_reporting"
+              action="action_eos_kpi_board" sequence="5"/>
     <menuitem id="menu_eos_kpi" name="KPI Dictionary" parent="menu_eos_reporting"
               action="action_eos_kpi" sequence="10"/>
     <menuitem id="menu_eos_kpi_value" name="KPI History" parent="menu_eos_reporting"

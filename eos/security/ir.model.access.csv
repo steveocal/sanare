@@ -7,6 +7,8 @@ access_eos_sku,eos.sku,model_eos_sku,base.group_user,1,1,1,1
 access_eos_risk,eos.risk,model_eos_risk,base.group_user,1,1,1,1
 access_eos_kpi,eos.kpi,model_eos_kpi,base.group_user,1,1,1,1
 access_eos_kpi_value,eos.kpi.value,model_eos_kpi_value,base.group_user,1,1,1,1
+access_eos_kpi_board,eos.kpi.board,model_eos_kpi_board,base.group_user,1,1,1,1
+access_eos_kpi_board_line,eos.kpi.board.line,model_eos_kpi_board_line,base.group_user,1,1,1,1
 access_eos_launch_workstream,eos.launch.workstream,model_eos_launch_workstream,base.group_user,1,1,1,1
 access_eos_close_step,eos.close.step,model_eos_close_step,base.group_user,1,1,1,1
 access_eos_monthly_report,eos.monthly.report,model_eos_monthly_report,base.group_user,1,1,1,1

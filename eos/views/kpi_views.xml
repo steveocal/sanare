@@ -45,12 +45,31 @@
     </record>
 
     <!-- KPI HISTORY / VALUES -->
+    <record id="view_eos_kpi_value_search" model="ir.ui.view">
+        <field name="name">eos.kpi.value.search</field>
+        <field name="model">eos.kpi.value</field>
+        <field name="arch" type="xml">
+            <search string="KPI History">
+                <field name="kpi_id"/>
+                <field name="market_id"/>
+                <filter string="Week" name="type_week" domain="[('period_type','=','week')]"/>
+                <filter string="Month" name="type_month" domain="[('period_type','=','month')]"/>
+                <separator/>
+                <filter string="Period" name="group_period" context="{'group_by':'period'}"/>
+                <filter string="Type" name="group_type" context="{'group_by':'period_type'}"/>
+                <filter string="Market" name="group_market" context="{'group_by':'market_id'}"/>
+                <filter string="KPI" name="group_kpi" context="{'group_by':'kpi_id'}"/>
+            </search>
+        </field>
+    </record>
+
     <record id="view_eos_kpi_value_tree" model="ir.ui.view">
         <field name="name">eos.kpi.value.tree</field>
         <field name="model">eos.kpi.value</field>
         <field name="arch" type="xml">
             <list string="KPI History">
                 <field name="period"/>
+                <field name="period_type"/>
                 <field name="market_id"/>
                 <field name="kpi_id"/>
                 <field name="value"/>
@@ -66,7 +85,9 @@
             <form string="KPI Value">
                 <sheet>
                     <group>
+                        <field name="period_type"/>
                         <field name="period"/>
+                        <field name="period_end" readonly="1"/>
                         <field name="market_id"/>
                         <field name="kpi_id"/>
                         <field name="value"/>
@@ -98,9 +119,76 @@
             <pivot string="KPI History" sample="1">
                 <field name="kpi_id" type="row"/>
                 <field name="market_id" type="row"/>
+                <field name="period_type" type="col"/>
                 <field name="period" interval="month" type="col"/>
                 <field name="value" type="measure"/>
             </pivot>
         </field>
+    </record>
+
+    <!-- CURRENT KPI SNAPSHOT / DASHBOARD -->
+    <record id="view_eos_kpi_board_line_tree" model="ir.ui.view">
+        <field name="name">eos.kpi.board.line.tree</field>
+        <field name="model">eos.kpi.board.line</field>
+        <field name="arch" type="xml">
+            <list string="KPI Measures" editable="bottom" create="0" delete="0">
+                <field name="kpi_id" readonly="1"/>
+                <field name="market_id" readonly="1"/>
+                <field name="source" readonly="1" optional="hide"/>
+                <field name="week_value" readonly="not week_is_manual"/>
+                <field name="week_is_manual" column_invisible="1"/>
+                <field name="month_value" readonly="not month_is_manual"/>
+                <field name="month_is_manual" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_kpi_board_form" model="ir.ui.view">
+        <field name="name">eos.kpi.board.form</field>
+        <field name="model">eos.kpi.board</field>
+        <field name="arch" type="xml">
+            <form string="Current KPI Snapshot">
+                <header>
+                    <button name="action_refresh" type="object" string="Refresh"
+                            class="btn-secondary"/>
+                    <button name="action_save_week" type="object" string="Save Week"
+                            class="btn-primary"/>
+                    <button name="action_save_month" type="object" string="Save Month"
+                            class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Current KPI Snapshot</h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="as_of_date"/>
+                        </group>
+                        <group string="Week">
+                            <field name="week_start" readonly="1"/>
+                            <field name="week_end" readonly="1"/>
+                        </group>
+                        <group string="Month">
+                            <field name="month_start" readonly="1"/>
+                            <field name="month_end" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids"/>
+                    <p class="text-muted">
+                        Grey cells are live-calculated from Odoo data as of the dates above.
+                        White cells have no formula yet and must be entered manually (matches
+                        the source workbook). <b>Save Week</b> / <b>Save Month</b> lock the
+                        current figures into KPI History at that period's beginning date.
+                    </p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eos_kpi_board" model="ir.actions.act_window">
+        <field name="name">Current KPI Snapshot</field>
+        <field name="res_model">eos.kpi.board</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
     </record>
 </odoo>

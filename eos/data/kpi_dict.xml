@@ -25,6 +25,18 @@
             <field name="report_section">Clinical</field>
             <field name="notes">Clinical utilization metric.</field>
         </record>
+        <record id="kpi_cases" model="eos.kpi">
+            <field name="name">Cases</field>
+            <field name="code">cases</field>
+            <field name="definition">Completed Sanare-supported clinical cases in the reporting period.</field>
+            <field name="calculation">Sum of physician case counts recorded against the market.</field>
+            <field name="source">Clinical &amp; KOL</field>
+            <field name="owner">Harold</field>
+            <field name="frequency">weekly_monthly</field>
+            <field name="target">Increasing month over month</field>
+            <field name="report_section">Clinical</field>
+            <field name="notes">Companion count to cm² used; both come from the same physician-level log.</field>
+        </record>
         <record id="kpi_active_hospitals" model="eos.kpi">
             <field name="name">Active hospitals</field>
             <field name="code">active_hospitals</field>

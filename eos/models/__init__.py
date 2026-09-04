@@ -6,4 +6,5 @@ from . import physician
 from . import supply_chain
 from . import risk
 from . import kpi
+from . import kpi_board
 from . import governance
