@@ -22,16 +22,20 @@ class EosMonthlyReport(models.Model):
         return d.strftime("%B %Y")
 
     def _report_quarter(self):
-        """Best available EOS quarter for rock filtering."""
+        """EOS quarter for rock filtering.
+
+        The workbook derives "Active EOS Quarter" (Monthly Control!B11) purely
+        from the reporting month, and Report 01/02 key off that - so the month
+        wins here too. The manual ``active_quarter`` / ``current_quarter``
+        fields are only a fallback when there is no reporting month.
+        """
         self.ensure_one()
-        if self.active_quarter:
-            return self.active_quarter
-        if self.current_quarter:
-            return self.current_quarter
         d = self.reporting_month or fields.Date.context_today(self)
-        # workbook: Q1 = Aug-Oct, Q2 = Nov-Jan, Q3 = Feb-Apr, Q4 = May-Jul
-        return {8: "q1", 9: "q1", 10: "q1", 11: "q2", 12: "q2", 1: "q2",
-                2: "q3", 3: "q3", 4: "q3", 5: "q4", 6: "q4", 7: "q4"}.get(d.month, "q1")
+        if d:
+            # workbook: Q1 = Aug-Oct, Q2 = Nov-Jan, Q3 = Feb-Apr, Q4 = May-Jul
+            return {8: "q1", 9: "q1", 10: "q1", 11: "q2", 12: "q2", 1: "q2",
+                    2: "q3", 3: "q3", 4: "q3", 5: "q4", 6: "q4", 7: "q4"}.get(d.month, "q1")
+        return self.active_quarter or self.current_quarter or "q1"
 
     def _quarter_label(self):
         return _QUARTER_LABEL.get(self._report_quarter(), "")
