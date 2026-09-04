@@ -68,3 +68,17 @@ class EosRisk(models.Model):
                 risk.rating = 'yellow'
             else:
                 risk.rating = 'green'
+
+    @api.model
+    def _get_top_risk(self, market=None):
+        """The single highest-priority open risk: highest risk_score, and
+        among ties, whichever was logged first (id ascending - the same
+        tie-break as the workbook's row-order hack, without needing one).
+        Replaces the source formula's INDEX/MATCH/LARGE lookup against the
+        Priority Helper column; call .mitigation / .name / etc on the
+        result, which is an empty recordset (falsy, blank fields) if there
+        are no open risks."""
+        domain = [('status', '!=', 'resolved')]
+        if market:
+            domain.append(('market_id', '=', market.id))
+        return self.search(domain, order='risk_score desc, id asc', limit=1)
