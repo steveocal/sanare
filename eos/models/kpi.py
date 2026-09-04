@@ -201,15 +201,23 @@ class EosKpiValue(models.Model):
         return self.create(vals)
 
     @api.model
-    def _cron_snapshot(self):
-        """Lock the just-finished week and/or month into history, using each
-        KPI's live formula. Runs daily; internally only acts on the actual
-        last day of a week (Sunday) and/or a month, so it fires once at each
-        boundary regardless of month length. KPIs with no live formula
-        (cm2_sold, case_documentation, ...) are left alone - matches the
-        source workbook's "enter confirmed total" - so a human fills those
-        in via the KPI Snapshot board afterwards without a cron run
-        clobbering a manual figure with zero."""
+    def _cron_snapshot_market(self, market_code):
+        """Lock the just-finished week and/or month into history for ONE
+        market, using each KPI's live formula. One cron per market (rather
+        than a single all-markets job) so Thailand and Singapore can be
+        scheduled, enabled/disabled and monitored independently.
+
+        Runs daily; internally only acts on the actual last day of a week
+        (Sunday) and/or a month, so it fires once at each boundary
+        regardless of month length. KPIs with no live formula (cm2_sold,
+        case_documentation, ...) are left alone - matches the source
+        workbook's "enter confirmed total" - so a human fills those in via
+        the KPI Snapshot board afterwards without a cron run clobbering a
+        manual figure with zero."""
+        market = self.env['eos.market'].search([('code', '=', market_code)], limit=1)
+        if not market:
+            return
+
         today = fields.Date.context_today(self)
         due = []
         if today.weekday() == 6:  # Sunday: the week ending today is done
@@ -222,12 +230,10 @@ class EosKpiValue(models.Model):
 
         Kpi = self.env['eos.kpi']
         kpis = Kpi.search([('frequency', '!=', False)])
-        markets = self.env['eos.market'].search([])
         for period_type in due:
             start, end = Kpi._period_bounds(period_type, today)
-            for market in markets:
-                for kpi in kpis:
-                    value = kpi._compute_live(market, start, end)
-                    if value is None:
-                        continue
-                    self._upsert(market, kpi, period_type, start, value)
+            for kpi in kpis:
+                value = kpi._compute_live(market, start, end)
+                if value is None:
+                    continue
+                self._upsert(market, kpi, period_type, start, value)
