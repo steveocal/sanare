@@ -16,3 +16,7 @@ Product Datasheet.pdf
 deepseek_conv_eos.txt
 scratch_formulas.txt
 generate_eos_data.py
+
+# Generated budget snapshots + local planning
+budget_actuals.xlsx
+.hermes/
