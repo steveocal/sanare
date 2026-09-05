@@ -6,6 +6,9 @@ __pycache__/
 base_accounting_kit/
 base_account_budget/
 advanced_dynamic_dashboard/
+enhanced_document_management/
+ica_web_responsive/
+mcp_server/
 
 # Source / working files kept out of the module repo
 Sanare_Management_Reporting_Engine_v2_ORDERED.xlsx
