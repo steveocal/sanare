@@ -1,0 +1,11 @@
+// Dark-mode-only override for the on-screen EOS report/dashboard cards
+// (report_layout.xml's `report_styles` template, rendered into `board_html`).
+// Loaded solely into the `web.assets_web_dark` bundle (see __manifest__.py),
+// which Odoo only serves when the user's color scheme is dark - so this never
+// touches the PDF/print output, which uses a separate report asset bundle
+// and needs to stay light regardless of the viewer's backend theme.
+.eos-report {
+    .eos-tile { background: #cfd2d7; }
+    table.eos tbody tr:nth-child(even) td { background: #cfd2d7; }
+    .eos-comm .box { background: #cfd2d7; }
+}

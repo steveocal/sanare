@@ -165,13 +165,3 @@
         .tip-warn { color: #ffcf8a; margin-top: 3px; }
     }
 }
-
-.o_web_client.o_dark .eos-gantt {
-    --eos-grid: #3a3a42;
-    --eos-weekend: rgba(255, 255, 255, 0.04);
-    --eos-border: #444;
-    background: var(--o-gray-900, #1e1e24);
-    .eos-gantt-left-head, .eos-gantt-timehead { background: #2a2a31; }
-    .eos-row.is-summary, .eos-gantt-left .eos-row.is-summary { background: #26262d; }
-    .eos-row:hover { background: #2c3646; }
-}
