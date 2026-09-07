@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dms_document_form_onlyoffice" model="ir.ui.view">
+        <field name="name">sanare.document.form.onlyoffice</field>
+        <field name="model">sanare.document</field>
+        <field name="inherit_id" ref="sanare_dms.view_dms_document_form"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//div[hasclass('o_dms_oo_hint')]" position="replace">
+                <div colspan="2" class="mt-2">
+                    <button name="action_edit_onlyoffice" type="object"
+                            string="Edit in ONLYOFFICE" class="btn-primary"
+                            icon="fa-pencil-square-o"
+                            invisible="content_type != 'onlyoffice'"/>
+                    <button name="action_view_onlyoffice" type="object"
+                            string="Open (read-only)" class="btn-secondary ms-1"
+                            icon="fa-eye"
+                            invisible="content_type != 'onlyoffice' or not attachment_id"/>
+                    <button name="action_save_office_version" type="object"
+                            string="Save Version" class="btn-secondary ms-1"
+                            icon="fa-floppy-o"
+                            invisible="content_type != 'onlyoffice' or not attachment_id"/>
+                    <div class="text-muted mt-1">
+                        Concurrent editors co-author in real time; a version is
+                        saved each time the editor is closed.
+                    </div>
+                </div>
+            </xpath>
+
+            <xpath expr="//button[@name='action_open_versions']" position="after">
+                <button name="action_edit_onlyoffice" type="object"
+                        class="oe_stat_button" icon="fa-pencil-square-o"
+                        string="Edit in ONLYOFFICE"
+                        invisible="content_type != 'onlyoffice'"/>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

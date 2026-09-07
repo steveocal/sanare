@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- ============ sanare.document ============ -->
+    <record id="rule_dms_document_manager" model="ir.rule">
+        <field name="name">Document: manager full access</field>
+        <field name="model_id" ref="model_sanare_document"/>
+        <field name="groups" eval="[(4, ref('group_dms_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_dms_document_user_read" model="ir.rule">
+        <field name="name">Document: read own / shared / public</field>
+        <field name="model_id" ref="model_sanare_document"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|', '|',
+                ('owner_id', '=', user.id),
+                ('create_uid', '=', user.id),
+                ('effective_visibility', '=', 'public'),
+                ('allowed_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_dms_document_user_write" model="ir.rule">
+        <field name="name">Document: write own / shared-for-edit</field>
+        <field name="model_id" ref="model_sanare_document"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|',
+                ('owner_id', '=', user.id),
+                ('create_uid', '=', user.id),
+                ('allowed_write_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- ============ sanare.document.version ============ -->
+    <record id="rule_dms_version_manager" model="ir.rule">
+        <field name="name">Version: manager full access</field>
+        <field name="model_id" ref="model_sanare_document_version"/>
+        <field name="groups" eval="[(4, ref('group_dms_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <record id="rule_dms_version_user_read" model="ir.rule">
+        <field name="name">Version: read where document readable</field>
+        <field name="model_id" ref="model_sanare_document_version"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|', '|',
+                ('document_id.owner_id', '=', user.id),
+                ('document_id.create_uid', '=', user.id),
+                ('document_id.effective_visibility', '=', 'public'),
+                ('document_id.allowed_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- ============ sanare.document.access ============ -->
+    <record id="rule_dms_access_manager" model="ir.rule">
+        <field name="name">Share: manager full access</field>
+        <field name="model_id" ref="model_sanare_document_access"/>
+        <field name="groups" eval="[(4, ref('group_dms_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <record id="rule_dms_access_user_read" model="ir.rule">
+        <field name="name">Share: read where document readable</field>
+        <field name="model_id" ref="model_sanare_document_access"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|',
+                ('document_id.owner_id', '=', user.id),
+                ('document_id.create_uid', '=', user.id),
+                ('document_id.allowed_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_dms_access_user_write" model="ir.rule">
+        <field name="name">Share: manage where document editable</field>
+        <field name="model_id" ref="model_sanare_document_access"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|',
+                ('document_id.owner_id', '=', user.id),
+                ('document_id.create_uid', '=', user.id),
+                ('document_id.allowed_write_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_read" eval="False"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- ============ approval requests ============ -->
+    <record id="rule_dms_request_manager" model="ir.rule">
+        <field name="name">Approval request: manager full access</field>
+        <field name="model_id" ref="model_sanare_document_approval_request"/>
+        <field name="groups" eval="[(4, ref('group_dms_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <record id="rule_dms_request_user_read" model="ir.rule">
+        <field name="name">Approval request: read where document readable</field>
+        <field name="model_id" ref="model_sanare_document_approval_request"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|', '|',
+                ('document_id.owner_id', '=', user.id),
+                ('document_id.create_uid', '=', user.id),
+                ('document_id.effective_visibility', '=', 'public'),
+                ('document_id.allowed_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_dms_request_line_manager" model="ir.rule">
+        <field name="name">Approval step: manager full access</field>
+        <field name="model_id" ref="model_sanare_document_approval_request_line"/>
+        <field name="groups" eval="[(4, ref('group_dms_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <record id="rule_dms_request_line_user_read" model="ir.rule">
+        <field name="name">Approval step: read where request readable</field>
+        <field name="model_id" ref="model_sanare_document_approval_request_line"/>
+        <field name="groups" eval="[(4, ref('group_dms_user'))]"/>
+        <field name="domain_force">
+            ['|', '|', '|',
+                ('request_id.document_id.owner_id', '=', user.id),
+                ('request_id.document_id.create_uid', '=', user.id),
+                ('request_id.document_id.effective_visibility', '=', 'public'),
+                ('request_id.document_id.allowed_user_ids', 'in', [user.id])]
+        </field>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>

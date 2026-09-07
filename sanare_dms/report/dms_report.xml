@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_dms_document" model="ir.actions.report">
+        <field name="name">Document</field>
+        <field name="model">sanare.document</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sanare_dms.report_document</field>
+        <field name="report_file">sanare_dms.report_document</field>
+        <field name="binding_model_id" ref="model_sanare_document"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
+                     style="margin: 12mm;">
+                    <h1 t-out="doc.name"/>
+                    <p class="text-muted">
+                        <span t-out="doc.complete_name"/> —
+                        revision v<span t-out="doc.version_number"/> —
+                        <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
+                    </p>
+                    <hr/>
+                    <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
+                    <div t-elif="doc.content_type == 'markdown'"
+                         t-out="doc.content_markdown_html"/>
+                    <div t-elif="doc.content_type == 'onlyoffice'">
+                        <p>Office document: <span t-out="doc.file_name"/>
+                           (<span t-out="doc.file_size"/> bytes).</p>
+                        <p>Open in ONLYOFFICE to view the full contents.</p>
+                    </div>
+                    <div t-else="">
+                        <p>This is a folder containing
+                           <span t-out="doc.child_count"/> item(s).</p>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

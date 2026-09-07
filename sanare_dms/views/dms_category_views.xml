@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dms_category_list" model="ir.ui.view">
+        <field name="name">sanare.document.category.list</field>
+        <field name="model">sanare.document.category</field>
+        <field name="arch" type="xml">
+            <list string="Categories">
+                <field name="complete_name" string="Category"/>
+                <field name="approval_rule_id"/>
+                <field name="document_count" string="Documents"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dms_category_form" model="ir.ui.view">
+        <field name="name">sanare.document.category.form</field>
+        <field name="model">sanare.document.category</field>
+        <field name="arch" type="xml">
+            <form string="Category">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_documents" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="document_count" widget="statinfo" string="Documents"/>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="parent_id"/>
+                        <field name="approval_rule_id"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="active" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dms_category" model="ir.actions.act_window">
+        <field name="name">Categories</field>
+        <field name="res_model">sanare.document.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

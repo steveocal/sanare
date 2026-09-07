@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ==================== LIST ==================== -->
+    <record id="view_dms_document_list" model="ir.ui.view">
+        <field name="name">sanare.document.list</field>
+        <field name="model">sanare.document</field>
+        <field name="arch" type="xml">
+            <list string="Documents">
+                <field name="complete_name" string="Name"/>
+                <field name="content_type"/>
+                <field name="parent_id" optional="hide"/>
+                <field name="category_id" optional="show"/>
+                <field name="owner_id" optional="show"/>
+                <field name="effective_visibility" string="Visibility"/>
+                <field name="version_number" string="Rev"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'to_approve'"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"/>
+                <field name="is_published" string="Public" widget="boolean_toggle" optional="show"/>
+                <field name="tag_ids" widget="many2many_tags" optional="hide"
+                       options="{'color_field': 'color'}"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ==================== KANBAN ==================== -->
+    <record id="view_dms_document_kanban" model="ir.ui.view">
+        <field name="name">sanare.document.kanban</field>
+        <field name="model">sanare.document</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="content_type"/>
+                <field name="child_count"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-2x fa-file-o me-2 text-muted" title="Document"/>
+                                <div class="flex-grow-1">
+                                    <strong><field name="name"/></strong>
+                                    <div class="text-muted">
+                                        <field name="content_type"/>
+                                        <span t-if="record.category_id.raw_value">
+                                            · <field name="category_id"/>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex justify-content-between align-items-center">
+                                <field name="state" widget="badge"
+                                       decoration-info="state == 'draft'"
+                                       decoration-warning="state == 'to_approve'"
+                                       decoration-success="state == 'approved'"
+                                       decoration-danger="state == 'rejected'"/>
+                                <span t-if="record.content_type.raw_value == 'folder'" class="text-muted">
+                                    <i class="fa fa-sitemap" title="Contents"/> <field name="child_count"/>
+                                </span>
+                                <field name="owner_id" widget="many2one_avatar_user"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ==================== FORM ==================== -->
+    <record id="view_dms_document_form" model="ir.ui.view">
+        <field name="name">sanare.document.form</field>
+        <field name="model">sanare.document</field>
+        <field name="arch" type="xml">
+            <form string="Document">
+                <header>
+                    <button name="action_submit" type="object" string="Submit for Approval"
+                            class="btn-primary" invisible="not can_submit"/>
+                    <button name="action_approve" type="object" string="Approve"
+                            class="btn-success" invisible="not can_approve"/>
+                    <button name="action_reject" type="object" string="Reject"
+                            class="btn-danger" invisible="not can_reject"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="state not in ('to_approve', 'rejected', 'approved')"
+                            groups="sanare_dms.group_dms_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,to_approve,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_versions" type="object"
+                                class="oe_stat_button" icon="fa-history"
+                                invisible="content_type == 'folder'">
+                            <field name="version_count" widget="statinfo" string="Versions"/>
+                        </button>
+                        <button name="action_open_children" type="object"
+                                class="oe_stat_button" icon="fa-sitemap">
+                            <field name="child_count" widget="statinfo" string="Contents"/>
+                        </button>
+                        <button name="action_open_website" type="object"
+                                class="oe_stat_button" icon="fa-globe"
+                                invisible="not is_published" string="View on Website"/>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Document name"/></h1>
+                        <field name="complete_name" class="text-muted" readonly="1"
+                               invisible="not parent_id"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="content_type"
+                                   readonly="version_number > 0"/>
+                            <field name="parent_id"
+                                   options="{'no_quick_create': True}"/>
+                            <field name="category_id"/>
+                            <field name="tag_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color', 'no_quick_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="owner_id"/>
+                            <field name="visibility" widget="radio"
+                                   options="{'horizontal': True}"/>
+                            <field name="visibility_inherited" invisible="not parent_id"/>
+                            <field name="effective_visibility" readonly="1"
+                                   invisible="visibility_inherited and parent_id"/>
+                            <field name="approval_rule_id" readonly="1"
+                                   invisible="content_type == 'folder'"/>
+                            <field name="is_published" widget="boolean_toggle"
+                                   readonly="not can_publish"
+                                   help="Publish the approved revision to the public website."/>
+                            <field name="can_publish" invisible="1"/>
+                            <field name="can_submit" invisible="1"/>
+                            <field name="can_approve" invisible="1"/>
+                            <field name="can_reject" invisible="1"/>
+                            <field name="version_number" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Content" name="content"
+                              invisible="content_type == 'folder'">
+                            <field name="content_html" widget="html"
+                                   invisible="content_type != 'html'"
+                                   options="{'codeview': true, 'height': 500}"/>
+                            <field name="content_markdown" widget="sanare_markdown"
+                                   invisible="content_type != 'markdown'"
+                                   nolabel="1"/>
+                            <group invisible="content_type != 'onlyoffice'" name="office_group">
+                                <field name="file_content" filename="file_name"
+                                       string="Office File"/>
+                                <field name="file_name" invisible="1"/>
+                                <field name="file_size" readonly="1"/>
+                                <field name="mimetype" readonly="1"/>
+                                <div class="text-muted o_dms_oo_hint" colspan="2">
+                                    Install <b>Sanare Document Management — ONLYOFFICE</b>
+                                    to edit this file in place with real-time co-editing.
+                                </div>
+                            </group>
+                        </page>
+                        <page string="Sharing" name="sharing">
+                            <field name="access_ids">
+                                <list editable="bottom">
+                                    <field name="partner_id"/>
+                                    <field name="group_id"/>
+                                    <field name="permission"/>
+                                </list>
+                            </field>
+                            <group string="Resolved access" col="2"
+                                   groups="base.group_no_one">
+                                <field name="allowed_user_ids" widget="many2many_tags"/>
+                                <field name="allowed_write_user_ids" widget="many2many_tags"/>
+                            </group>
+                        </page>
+                        <page string="Versions" name="versions"
+                              invisible="content_type == 'folder'">
+                            <field name="version_ids" readonly="1">
+                                <list>
+                                    <field name="version_number" string="Rev"/>
+                                    <field name="create_date" string="Saved on"/>
+                                    <field name="author_id"/>
+                                    <field name="changelog"/>
+                                    <field name="is_current" widget="boolean"/>
+                                    <field name="is_approved" widget="boolean" string="Published"/>
+                                    <button name="action_restore" type="object"
+                                            string="Restore" icon="fa-undo"/>
+                                    <button name="action_open" type="object"
+                                            string="Open" icon="fa-eye"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Approval" name="approval"
+                              invisible="not approval_request_id">
+                            <group>
+                                <field name="approval_request_id" readonly="1"/>
+                                <field name="approval_rule_id" readonly="1"/>
+                            </group>
+                            <field name="approval_line_ids" readonly="1">
+                                <list>
+                                    <field name="sequence" string="#"/>
+                                    <field name="name"/>
+                                    <field name="approver_ids" widget="many2many_tags"/>
+                                    <field name="approval_mode"/>
+                                    <field name="approver_done_ids" widget="many2many_tags"
+                                           string="Signed"/>
+                                    <field name="status" widget="badge"
+                                           decoration-warning="status == 'pending'"
+                                           decoration-success="status == 'approved'"
+                                           decoration-danger="status == 'rejected'"/>
+                                    <field name="decided_by"/>
+                                    <field name="decided_on"/>
+                                    <field name="comment"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Contents" name="contents"
+                              invisible="content_type != 'folder'">
+                            <field name="child_ids" context="{'default_parent_id': id}">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="content_type"/>
+                                    <field name="owner_id"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ==================== SEARCH ==================== -->
+    <record id="view_dms_document_search" model="ir.ui.view">
+        <field name="name">sanare.document.search</field>
+        <field name="model">sanare.document</field>
+        <field name="arch" type="xml">
+            <search string="Documents">
+                <field name="name"
+                       filter_domain="['|', ('name', 'ilike', self), ('complete_name', 'ilike', self)]"/>
+                <field name="category_id"/>
+                <field name="tag_ids"/>
+                <field name="owner_id"/>
+                <field name="parent_id"/>
+                <separator/>
+                <filter name="top_level" string="Top Level" domain="[('parent_id', '=', False)]"/>
+                <filter name="folders" string="Folders" domain="[('content_type', '=', 'folder')]"/>
+                <filter name="documents" string="Documents" domain="[('content_type', '!=', 'folder')]"/>
+                <separator/>
+                <filter name="my_docs" string="My Documents" domain="[('owner_id', '=', uid)]"/>
+                <filter name="shared_with_me" string="Shared with Me"
+                        domain="[('allowed_user_ids', 'in', [uid]), ('owner_id', '!=', uid)]"/>
+                <filter name="pending_my_approval" string="Pending My Approval"
+                        domain="[('state', '=', 'to_approve'),
+                                 ('approval_request_id.line_ids.approver_ids', 'in', [uid]),
+                                 ('approval_request_id.line_ids.status', '=', 'pending')]"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="to_approve" string="To Approve" domain="[('state', '=', 'to_approve')]"/>
+                <filter name="approved" string="Approved" domain="[('state', '=', 'approved')]"/>
+                <filter name="published" string="Published" domain="[('is_published', '=', True)]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <group name="group_by">
+                    <filter name="gb_parent" string="Parent" context="{'group_by': 'parent_id'}"/>
+                    <filter name="gb_category" string="Category" context="{'group_by': 'category_id'}"/>
+                    <filter name="gb_owner" string="Owner" context="{'group_by': 'owner_id'}"/>
+                    <filter name="gb_type" string="Type" context="{'group_by': 'content_type'}"/>
+                    <filter name="gb_state" string="Status" context="{'group_by': 'state'}"/>
+                    <filter name="gb_visibility" string="Visibility"
+                            context="{'group_by': 'effective_visibility'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_dms_document" model="ir.actions.act_window">
+        <field name="name">Documents</field>
+        <field name="res_model">sanare.document</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_dms_document_search"/>
+        <field name="context">{'search_default_top_level': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first document or folder</p>
+            <p>Store office documents, web pages and Markdown notes in a hierarchy,
+               with versioning, approvals and Private / Shared / Public visibility.</p>
+        </field>
+    </record>
+
+    <record id="action_dms_document_pending" model="ir.actions.act_window">
+        <field name="name">Pending My Approval</field>
+        <field name="res_model">sanare.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_pending_my_approval': 1}</field>
+    </record>
+
+</odoo>

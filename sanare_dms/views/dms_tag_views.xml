@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dms_tag_list" model="ir.ui.view">
+        <field name="name">sanare.document.tag.list</field>
+        <field name="model">sanare.document.tag</field>
+        <field name="arch" type="xml">
+            <list string="Tags" editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_dms_tag" model="ir.actions.act_window">
+        <field name="name">Tags</field>
+        <field name="res_model">sanare.document.tag</field>
+        <field name="view_mode">list</field>
+    </record>
+
+</odoo>

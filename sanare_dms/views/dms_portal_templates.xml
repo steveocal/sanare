@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="portal_my_home_documents" name="Portal: My Documents entry"
+              inherit_id="portal.portal_my_home" priority="40">
+        <xpath expr="//div[@id='portal_common_category']" position="inside">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/sanare_dms/static/description/icon.png'"/>
+                <t t-set="title">Documents</t>
+                <t t-set="url" t-value="'/my/documents'"/>
+                <t t-set="text">Documents you own or may read</t>
+                <t t-set="placeholder_count" t-value="'document_count'"/>
+            </t>
+        </xpath>
+    </template>
+
+    <template id="portal_my_documents" name="My Documents">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Documents</t>
+            </t>
+            <t t-if="not documents" class="alert alert-info">
+                <p>You don't have any documents yet.</p>
+            </t>
+            <div t-if="documents" class="o_portal_my_doc_table">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Revision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="documents" t-as="document">
+                            <td t-out="document.complete_name"/>
+                            <td class="text-uppercase" t-out="document.content_type"/>
+                            <td t-out="document.state"/>
+                            <td>v<span t-out="document.version_number"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="o_portal_pager">
+                <t t-call="portal.pager"/>
+            </div>
+        </t>
+    </template>
+
+</odoo>

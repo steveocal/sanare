@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_dms_approval_rule_list" model="ir.ui.view">
+        <field name="name">sanare.document.approval.rule.list</field>
+        <field name="model">sanare.document.approval.rule</field>
+        <field name="arch" type="xml">
+            <list string="Approval Rules">
+                <field name="name"/>
+                <field name="category_ids" widget="many2many_tags"/>
+                <field name="folder_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_dms_approval_rule_form" model="ir.ui.view">
+        <field name="name">sanare.document.approval.rule.form</field>
+        <field name="model">sanare.document.approval.rule</field>
+        <field name="arch" type="xml">
+            <form string="Approval Rule">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="active" invisible="1"/>
+                    </group>
+                    <group string="Applies to">
+                        <field name="category_ids" widget="many2many_tags"/>
+                        <field name="folder_ids" widget="many2many_tags"
+                               options="{'no_create': True}"/>
+                    </group>
+                    <field name="line_ids">
+                        <list string="Steps" editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="approver_type"/>
+                            <field name="user_ids" widget="many2many_tags"
+                                   invisible="approver_type != 'users'"
+                                   required="approver_type == 'users'"/>
+                            <field name="group_id"
+                                   invisible="approver_type != 'group'"
+                                   required="approver_type == 'group'"/>
+                            <field name="approval_mode"/>
+                        </list>
+                    </field>
+                    <field name="note" placeholder="Internal notes…"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dms_approval_rule" model="ir.actions.act_window">
+        <field name="name">Approval Rules</field>
+        <field name="res_model">sanare.document.approval.rule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

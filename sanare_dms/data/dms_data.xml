@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- Example categories -->
+    <record id="category_policies" model="sanare.document.category">
+        <field name="name">Policies &amp; Procedures</field>
+    </record>
+    <record id="category_contracts" model="sanare.document.category">
+        <field name="name">Contracts</field>
+    </record>
+    <record id="category_marketing" model="sanare.document.category">
+        <field name="name">Marketing</field>
+    </record>
+    <record id="category_public" model="sanare.document.category">
+        <field name="name">Published / Public</field>
+    </record>
+
+    <!-- A ready-to-use single-step approval rule.
+         Documents with no category rule and no ancestor-folder rule fall back
+         to a single "any Document Manager" step automatically, so this rule is
+         a starting template rather than a hard requirement. -->
+    <record id="approval_rule_standard" model="sanare.document.approval.rule">
+        <field name="name">Standard Approval</field>
+    </record>
+    <record id="approval_rule_standard_line" model="sanare.document.approval.rule.line">
+        <field name="rule_id" ref="approval_rule_standard"/>
+        <field name="sequence">10</field>
+        <field name="name">Manager sign-off</field>
+        <field name="approver_type">group</field>
+        <field name="group_id" ref="group_dms_manager"/>
+        <field name="approval_mode">any</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_dms_reject_wizard_form" model="ir.ui.view">
+        <field name="name">sanare.document.reject.wizard.form</field>
+        <field name="model">sanare.document.reject.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Reject Document">
+                <field name="document_id" invisible="1"/>
+                <group>
+                    <field name="reason" placeholder="Explain why this revision is rejected…"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Reject" class="btn-danger"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

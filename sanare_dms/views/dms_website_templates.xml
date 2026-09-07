@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="documents_index" name="Public Documents">
+        <t t-call="website.layout">
+            <div class="container my-4 o_sanare_dms_index">
+                <h1 class="mb-4">Documents</h1>
+                <form method="get" action="/documents" class="row g-2 mb-4">
+                    <div class="col-md-8">
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Search documents…" t-att-value="search"/>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                    </div>
+                    <div class="col-md-2" t-if="categories">
+                        <select name="category" class="form-select"
+                                onchange="this.form.submit()">
+                            <option value="">All categories</option>
+                            <t t-foreach="categories" t-as="cat">
+                                <option t-att-value="cat.id"
+                                        t-att-selected="active_category == cat.id"
+                                        t-out="cat.complete_name"/>
+                            </t>
+                        </select>
+                    </div>
+                </form>
+
+                <div t-if="not documents" class="alert alert-info">
+                    No published documents found.
+                </div>
+
+                <div class="list-group">
+                    <a t-foreach="documents" t-as="document"
+                       t-att-href="'/documents/%s' % document.id"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fw-bold" t-out="document.name"/>
+                            <small class="text-muted" t-out="document.category_id.complete_name"/>
+                        </div>
+                        <span class="badge text-bg-secondary text-uppercase"
+                              t-out="document.content_type"/>
+                    </a>
+                </div>
+
+                <div class="mt-4">
+                    <t t-call="website.pager"/>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="documents_page" name="Public Document">
+        <t t-call="website.layout">
+            <div class="container my-4 o_sanare_dms_page">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/documents">Documents</a></li>
+                        <li class="breadcrumb-item active" t-out="document.name"/>
+                    </ol>
+                </nav>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h1 class="mb-0" t-out="document.name"/>
+                    <a t-att-href="'/documents/%s/download' % document.id"
+                       class="btn btn-outline-primary">
+                        <i class="fa fa-download"/> Download
+                    </a>
+                </div>
+                <p class="text-muted" t-if="document.category_id"
+                   t-out="document.category_id.complete_name"/>
+                <hr/>
+
+                <div t-if="body" class="o_sanare_dms_body" t-out="body"/>
+
+                <div t-elif="document.content_type == 'onlyoffice'" class="alert alert-secondary">
+                    <p class="mb-1"><strong t-out="document.file_name"/></p>
+                    <p class="mb-0">
+                        Use the Download button above to get this office document.
+                    </p>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>

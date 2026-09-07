@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_dms_root" name="Documents" sequence="90"
+              web_icon="sanare_dms,static/description/icon.png"/>
+
+    <menuitem id="menu_dms_documents" name="Documents"
+              parent="menu_dms_root" action="action_dms_document" sequence="10"/>
+
+    <menuitem id="menu_dms_pending" name="Pending My Approval"
+              parent="menu_dms_root" action="action_dms_document_pending" sequence="20"/>
+
+    <menuitem id="menu_dms_config" name="Configuration"
+              parent="menu_dms_root" sequence="90"
+              groups="sanare_dms.group_dms_manager"/>
+
+    <menuitem id="menu_dms_categories" name="Categories"
+              parent="menu_dms_config" action="action_dms_category" sequence="10"/>
+
+    <menuitem id="menu_dms_tags" name="Tags"
+              parent="menu_dms_config" action="action_dms_tag" sequence="20"/>
+
+    <menuitem id="menu_dms_approval_rules" name="Approval Rules"
+              parent="menu_dms_config" action="action_dms_approval_rule" sequence="30"/>
+
+</odoo>
