@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_dms_browser" model="ir.actions.client">
+        <field name="name">Browse Documents</field>
+        <field name="tag">sanare_dms.browser</field>
+    </record>
+
+</odoo>

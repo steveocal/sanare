@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management — ONLYOFFICE",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sanare_dms.DmsBrowser">
+        <div class="o_dms_browser d-flex flex-column h-100" t-att-class="props.className">
+
+            <!-- toolbar -->
+            <div class="o_dms_toolbar d-flex align-items-center gap-2 p-2 border-bottom">
+                <ol class="breadcrumb mb-0 flex-grow-1">
+                    <li class="breadcrumb-item">
+                        <a href="#" t-on-click.prevent="() => this.selectFolder(false)"
+                           t-att-class="{ 'o_dms_drop_target': state.dragOverId === 'root' }"
+                           t-on-dragover="(ev) => this.onFolderDragOver(false, ev)"
+                           t-on-dragleave="() => this.onFolderDragLeave()"
+                           t-on-drop="(ev) => this.onFolderDrop(false, ev)">
+                            <i class="fa fa-database me-1"/>Documents
+                        </a>
+                    </li>
+                    <t t-foreach="state.breadcrumb" t-as="crumb" t-key="crumb.id">
+                        <li class="breadcrumb-item"
+                            t-att-class="{ active: crumb_last }">
+                            <a t-if="!crumb_last" href="#"
+                               t-on-click.prevent="() => this.selectFolder(crumb.id)"
+                               t-esc="crumb.name"/>
+                            <span t-else="" t-esc="crumb.name"/>
+                        </li>
+                    </t>
+                </ol>
+
+                <button class="btn btn-sm btn-secondary" t-on-click="() => this.startNewFolder()">
+                    <i class="fa fa-folder-o me-1"/>New Folder
+                </button>
+
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-primary"
+                            t-on-click="() => state.newMenuOpen = !state.newMenuOpen">
+                        <i class="fa fa-plus me-1"/>New Document <i class="fa fa-caret-down ms-1"/>
+                    </button>
+                    <div t-if="state.newMenuOpen" class="o_dms_menu shadow-sm">
+                        <t t-foreach="newTypes" t-as="nt" t-key="nt[0]">
+                            <a t-if="nt[0] !== 'folder'" href="#" class="dropdown-item"
+                               t-on-click.prevent="() => this.pickNewType(nt[0])"
+                               t-esc="nt[1]"/>
+                        </t>
+                    </div>
+                </div>
+
+                <button class="btn btn-sm btn-light" title="Refresh"
+                        t-on-click="() => this.refresh()">
+                    <i class="fa fa-refresh"/>
+                </button>
+            </div>
+
+            <!-- body -->
+            <div class="o_dms_body d-flex flex-grow-1 overflow-hidden">
+
+                <!-- tree pane -->
+                <div class="o_dms_tree border-end p-1 overflow-auto">
+                    <div class="o_dms_tree_row o_dms_root d-flex align-items-center px-2 py-1 rounded"
+                         t-att-class="{
+                             'o_dms_selected': state.selectedId === false,
+                             'o_dms_drop_target': state.dragOverId === 'root' }"
+                         t-on-click="() => this.selectFolder(false)"
+                         t-on-dragover="(ev) => this.onFolderDragOver(false, ev)"
+                         t-on-dragleave="() => this.onFolderDragLeave()"
+                         t-on-drop="(ev) => this.onFolderDrop(false, ev)">
+                        <i class="fa fa-database me-2 text-primary"/>
+                        <span class="fw-bold">Documents</span>
+                    </div>
+                    <div t-if="state.loadingTree" class="text-muted small px-2 py-1">Loading…</div>
+                    <t t-foreach="state.tree" t-as="node" t-key="node.id">
+                        <DmsTreeNode node="node" depth="0"/>
+                    </t>
+                    <div t-if="!state.loadingTree and !state.tree.length"
+                         class="text-muted small px-2 py-1">No folders yet</div>
+                </div>
+
+                <!-- list pane -->
+                <div class="o_dms_list flex-grow-1 overflow-auto">
+                    <table class="table table-sm table-hover mb-0 o_dms_table">
+                        <thead class="o_dms_thead">
+                            <tr>
+                                <th style="width: 45%">Name</th>
+                                <th>Type</th>
+                                <th>Owner</th>
+                                <th>Visibility</th>
+                                <th>Status</th>
+                                <th>Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-if="state.creatingFolder">
+                                <td colspan="6">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa fa-folder-o text-warning"/>
+                                        <input type="text" class="form-control form-control-sm w-auto"
+                                               placeholder="Folder name…"
+                                               t-att-value="state.newFolderName"
+                                               t-on-input="(ev) => this.state.newFolderName = ev.target.value"
+                                               t-on-keydown="(ev) => this.onNewFolderKeydown(ev)"
+                                               t-ref="newFolderInput"/>
+                                        <button class="btn btn-sm btn-primary"
+                                                t-on-click="() => this.confirmNewFolder()">Create</button>
+                                        <button class="btn btn-sm btn-link"
+                                                t-on-click="() => this.cancelNewFolder()">Cancel</button>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr t-foreach="state.records" t-as="rec" t-key="rec.id"
+                                class="o_dms_row"
+                                draggable="true"
+                                t-att-class="{
+                                    'o_dms_selected': state.selection.has(rec.id),
+                                    'o_dms_drop_target': rec.is_folder and state.dragOverId === rec.id,
+                                    'o_dms_is_folder': rec.is_folder }"
+                                t-on-click="(ev) => this.onRowClick(rec, ev)"
+                                t-on-dblclick="() => this.onRowDblClick(rec)"
+                                t-on-dragstart="(ev) => this.onItemDragStart(rec, ev)"
+                                t-on-dragover="(ev) => rec.is_folder ? this.onFolderDragOver(rec.id, ev) : null"
+                                t-on-dragleave="() => rec.is_folder ? this.onFolderDragLeave() : null"
+                                t-on-drop="(ev) => rec.is_folder ? this.onFolderDrop(rec.id, ev) : null">
+                                <td>
+                                    <i class="fa me-2" t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
+                                    <span t-esc="rec.name"/>
+                                    <span t-if="rec.is_folder and rec.child_count"
+                                          class="badge text-bg-light ms-2" t-esc="rec.child_count"/>
+                                </td>
+                                <td class="text-muted" t-esc="rec.is_folder ? 'Folder' : rec.content_type_label"/>
+                                <td class="text-muted" t-esc="rec.owner"/>
+                                <td class="text-muted text-capitalize" t-esc="rec.visibility"/>
+                                <td>
+                                    <span t-if="!rec.is_folder" class="badge"
+                                          t-att-class="this.stateClass(rec.state)" t-esc="rec.state_label"/>
+                                </td>
+                                <td class="text-muted small" t-esc="rec.updated"/>
+                            </tr>
+
+                            <tr t-if="!state.loadingList and !state.records.length and !state.creatingFolder">
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    This folder is empty. Drag items here, or use “New”.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <!-- recursive folder node -->
+    <t t-name="sanare_dms.DmsTreeNode">
+        <div class="o_dms_tree_row d-flex align-items-center px-1 py-1 rounded"
+             t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
+             t-att-class="{ 'o_dms_selected': isSelected, 'o_dms_drop_target': isDragOver }"
+             draggable="true"
+             t-on-click="() => env.dms.select(props.node.id)"
+             t-on-dragstart="(ev) => env.dms.dragStart(props.node, ev)"
+             t-on-dragover="(ev) => env.dms.dragOver(props.node.id, ev)"
+             t-on-dragleave="() => env.dms.dragLeave()"
+             t-on-drop="(ev) => env.dms.drop(props.node.id, ev)">
+            <span class="o_dms_caret" t-on-click.stop="() => env.dms.toggle(props.node)">
+                <i t-if="props.node.has_subfolders" class="fa"
+                   t-att-class="props.node.expanded ? 'fa-caret-down' : 'fa-caret-right'"/>
+                <i t-else="" class="fa fa-fw"/>
+            </span>
+            <i class="fa fa-folder me-2 text-warning"/>
+            <span class="text-truncate" t-esc="props.node.name"/>
+            <i t-if="props.node.loading" class="fa fa-spinner fa-spin ms-2 small"/>
+        </div>
+        <t t-if="props.node.expanded and props.node.children">
+            <t t-foreach="props.node.children" t-as="child" t-key="child.id">
+                <DmsTreeNode node="child" depth="props.depth + 1"/>
+            </t>
+        </t>
+    </t>
+
+</templates>

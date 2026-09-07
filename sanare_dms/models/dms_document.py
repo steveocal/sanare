@@ -3,7 +3,7 @@ import re
 from markupsafe import escape
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tools import html_sanitize
 
 CONTENT_TYPES = [
@@ -680,3 +680,95 @@ class SanareDocument(models.Model):
     def action_open_website(self):
         self.ensure_one()
         return self.env["website"].get_client_action(self.website_url)
+
+    @api.constrains("parent_id")
+    def _check_parent_recursion(self):
+        if self._has_cycle():
+            raise ValidationError(
+                self.env._("A document cannot be placed inside itself.")
+            )
+
+    # ==================================================================
+    # Tree browser  (client action "sanare_dms.browser")
+    # ==================================================================
+    @api.model
+    def browser_folders(self, parent_id=False):
+        """Folders directly under ``parent_id`` (falsy = top level)."""
+        folders = self.search(
+            [("content_type", "=", "folder"), ("parent_id", "=", parent_id or False)],
+            order="name",
+        )
+        sub = dict(
+            self._read_group(
+                [("content_type", "=", "folder"), ("parent_id", "in", folders.ids)],
+                ["parent_id"],
+                ["__count"],
+            )
+        )
+        return [
+            {"id": f.id, "name": f.name, "has_subfolders": bool(sub.get(f))}
+            for f in folders
+        ]
+
+    @api.model
+    def _browser_breadcrumb(self, parent_id):
+        crumbs = []
+        rec = self.browse(parent_id) if parent_id else self.browse()
+        guard = 0
+        while rec and guard < 100:
+            crumbs.insert(0, {"id": rec.id, "name": rec.name})
+            rec = rec.parent_id
+            guard += 1
+        return crumbs
+
+    @api.model
+    def browser_contents(self, parent_id=False):
+        recs = self.search(
+            [("parent_id", "=", parent_id or False)], order="is_folder desc, name"
+        )
+        ctypes = dict(CONTENT_TYPES)
+        states = dict(self._fields["state"].selection)
+        return {
+            "breadcrumb": self._browser_breadcrumb(parent_id),
+            "records": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "is_folder": r.is_folder,
+                    "content_type": r.content_type,
+                    "content_type_label": ctypes.get(r.content_type),
+                    "state": r.state,
+                    "state_label": states.get(r.state),
+                    "owner": r.owner_id.display_name,
+                    "visibility": r.effective_visibility,
+                    "child_count": r.child_count if r.is_folder else 0,
+                    "updated": fields.Datetime.to_string(r.write_date),
+                }
+                for r in recs
+            ],
+        }
+
+    @api.model
+    def browser_move(self, doc_ids, target_parent_id):
+        docs = self.browse(doc_ids).exists()
+        if not docs:
+            return False
+        target = self.browse(target_parent_id) if target_parent_id else self.browse()
+        if target:
+            if target.content_type != "folder":
+                raise UserError(self.env._("Items can only be moved into a folder."))
+            if target in docs:
+                raise UserError(self.env._("You cannot move a folder into itself."))
+        docs.write({"parent_id": target.id if target else False})
+        return True
+
+    @api.model
+    def browser_create_folder(self, name, parent_id=False):
+        folder = self.create(
+            {
+                "name": (name or "").strip() or self.env._("New Folder"),
+                "content_type": "folder",
+                "parent_id": parent_id or False,
+            }
+        )
+        return folder.id

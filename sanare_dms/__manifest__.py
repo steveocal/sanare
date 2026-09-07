@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.1.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -26,6 +26,7 @@
         "views/dms_tag_views.xml",
         "views/dms_approval_views.xml",
         "views/dms_document_views.xml",
+        "views/dms_browser_views.xml",
         "views/dms_menus.xml",
         "report/dms_report.xml",
         "views/dms_portal_templates.xml",
@@ -37,6 +38,9 @@
             "sanare_dms/static/src/markdown_field/markdown_field.scss",
             "sanare_dms/static/src/markdown_field/markdown_field.js",
             "sanare_dms/static/src/markdown_field/markdown_field.xml",
+            "sanare_dms/static/src/browser/dms_browser.scss",
+            "sanare_dms/static/src/browser/dms_browser.js",
+            "sanare_dms/static/src/browser/dms_browser.xml",
         ],
         "web.assets_frontend": [
             "sanare_dms/static/src/scss/dms_frontend.scss",

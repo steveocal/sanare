@@ -82,6 +82,42 @@ class TestSanareDms(TransactionCase):
         self.assertIn("<strong>b</strong>", html)
         self.assertIn("<li>x</li>", html)
 
+    def test_browser_tree_contents_and_move(self):
+        root = self.Doc.create({"name": "Root", "content_type": "folder"})
+        a = self.Doc.create({"name": "A", "content_type": "folder", "parent_id": root.id})
+        b = self.Doc.create({"name": "B", "content_type": "folder", "parent_id": root.id})
+        doc = self.Doc.create(
+            {"name": "d1", "content_type": "markdown", "parent_id": a.id,
+             "content_markdown": "x"}
+        )
+        # tree
+        top = self.Doc.browser_folders(False)
+        self.assertIn("Root", [f["name"] for f in top])
+        kids = self.Doc.browser_folders(root.id)
+        self.assertEqual({f["name"] for f in kids}, {"A", "B"})
+        # contents + breadcrumb
+        res = self.Doc.browser_contents(a.id)
+        self.assertEqual([r["name"] for r in res["records"]], ["d1"])
+        self.assertEqual([c["name"] for c in res["breadcrumb"]], ["Root", "A"])
+        # move doc A -> B
+        self.Doc.browser_move([doc.id], b.id)
+        self.assertEqual(doc.parent_id, b)
+        # move to root (unfile)
+        self.Doc.browser_move([doc.id], False)
+        self.assertFalse(doc.parent_id)
+        # cannot move a folder into itself / its descendant
+        with self.assertRaises(Exception):
+            self.Doc.browser_move([root.id], a.id)
+        # cannot drop onto a non-folder
+        with self.assertRaises(UserError):
+            self.Doc.browser_move([b.id], doc.id)
+
+    def test_parent_recursion_blocked(self):
+        f1 = self.Doc.create({"name": "f1", "content_type": "folder"})
+        f2 = self.Doc.create({"name": "f2", "content_type": "folder", "parent_id": f1.id})
+        with self.assertRaises(Exception):
+            f1.parent_id = f2.id
+
     def test_record_rule_hides_private_docs(self):
         self.Doc.create(
             {"name": "secret", "content_type": "html", "owner_id": self.manager.id,

@@ -4,9 +4,9 @@
     <menuitem id="menu_dms_root" name="Documents" sequence="50"
               web_icon="sanare_dms,static/description/icon.png"/>
 
-    <!-- Browse: opens at the top of the tree, drill into folders from the form -->
+    <!-- Browse: two-pane folder tree + document list, drag &amp; drop to move -->
     <menuitem id="menu_dms_browse" name="Browse"
-              parent="menu_dms_root" action="action_dms_document" sequence="10"/>
+              parent="menu_dms_root" action="action_dms_browser" sequence="10"/>
 
     <!-- Flat list of every document the user may see -->
     <menuitem id="menu_dms_all" name="All Documents"
