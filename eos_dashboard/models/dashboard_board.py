@@ -283,6 +283,7 @@ class EosDashboardBoard(models.Model):
         Phys = env["eos.physician"]
         Sku = env["eos.sku"]
         Uof = env["eos.use.of.funds"]
+        FpLine = env["eos.financial.period.line"]
 
         for b in self:
             # Reset everything to its empty value; only the branch matching
@@ -318,6 +319,7 @@ class EosDashboardBoard(models.Model):
             b.fp_net_cash_burn = b.fp_runway_months = 0.0
             b.fp_gross_margin_pct = 0.0
             b.fp_capital_received = b.fp_committed_unspent = 0.0
+            b.financial_line_ids = FpLine.browse()
             b.use_of_funds_ids = Uof.browse()
             b.risks_open_red = b.risks_open_yellow = b.risks_worsening = 0
             b.top_risk_ids = Risk.browse()
