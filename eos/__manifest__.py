@@ -51,9 +51,6 @@ financial reports in a later phase.
             'eos/static/src/gantt/eos_gantt.xml',
             'eos/static/src/gantt/eos_gantt.js',
         ],
-        'web.assets_web_dark': [
-            'eos/static/src/gantt/eos_gantt_dark.scss',
-        ],
     },
     'installable': True,
     'application': True,

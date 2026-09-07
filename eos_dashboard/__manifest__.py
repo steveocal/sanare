@@ -30,11 +30,6 @@
         "views/thailand_readiness_views.xml",
         "data/sample_data.xml",
     ],
-    "assets": {
-        "web.assets_web_dark": [
-            "eos_dashboard/static/src/scss/eos_report_dark.scss",
-        ],
-    },
     "installable": True,
     "application": False,
     "auto_install": False,
