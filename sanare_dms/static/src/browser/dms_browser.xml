@@ -45,6 +45,19 @@
                     </t>
                 </Dropdown>
 
+                <button class="btn btn-sm btn-secondary" title="Copy (Ctrl+C)"
+                        t-att-disabled="!state.selection.size"
+                        t-on-click="() => this.copySelection()">
+                    <i class="fa fa-clone"/>
+                </button>
+                <button class="btn btn-sm btn-secondary" title="Paste (Ctrl+V)"
+                        t-att-disabled="!state.clipboard.ids.length"
+                        t-on-click="() => this.pasteClipboard()">
+                    <i class="fa fa-clipboard"/>
+                    <span t-if="state.clipboard.ids.length" class="badge text-bg-light ms-1"
+                          t-esc="state.clipboard.ids.length"/>
+                </button>
+
                 <button class="btn btn-sm btn-secondary" title="Refresh"
                         t-on-click="() => this.refresh()">
                     <i class="fa fa-refresh"/>
@@ -86,11 +99,12 @@
                                 <th>Visibility</th>
                                 <th>Status</th>
                                 <th>Updated</th>
+                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr t-if="state.creatingFolder">
-                                <td colspan="6">
+                                <td colspan="7">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="fa fa-folder-o text-warning"/>
                                         <input type="text" class="form-control form-control-sm w-auto"
@@ -134,10 +148,30 @@
                                           t-att-class="this.stateClass(rec.state)" t-esc="rec.state_label"/>
                                 </td>
                                 <td class="text-muted small" t-esc="rec.updated"/>
+                                <td class="text-end text-nowrap o_dms_actions">
+                                    <span class="o_dms_reorder me-1">
+                                        <i class="fa fa-caret-up" title="Move up"
+                                           t-on-click="(ev) => { ev.stopPropagation(); this.reorder(rec.id, 'up'); }"/>
+                                        <i class="fa fa-caret-down" title="Move down"
+                                           t-on-click="(ev) => { ev.stopPropagation(); this.reorder(rec.id, 'down'); }"/>
+                                    </span>
+                                    <i class="fa fa-print mx-1"
+                                       t-att-title="rec.is_folder ? 'Print (includes contents)' : 'Print'"
+                                       t-on-click="(ev) => this.printDocument(rec, ev)"/>
+                                    <i t-if="!rec.is_folder" class="fa fa-download mx-1" title="Download"
+                                       t-on-click="(ev) => this.downloadDocument(rec, ev)"/>
+                                    <i t-if="!rec.is_folder" class="fa fa-globe mx-1" title="Toggle publish to website"
+                                       t-att-class="{ 'text-success': rec.is_published }"
+                                       t-on-click="(ev) => this.togglePublish(rec, ev)"/>
+                                    <i class="fa mx-1"
+                                       t-att-class="rec.display_in_print ? 'fa-eye' : 'fa-eye-slash text-muted'"
+                                       t-att-title="rec.display_in_print ? 'Included when parent is printed - click to exclude' : 'Excluded when parent is printed - click to include'"
+                                       t-on-click="(ev) => this.toggleDisplayInPrint(rec, ev)"/>
+                                </td>
                             </tr>
 
                             <tr t-if="!state.loadingList and !state.records.length and !state.creatingFolder">
-                                <td colspan="6" class="text-center text-muted py-4">
+                                <td colspan="7" class="text-center text-muted py-4">
                                     This folder is empty. Drag items here, or use “New”.
                                 </td>
                             </tr>
@@ -148,23 +182,27 @@
         </div>
     </t>
 
-    <!-- recursive folder node -->
+    <!-- recursive tree node - a folder (expandable, click loads its
+         contents in the flat pane) or a leaf document (no caret,
+         dblclick opens its form). Both are draggable for reparenting;
+         only folders are drop targets. -->
     <t t-name="sanare_dms.DmsTreeNode">
         <div class="o_dms_tree_row d-flex align-items-center px-1 py-1 rounded"
              t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
              t-att-class="{ 'o_dms_selected': isSelected, 'o_dms_drop_target': isDragOver }"
              draggable="true"
-             t-on-click="() => env.dms.select(props.node.id)"
+             t-on-click="() => props.node.is_folder ? env.dms.select(props.node.id) : null"
+             t-on-dblclick="() => props.node.is_folder ? null : env.dms.open(props.node.id)"
              t-on-dragstart="(ev) => env.dms.dragStart(props.node, ev)"
-             t-on-dragover="(ev) => env.dms.dragOver(props.node.id, ev)"
-             t-on-dragleave="() => env.dms.dragLeave()"
-             t-on-drop="(ev) => env.dms.drop(props.node.id, ev)">
+             t-on-dragover="(ev) => props.node.is_folder ? env.dms.dragOver(props.node.id, ev) : null"
+             t-on-dragleave="() => props.node.is_folder ? env.dms.dragLeave() : null"
+             t-on-drop="(ev) => props.node.is_folder ? env.dms.drop(props.node.id, ev) : null">
             <span class="o_dms_caret" t-on-click.stop="() => env.dms.toggle(props.node)">
-                <i t-if="props.node.has_subfolders" class="fa"
+                <i t-if="props.node.has_children" class="fa"
                    t-att-class="props.node.expanded ? 'fa-caret-down' : 'fa-caret-right'"/>
                 <i t-else="" class="fa fa-fw"/>
             </span>
-            <i class="fa fa-folder me-2 text-warning"/>
+            <i class="fa me-2" t-att-class="icon + (props.node.is_folder ? ' text-warning' : ' text-muted')"/>
             <span class="text-truncate" t-esc="props.node.name"/>
             <i t-if="props.node.loading" class="fa fa-spinner fa-spin ms-2 small"/>
         </div>

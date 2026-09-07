@@ -21,6 +21,11 @@ export class EmbeddedDocRefComponent extends Component {
       error: "",
       name: this.props.documentName || "",
       contentHtml: markup(""),
+      // Session-only UI state, not persisted into data-embedded-props -
+      // collapsing doesn't change what's stored, and doesn't affect the
+      // mount-driven live-refresh fetch below (toggling visibility alone
+      // never unmounts the component, so nothing re-fetches from it).
+      collapsed: false,
     })
     // Runs every time this document is opened (the embedded component
     // mounts fresh on every render of the host document, there is no
@@ -52,6 +57,10 @@ export class EmbeddedDocRefComponent extends Component {
   refresh() {
     this.state.loading = true
     this.load()
+  }
+
+  toggleCollapsed() {
+    this.state.collapsed = !this.state.collapsed
   }
 
   openDocument() {

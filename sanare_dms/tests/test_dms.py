@@ -91,10 +91,16 @@ class TestSanareDms(TransactionCase):
              "content_markdown": "x"}
         )
         # tree
-        top = self.Doc.browser_folders(False)
+        top = self.Doc.browser_tree_children(False)
         self.assertIn("Root", [f["name"] for f in top])
-        kids = self.Doc.browser_folders(root.id)
+        kids = self.Doc.browser_tree_children(root.id)
         self.assertEqual({f["name"] for f in kids}, {"A", "B"})
+        self.assertTrue(all(f["is_folder"] for f in kids))
+        # d1 (a document, not a folder) now shows up as a leaf under A
+        a_children = self.Doc.browser_tree_children(a.id)
+        self.assertEqual([f["name"] for f in a_children], ["d1"])
+        self.assertFalse(a_children[0]["is_folder"])
+        self.assertFalse(a_children[0]["has_children"])
         # contents + breadcrumb
         res = self.Doc.browser_contents(a.id)
         self.assertEqual([r["name"] for r in res["records"]], ["d1"])
@@ -117,6 +123,52 @@ class TestSanareDms(TransactionCase):
         f2 = self.Doc.create({"name": "f2", "content_type": "folder", "parent_id": f1.id})
         with self.assertRaises(Exception):
             f1.parent_id = f2.id
+
+    def test_browser_reorder(self):
+        folder = self.Doc.create({"name": "ReorderFolder", "content_type": "folder"})
+        c1 = self.Doc.create({"name": "c1", "content_type": "folder", "parent_id": folder.id})
+        c2 = self.Doc.create({"name": "c2", "content_type": "folder", "parent_id": folder.id})
+        c3 = self.Doc.create({"name": "c3", "content_type": "folder", "parent_id": folder.id})
+        self.Doc.browser_reorder([c3.id, c1.id, c2.id], folder.id)
+        self.assertLess(c3.sequence, c1.sequence)
+        self.assertLess(c1.sequence, c2.sequence)
+        # a stray id that isn't actually a child of folder is silently
+        # ignored - not an error, and it can't smuggle itself into this
+        # sibling group or have its own parent/sequence touched
+        other = self.Doc.create({"name": "elsewhere", "content_type": "folder"})
+        self.Doc.browser_reorder([c2.id, other.id, c1.id], folder.id)
+        self.assertFalse(other.parent_id)
+
+    def test_browser_paste_cascades_children(self):
+        folder = self.Doc.create({"name": "PasteFolder", "content_type": "folder"})
+        self.Doc.create(
+            {"name": "child", "content_type": "html", "parent_id": folder.id,
+             "content_html": "<p>hi</p>"}
+        )
+        target = self.Doc.create({"name": "Target", "content_type": "folder"})
+        pasted_ids = self.Doc.browser_paste([folder.id], target.id)
+        pasted = self.Doc.browse(pasted_ids)
+        self.assertEqual(pasted.parent_id, target)
+        self.assertEqual(pasted.child_count, 1)
+        self.assertEqual(pasted.child_ids.state, "draft")
+
+    def test_recursive_print_respects_display_flag(self):
+        folder = self.Doc.create({"name": "PrintFolder", "content_type": "folder"})
+        shown = self.Doc.create(
+            {"name": "Shown", "content_type": "html", "parent_id": folder.id,
+             "content_html": "<p>shown-marker</p>"}
+        )
+        hidden = self.Doc.create(
+            {"name": "Hidden", "content_type": "html", "parent_id": folder.id,
+             "content_html": "<p>hidden-marker</p>", "display_in_print": False}
+        )
+        html = self.env["ir.qweb"]._render(
+            "sanare_dms.report_document_body", {"doc": folder, "level": 1}
+        )
+        self.assertIn("shown-marker", html)
+        self.assertNotIn("hidden-marker", html)
+        self.assertTrue(shown.display_in_print)
+        self.assertFalse(hidden.display_in_print)
 
     def test_record_rule_hides_private_docs(self):
         self.Doc.create(

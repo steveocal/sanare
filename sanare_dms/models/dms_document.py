@@ -717,22 +717,31 @@ class SanareDocument(models.Model):
     # Tree browser  (client action "sanare_dms.browser")
     # ==================================================================
     @api.model
-    def browser_folders(self, parent_id=False):
-        """Folders directly under ``parent_id`` (falsy = top level)."""
-        folders = self.search(
-            [("content_type", "=", "folder"), ("parent_id", "=", parent_id or False)],
-            order="sequence, name",
+    def browser_tree_children(self, parent_id=False):
+        """All direct children - folders *and* documents - under
+        ``parent_id`` (falsy = top level), for the nested tree pane.
+        Contrast with browser_contents, which returns the same set with
+        richer columns for the flat detail table. Documents are leaves
+        (has_children always False for them); a folder's has_children
+        reflects any child at all, not just subfolders, since the tree now
+        shows documents as expandable-into content too."""
+        recs = self.search(
+            [("parent_id", "=", parent_id or False)], order="is_folder desc, sequence, name"
         )
-        sub = dict(
-            self._read_group(
-                [("content_type", "=", "folder"), ("parent_id", "in", folders.ids)],
-                ["parent_id"],
-                ["__count"],
-            )
+        data = self._read_group(
+            [("parent_id", "in", recs.filtered("is_folder").ids)],
+            ["parent_id"], ["__count"],
         )
+        counts = {parent.id: count for parent, count in data}
         return [
-            {"id": f.id, "name": f.name, "has_subfolders": bool(sub.get(f))}
-            for f in folders
+            {
+                "id": r.id,
+                "name": r.name,
+                "is_folder": r.is_folder,
+                "content_type": r.content_type,
+                "has_children": bool(counts.get(r.id)) if r.is_folder else False,
+            }
+            for r in recs
         ]
 
     @api.model

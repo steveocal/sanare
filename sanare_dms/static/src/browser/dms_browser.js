@@ -5,7 +5,9 @@ import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
-import { Component, useState, useChildSubEnv, useEffect, useRef, onMounted } from "@odoo/owl";
+import {
+    Component, useState, useChildSubEnv, useEffect, useRef, onMounted, useExternalListener,
+} from "@odoo/owl";
 
 const MODEL = "sanare.document";
 const NEW_TYPES = [
@@ -30,6 +32,9 @@ export class DmsTreeNode extends Component {
     }
     get isDragOver() {
         return this.env.dms.state.dragOverId === this.props.node.id;
+    }
+    get icon() {
+        return this.env.dms.iconFor(this.props.node);
     }
 }
 DmsTreeNode.components = { DmsTreeNode };
@@ -62,6 +67,7 @@ export class DmsBrowser extends Component {
             dragOverId: null,
             creatingFolder: false,
             newFolderName: "",
+            clipboard: { ids: [], names: [] },
         });
 
         this.newFolderInput = useRef("newFolderInput");
@@ -78,10 +84,13 @@ export class DmsBrowser extends Component {
         useChildSubEnv({
             dms: {
                 state: this.state,
+                iconFor: (node) => this.iconFor(node),
                 toggle: (n) => this.toggleNode(n),
                 select: (id) => this.selectFolder(id),
-                dragStart: (node, ev) =>
-                    this.onItemDragStart({ id: node.id, is_folder: true }, ev),
+                open: (id) => this.openDocument(id),
+                // onItemDragStart only ever reads rec.id - the node itself
+                // (folder or leaf document) is all it needs.
+                dragStart: (node, ev) => this.onItemDragStart(node, ev),
                 dragOver: (id, ev) => this.onFolderDragOver(id, ev),
                 dragLeave: () => this.onFolderDragLeave(),
                 drop: (id, ev) => this.onFolderDrop(id, ev),
@@ -94,20 +103,37 @@ export class DmsBrowser extends Component {
             this.refreshTree();
             this.loadContents(false);
         });
+
+        // Ctrl/Cmd+C / Ctrl/Cmd+V, ignored while typing in an input/textarea
+        // (the new-folder-name field, most relevantly) so this doesn't
+        // fight with normal copy/paste of text.
+        useExternalListener(window, "keydown", (ev) => {
+            const tag = ev.target && ev.target.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA") {
+                return;
+            }
+            if ((ev.ctrlKey || ev.metaKey) && ev.key === "c") {
+                this.copySelection();
+            } else if ((ev.ctrlKey || ev.metaKey) && ev.key === "v") {
+                this.pasteClipboard();
+            }
+        });
     }
 
     // ---- data --------------------------------------------------------
     async buildBranch(parentId) {
-        const raw = await this.orm.call(MODEL, "browser_folders", [parentId || false]);
+        const raw = await this.orm.call(MODEL, "browser_tree_children", [parentId || false]);
         const nodes = [];
         for (const f of raw) {
-            const expanded = this.expandedIds.has(f.id);
+            const expanded = f.is_folder && this.expandedIds.has(f.id);
             nodes.push({
                 ...f,
                 expanded,
                 loading: false,
+                // Leaf documents (is_folder false) never recurse - they're
+                // shown, not expanded into.
                 children:
-                    expanded && f.has_subfolders ? await this.buildBranch(f.id) : null,
+                    expanded && f.has_children ? await this.buildBranch(f.id) : null,
             });
         }
         return nodes;
@@ -143,6 +169,11 @@ export class DmsBrowser extends Component {
     }
 
     async toggleNode(node) {
+        if (!node.is_folder) {
+            // Leaf documents have no caret in the template, but guard here
+            // too in case this is ever reached another way.
+            return;
+        }
         if (node.expanded) {
             node.expanded = false;
             this.expandedIds.delete(node.id);
@@ -150,7 +181,7 @@ export class DmsBrowser extends Component {
         }
         node.expanded = true;
         this.expandedIds.add(node.id);
-        if (node.children === null && node.has_subfolders) {
+        if (node.children === null && node.has_children) {
             node.loading = true;
             node.children = await this.buildBranch(node.id);
             node.loading = false;
@@ -286,6 +317,91 @@ export class DmsBrowser extends Component {
             },
             { onClose: () => this.loadContents(this.state.selectedId) }
         );
+    }
+
+    // ---- copy / paste -----------------------------------------------
+    copySelection() {
+        if (!this.state.selection.size) {
+            return;
+        }
+        const ids = [...this.state.selection];
+        const names = this.state.records
+            .filter((r) => this.state.selection.has(r.id))
+            .map((r) => r.name);
+        this.state.clipboard = { ids, names };
+        this.notification.add(
+            names.length === 1
+                ? _t("Copied “%s”.", names[0])
+                : _t("Copied %s items.", names.length),
+            { type: "info" }
+        );
+    }
+
+    async pasteClipboard() {
+        if (!this.state.clipboard.ids.length) {
+            return;
+        }
+        const ids = this.state.clipboard.ids;
+        try {
+            await this.orm.call(MODEL, "browser_paste", [ids, this.state.selectedId || false]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("The paste was rejected.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        if (this.state.selectedId) {
+            this.expandedIds.add(this.state.selectedId);
+        }
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
+    // ---- ordering -----------------------------------------------------
+    async reorder(recId, direction) {
+        const ids = this.state.records.map((r) => r.id);
+        const i = ids.indexOf(recId);
+        const j = direction === "up" ? i - 1 : i + 1;
+        if (i === -1 || j < 0 || j >= ids.length) {
+            return;
+        }
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+        await this.orm.call(MODEL, "browser_reorder", [ids, this.state.selectedId || false]);
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
+    // ---- row actions ---------------------------------------------------
+    async printDocument(rec, ev) {
+        ev.stopPropagation();
+        const action = await this.orm.call(MODEL, "action_report", [[rec.id]]);
+        this.action.doAction(action);
+    }
+
+    downloadDocument(rec, ev) {
+        ev.stopPropagation();
+        window.open(`/sanare_dms/document/${rec.id}/download`, "_blank");
+    }
+
+    async togglePublish(rec, ev) {
+        ev.stopPropagation();
+        try {
+            const isPublished = await this.orm.call(MODEL, "browser_toggle_publish", [[rec.id]]);
+            rec.is_published = isPublished;
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not change publish status.");
+            this.notification.add(msg, { type: "danger" });
+        }
+    }
+
+    async toggleDisplayInPrint(rec, ev) {
+        ev.stopPropagation();
+        const value = !rec.display_in_print;
+        await this.orm.write(MODEL, [rec.id], { display_in_print: value });
+        rec.display_in_print = value;
     }
 
     iconFor(rec) {

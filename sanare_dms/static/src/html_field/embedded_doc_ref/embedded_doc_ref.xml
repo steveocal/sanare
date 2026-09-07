@@ -22,11 +22,18 @@
                         t-on-click="refresh" t-att-disabled="state.loading">
                     <i class="fa fa-refresh" t-att-class="{ 'fa-spin': state.loading }" role="img"/>
                 </button>
+                <button type="button" class="btn btn-sm btn-link p-0 ms-2"
+                        t-att-title="state.collapsed ? 'Show' : 'Hide'"
+                        t-on-click="toggleCollapsed">
+                    <i class="fa" t-att-class="state.collapsed ? 'fa-chevron-down' : 'fa-chevron-up'" role="img"/>
+                </button>
             </div>
-            <div class="o_sanare_doc_ref_body card-body" t-if="!state.loading and !state.error">
+            <div class="o_sanare_doc_ref_body card-body"
+                 t-if="!state.collapsed and !state.loading and !state.error">
                 <t t-out="state.contentHtml"/>
             </div>
-            <div class="o_sanare_doc_ref_body card-body text-muted fst-italic" t-if="state.error">
+            <div class="o_sanare_doc_ref_body card-body text-muted fst-italic"
+                 t-if="!state.collapsed and state.error">
                 <t t-esc="state.error"/>
             </div>
         </div>
