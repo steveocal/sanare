@@ -35,11 +35,10 @@
 
     </data>
 
-    <!-- Every internal user is a Document User (can see the app, manage their
-         own documents, read shared + public ones). Applied on install and on
-         every module update. -->
-    <record id="base.group_user" model="res.groups">
-        <field name="implied_ids" eval="[(4, ref('sanare_dms.group_dms_user'))]"/>
-    </record>
+    <!-- Every internal user is made a Document User (so the app is visible to
+         all, they manage their own documents and read shared + public ones) by
+         _link_dms_user_to_internal() - post_init_hook + the 19.0.1.0.2
+         migration - because base.group_user is noupdate and can't be extended
+         from XML on module update. -->
 
 </odoo>
