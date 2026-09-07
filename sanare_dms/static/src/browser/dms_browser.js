@@ -5,7 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
-import { Component, useState, useChildSubEnv, useEffect, useRef, onWillStart } from "@odoo/owl";
+import { Component, useState, useChildSubEnv, useEffect, useRef, onMounted } from "@odoo/owl";
 
 const MODEL = "sanare.document";
 const NEW_TYPES = [
@@ -88,8 +88,11 @@ export class DmsBrowser extends Component {
             },
         });
 
-        onWillStart(async () => {
-            await Promise.all([this.refreshTree(), this.loadContents(false)]);
+        // Load after mount (not in onWillStart) so the shell + loading states
+        // render immediately even if the backend/network is slow.
+        onMounted(() => {
+            this.refreshTree();
+            this.loadContents(false);
         });
     }
 
@@ -112,18 +115,31 @@ export class DmsBrowser extends Component {
 
     async refreshTree() {
         this.state.loadingTree = true;
-        this.state.tree = await this.buildBranch(false);
-        this.state.loadingTree = false;
+        try {
+            this.state.tree = await this.buildBranch(false);
+        } catch (err) {
+            this.state.tree = [];
+            this.notification.add(_t("Could not load folders."), { type: "danger" });
+        } finally {
+            this.state.loadingTree = false;
+        }
     }
 
     async loadContents(folderId) {
         this.state.loadingList = true;
         this.state.selectedId = folderId || false;
         this.state.selection = new Set();
-        const res = await this.orm.call(MODEL, "browser_contents", [folderId || false]);
-        this.state.breadcrumb = res.breadcrumb;
-        this.state.records = res.records;
-        this.state.loadingList = false;
+        try {
+            const res = await this.orm.call(MODEL, "browser_contents", [folderId || false]);
+            this.state.breadcrumb = res.breadcrumb;
+            this.state.records = res.records;
+        } catch (err) {
+            this.state.breadcrumb = [];
+            this.state.records = [];
+            this.notification.add(_t("Could not load this folder."), { type: "danger" });
+        } finally {
+            this.state.loadingList = false;
+        }
     }
 
     async toggleNode(node) {
