@@ -139,7 +139,7 @@
                     <notebook>
                         <page string="Content" name="content"
                               invisible="content_type == 'folder'">
-                            <field name="content_html" widget="html" class="w-100"
+                            <field name="content_html" widget="sanare_html" class="w-100"
                                    invisible="content_type != 'html'"
                                    options="{'codeview': true, 'height': 500}"/>
                             <field name="content_markdown" widget="sanare_markdown"

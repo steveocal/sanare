@@ -41,6 +41,8 @@
             "sanare_dms/static/src/browser/dms_browser.scss",
             "sanare_dms/static/src/browser/dms_browser.js",
             "sanare_dms/static/src/browser/dms_browser.xml",
+            "sanare_dms/static/src/html_field/section_heading_plugin.js",
+            "sanare_dms/static/src/html_field/sanare_html_field.js",
         ],
         "web.assets_frontend": [
             "sanare_dms/static/src/scss/dms_frontend.scss",
