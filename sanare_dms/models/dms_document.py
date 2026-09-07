@@ -37,7 +37,14 @@ class SanareDocument(models.Model):
         "sanare.document", string="Parent", ondelete="cascade", index=True, tracking=True
     )
     parent_path = fields.Char(index=True)
-    child_ids = fields.One2many("sanare.document", "parent_id", string="Contents")
+    child_ids = fields.One2many(
+        "sanare.document", "parent_id", string="Contents", copy=True
+    )
+    # One2many defaults to copy=False in Odoo - confirmed empirically via
+    # odoo-bin shell (Doc._fields["child_ids"].copy was False before this),
+    # not the "cascades by default" behaviour assumed when browser_paste was
+    # designed. Explicit copy=True here is what actually makes pasting a
+    # folder bring its subtree along.
     child_count = fields.Integer(compute="_compute_child_count")
     complete_name = fields.Char(
         compute="_compute_complete_name", recursive=True, store=True, string="Path"
