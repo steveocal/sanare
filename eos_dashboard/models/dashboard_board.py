@@ -126,19 +126,24 @@ class EosDashboardBoard(models.Model):
     regulatory_task_ids = fields.Many2many("eos.task", compute="_compute_report_fields")
     sku_ids = fields.Many2many("eos.sku", compute="_compute_report_fields")
 
-    # 07 · Financial / 08 · Use of Funds (financial_period_id is shared)
+    # 07 · Financial / 08 · Use of Funds (financial_period_id is shared).
+    # Plain computed (not related=) - financial_period_id is itself a
+    # non-stored compute field, and Odoo can't build a recompute-dependency
+    # graph through a non-searchable related target. Setting these directly
+    # in _compute_report_fields sidesteps that entirely.
     financial_period_id = fields.Many2one("eos.financial.period", compute="_compute_report_fields")
-    fp_ending_cash = fields.Monetary(related="financial_period_id.ending_cash", string="Ending Cash")
+    fp_ending_cash = fields.Monetary(
+        compute="_compute_report_fields", currency_field="currency_id", string="Ending Cash")
     fp_available_capital = fields.Monetary(
-        related="financial_period_id.available_capital", string="Available Capital")
-    fp_net_cash_burn = fields.Monetary(related="financial_period_id.net_cash_burn", string="Net Cash Burn")
-    fp_runway_months = fields.Float(related="financial_period_id.runway_months", string="Runway (Months)")
-    fp_gross_margin_pct = fields.Float(
-        related="financial_period_id.gross_margin_pct", string="Gross Margin %")
+        compute="_compute_report_fields", currency_field="currency_id", string="Available Capital")
+    fp_net_cash_burn = fields.Monetary(
+        compute="_compute_report_fields", currency_field="currency_id", string="Net Cash Burn")
+    fp_runway_months = fields.Float(compute="_compute_report_fields", string="Runway (Months)")
+    fp_gross_margin_pct = fields.Float(compute="_compute_report_fields", string="Gross Margin %")
     fp_capital_received = fields.Monetary(
-        related="financial_period_id.capital_received", string="Capital Received")
+        compute="_compute_report_fields", currency_field="currency_id", string="Capital Received")
     fp_committed_unspent = fields.Monetary(
-        related="financial_period_id.committed_unspent", string="Committed but Unspent")
+        compute="_compute_report_fields", currency_field="currency_id", string="Committed but Unspent")
     financial_line_ids = fields.Many2many("eos.financial.period.line", compute="_compute_report_fields")
 
     # 08 · Use of Funds
@@ -309,6 +314,10 @@ class EosDashboardBoard(models.Model):
             b.regulatory_task_ids = Task.browse()
             b.sku_ids = Sku.browse()
             b.financial_period_id = False
+            b.fp_ending_cash = b.fp_available_capital = 0.0
+            b.fp_net_cash_burn = b.fp_runway_months = 0.0
+            b.fp_gross_margin_pct = 0.0
+            b.fp_capital_received = b.fp_committed_unspent = 0.0
             b.use_of_funds_ids = Uof.browse()
             b.risks_open_red = b.risks_open_yellow = b.risks_worsening = 0
             b.top_risk_ids = Risk.browse()
@@ -391,9 +400,17 @@ class EosDashboardBoard(models.Model):
                 b.sku_ids = Sku.search([], order="name")
 
             elif k in ("financial", "use_of_funds"):
-                b.financial_period_id = o._financial_period()
+                fp = o._financial_period()
+                b.financial_period_id = fp
+                b.fp_ending_cash = fp.ending_cash or 0.0
+                b.fp_available_capital = fp.available_capital or 0.0
+                b.fp_net_cash_burn = fp.net_cash_burn or 0.0
+                b.fp_runway_months = fp.runway_months or 0.0
+                b.fp_gross_margin_pct = fp.gross_margin_pct or 0.0
+                b.fp_capital_received = fp.capital_received or 0.0
+                b.fp_committed_unspent = fp.committed_unspent or 0.0
                 if k == "financial":
-                    b.financial_line_ids = b.financial_period_id.line_ids
+                    b.financial_line_ids = fp.line_ids
                 else:
                     b.use_of_funds_ids = Uof.search([], order="sequence, id")
 
