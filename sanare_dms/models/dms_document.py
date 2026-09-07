@@ -722,6 +722,29 @@ class SanareDocument(models.Model):
         return crumbs
 
     @api.model
+    def get_embedded_content(self, document_id):
+        """RPC target for the "embed another document" editor plugin.
+
+        Deliberately runs under the requesting user's own env (no sudo):
+        accessing `content_html` below goes through the normal read path,
+        so the same ir.rule visibility rules that gate opening the document
+        directly also gate embedding it - a Private document embedded by
+        someone who can't see it raises AccessError same as it would if
+        they tried to open it, rather than leaking content through the
+        embed.
+        """
+        doc = self.browse(int(document_id)).exists()
+        if not doc:
+            return {"error": "not_found"}
+        if doc.content_type != "html":
+            return {"error": "unsupported_type"}
+        return {
+            "name": doc.name,
+            "content_html": doc.content_html or "",
+            "write_date": fields.Datetime.to_string(doc.write_date),
+        }
+
+    @api.model
     def browser_contents(self, parent_id=False):
         recs = self.search(
             [("parent_id", "=", parent_id or False)], order="is_folder desc, name"

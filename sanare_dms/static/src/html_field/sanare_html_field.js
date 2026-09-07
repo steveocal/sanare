@@ -3,6 +3,7 @@
 import { registry } from "@web/core/registry"
 import { HtmlField, htmlField } from "@html_editor/fields/html_field"
 import { SectionHeadingPlugin } from "./section_heading_plugin"
+import { EmbeddedDocRefPlugin } from "./embedded_doc_ref/embedded_doc_ref_plugin"
 
 // Odoo's own widget="html" (html_editor's HtmlField) builds its Plugins list
 // internally from MAIN_PLUGINS with no registry to hook into - the only way
@@ -12,7 +13,7 @@ import { SectionHeadingPlugin } from "./section_heading_plugin"
 export class SanareHtmlField extends HtmlField {
   getConfig() {
     const config = super.getConfig()
-    config.Plugins = [...config.Plugins, SectionHeadingPlugin]
+    config.Plugins = [...config.Plugins, SectionHeadingPlugin, EmbeddedDocRefPlugin]
     return config
   }
 }

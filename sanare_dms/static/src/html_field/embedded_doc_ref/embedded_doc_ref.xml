@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Rendered once at insertion time (renderToString), becomes the
+         stored marker in content_html. data-embedded-props is the "stored
+         link" - the only thing persisted; everything else is re-fetched
+         live by EmbeddedDocRefComponent on every mount. -->
+    <t t-name="sanare_dms.EmbeddedDocRefBlueprint">
+        <div data-embedded="sanareDocRef" data-oe-protected="true" contenteditable="false"
+             t-att-data-embedded-props="embeddedProps" class="o-contenteditable-false"/>
+    </t>
+
+    <t t-name="sanare_dms.EmbeddedDocRef">
+        <div class="o_sanare_doc_ref card my-2">
+            <div class="o_sanare_doc_ref_header card-header d-flex align-items-center justify-content-between py-1">
+                <button type="button" class="btn btn-link p-0 text-truncate fw-bold"
+                        t-on-click="openDocument" t-att-disabled="state.loading">
+                    <i class="fa fa-link me-1" role="img"/>
+                    <t t-esc="state.name"/>
+                </button>
+                <button type="button" class="btn btn-sm btn-link p-0 ms-2" title="Refresh"
+                        t-on-click="refresh" t-att-disabled="state.loading">
+                    <i class="fa fa-refresh" t-att-class="{ 'fa-spin': state.loading }" role="img"/>
+                </button>
+            </div>
+            <div class="o_sanare_doc_ref_body card-body" t-if="!state.loading and !state.error">
+                <t t-out="state.contentHtml"/>
+            </div>
+            <div class="o_sanare_doc_ref_body card-body text-muted fst-italic" t-if="state.error">
+                <t t-esc="state.error"/>
+            </div>
+        </div>
+    </t>
+
+</templates>
