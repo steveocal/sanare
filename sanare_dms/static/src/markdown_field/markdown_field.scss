@@ -6,6 +6,15 @@ $md-text: #dee2e6;
 $md-line: rgba(255, 255, 255, .14);
 $md-soft: rgba(255, 255, 255, .08);
 
+/* the field wrapper Odoo puts around a custom widget shrinks to content
+   unless forced full-width */
+.o_field_widget.o_field_sanare_markdown,
+.o_field_widget:has(> .o_sanare_markdown) {
+    width: 100%;
+    flex: 1 1 100%;
+    display: block;
+}
+
 .o_sanare_markdown {
     width: 100%;
     display: block;
