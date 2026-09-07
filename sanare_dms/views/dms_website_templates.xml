@@ -3,7 +3,7 @@
 
     <template id="documents_index" name="Public Documents">
         <t t-call="website.layout">
-            <div class="container my-4 o_sanare_dms_index">
+            <div class="container-fluid px-3 px-md-5 my-4 o_sanare_dms_index">
                 <h1 class="mb-4">Documents</h1>
                 <form method="get" action="/documents" class="row g-2 mb-4">
                     <div class="col-md-8">
@@ -52,7 +52,7 @@
 
     <template id="documents_page" name="Public Document">
         <t t-call="website.layout">
-            <div class="container my-4 o_sanare_dms_page">
+            <div class="container-fluid px-3 px-md-5 my-4 o_sanare_dms_page">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/documents">Documents</a></li>
@@ -69,15 +69,16 @@
                 </div>
                 <p class="text-muted" t-if="document.category_id"
                    t-out="document.category_id.complete_name"/>
-                <hr/>
 
-                <div t-if="body" class="o_sanare_dms_body" t-out="body"/>
+                <div class="o_sanare_dms_article">
+                    <div t-if="body" class="o_sanare_dms_body" t-out="body"/>
 
-                <div t-elif="document.content_type == 'onlyoffice'" class="alert alert-secondary">
-                    <p class="mb-1"><strong t-out="document.file_name"/></p>
-                    <p class="mb-0">
-                        Use the Download button above to get this office document.
-                    </p>
+                    <div t-elif="document.content_type == 'onlyoffice'" class="alert alert-secondary">
+                        <p class="mb-1"><strong t-out="document.file_name"/></p>
+                        <p class="mb-0">
+                            Use the Download button above to get this office document.
+                        </p>
+                    </div>
                 </div>
             </div>
         </t>

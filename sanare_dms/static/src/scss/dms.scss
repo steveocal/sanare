@@ -1,3 +1,11 @@
+/* Document form: use the full width for the editors */
+.o_dms_document_form {
+    .o_form_sheet {
+        max-width: 100%;
+    }
+}
+
+/* keep the folder kanban tidy */
 .o_kanban_dashboard .oe_kanban_global_click {
     padding: 12px;
 }
