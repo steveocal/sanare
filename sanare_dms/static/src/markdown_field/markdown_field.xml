@@ -2,30 +2,29 @@
 <templates xml:space="preserve">
 
     <t t-name="sanare_dms.MarkdownField">
-        <div class="o_sanare_markdown" t-attf-class="o_sanare_md_view_{{ state.view }}">
+        <div class="o_sanare_markdown">
             <div class="btn-group btn-group-sm mb-2" role="group">
                 <button type="button" class="btn btn-outline-secondary"
                         t-att-class="{ active: state.view === 'editor' }"
                         t-on-click="() => this.setView('editor')">Editor</button>
                 <button type="button" class="btn btn-outline-secondary"
                         t-att-class="{ active: state.view === 'split' }"
-                        t-on-click="() => this.setView('split')">Editor + Preview</button>
+                        t-on-click="() => this.setView('split')">Split</button>
                 <button type="button" class="btn btn-outline-secondary"
                         t-att-class="{ active: state.view === 'preview' }"
                         t-on-click="() => this.setView('preview')">Preview</button>
             </div>
-
-            <div class="o_sanare_markdown_editor" t-if="state.view !== 'preview'">
-                <CodeEditor
-                    value="value"
-                    readonly="props.readonly"
-                    theme="editorTheme"
-                    onChange="(v) => this.onChange(v)"
-                    class="'o_sanare_markdown_code'"/>
+            <div class="o_sanare_markdown_panes" t-attf-class="view-{{ state.view }}">
+                <div class="o_sanare_markdown_editor" t-if="state.view !== 'preview'">
+                    <CodeEditor
+                        value="value"
+                        readonly="props.readonly"
+                        onChange.bind="onChange"
+                        class="'o_sanare_markdown_code'"/>
+                </div>
+                <div class="o_sanare_markdown_preview" t-if="state.view !== 'editor'"
+                     t-out="state.preview"/>
             </div>
-
-            <div class="o_sanare_markdown_preview" t-if="state.view !== 'editor'"
-                 t-out="state.preview"/>
         </div>
     </t>
 

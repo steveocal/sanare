@@ -1,64 +1,54 @@
-/* Theme-agnostic: transparent surfaces + translucent greys so the widget
-   inherits the webclient's light or dark background. No opaque colours.
-   Full-width stacked layout (editor above preview) - avoids the ACE-in-flex
-   width bug and gives the editor the whole column. */
-
-$md-line: rgba(128, 128, 128, .30);
-$md-soft: rgba(128, 128, 128, .14);
-
 .o_sanare_markdown {
-    width: 100%;
-    display: block;
-
-    .o_sanare_markdown_editor,
-    .o_sanare_markdown_preview {
-        width: 100%;
-        border: 1px solid $md-line;
+    .o_sanare_markdown_panes {
+        display: flex;
+        gap: 12px;
+        align-items: stretch;
+        border: 1px solid var(--border-color, #dee2e6);
         border-radius: 4px;
-        background: transparent;
+        min-height: 480px;
+
+        &.view-editor .o_sanare_markdown_editor { flex: 1 1 100%; }
+        &.view-preview .o_sanare_markdown_preview { flex: 1 1 100%; }
+        &.view-split .o_sanare_markdown_editor,
+        &.view-split .o_sanare_markdown_preview { flex: 1 1 50%; width: 50%; }
     }
 
     .o_sanare_markdown_editor {
-        height: 460px;
-        overflow: hidden;
+        display: flex;
+        min-height: 480px;
     }
 
-    /* CodeEditor root */
     .o_sanare_markdown_code {
-        width: 100%;
+        min-height: 480px;
         height: 100%;
+        width: 100%;
     }
 
     .o_sanare_markdown_preview {
-        margin-top: 10px;
-        min-height: 160px;
-        max-height: 520px;
-        overflow-y: auto;
         padding: 12px 16px;
-        color: inherit;
+        overflow-y: auto;
+        max-height: 640px;
+        border-left: 1px solid var(--border-color, #dee2e6);
         line-height: 1.6;
 
-        h1, h2, h3 { margin-top: .6em; }
+        h1, h2, h3 { margin-top: 0.6em; }
         pre {
-            background: $md-soft;
-            padding: .75rem 1rem;
+            background: #f6f8fa;
+            padding: 0.75rem 1rem;
             border-radius: 4px;
             overflow-x: auto;
         }
-        code { background: $md-soft; padding: .1em .3em; border-radius: 3px; }
+        code { background: #f6f8fa; padding: 0.1em 0.3em; border-radius: 3px; }
         blockquote {
-            border-left: 3px solid $md-line;
+            border-left: 3px solid #d0d7de;
             padding-left: 1rem;
+            color: #57606a;
             margin-left: 0;
-            opacity: .85;
         }
         table {
             border-collapse: collapse;
-            th, td { border: 1px solid $md-line; padding: .3rem .5rem; }
+            th, td { border: 1px solid #d0d7de; padding: 0.3rem 0.5rem; }
         }
         img { max-width: 100%; }
     }
-
-    /* "Editor + Preview" = editor shorter, preview right below */
-    &.o_sanare_md_view_split .o_sanare_markdown_editor { height: 320px; }
 }

@@ -1,12 +1,11 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
-import { Component, useState, useEffect, onWillStart, onMounted, markup } from "@odoo/owl";
+import { Component, useState, onWillStart, markup } from "@odoo/owl";
 import { CodeEditor } from "@web/core/code_editor/code_editor";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 import { useService } from "@web/core/utils/hooks";
 import { useDebounced } from "@web/core/utils/timing";
-import { cookie } from "@web/core/browser/cookie";
 import { _t } from "@web/core/l10n/translation";
 
 export class SanareMarkdownField extends Component {
@@ -16,28 +15,13 @@ export class SanareMarkdownField extends Component {
 
     setup() {
         this.orm = useService("orm");
-        this.state = useState({ preview: markup(""), view: "editor" });
-        this.renderPreview = useDebounced((text) => this._render(text), 300);
+        this.state = useState({ preview: markup(""), view: "split" });
+        this.renderPreview = useDebounced((text) => this._render(text), 400);
         onWillStart(() => this._render(this.value));
-
-        // The bundled ACE editor measures its container once on mount and never
-        // again; if the form/notebook layout is not settled yet it renders at a
-        // tiny width. Kick a resize after mount and whenever the view changes.
-        const kick = () => {
-            for (const d of [0, 60, 250]) {
-                setTimeout(() => window.dispatchEvent(new Event("resize")), d);
-            }
-        };
-        onMounted(kick);
-        useEffect(kick, () => [this.state.view]);
     }
 
     get value() {
         return this.props.record.data[this.props.name] || "";
-    }
-
-    get editorTheme() {
-        return cookie.get("color_scheme") === "dark" ? "monokai" : "";
     }
 
     async _render(text) {
@@ -45,7 +29,7 @@ export class SanareMarkdownField extends Component {
             const html = await this.orm.call("sanare.document", "render_markdown_text", [
                 text || "",
             ]);
-            this.state.preview = markup(html || "");
+            this.state.preview = markup(html);
         } catch {
             this.state.preview = markup("");
         }

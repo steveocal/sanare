@@ -31,21 +31,21 @@
                     <i class="fa fa-folder-o me-1"/>New Folder
                 </button>
 
-                <Dropdown>
-                    <button class="btn btn-sm btn-primary">
+                <div class="position-relative">
+                    <button class="btn btn-sm btn-primary"
+                            t-on-click="() => state.newMenuOpen = !state.newMenuOpen">
                         <i class="fa fa-plus me-1"/>New Document <i class="fa fa-caret-down ms-1"/>
                     </button>
-                    <t t-set-slot="content">
+                    <div t-if="state.newMenuOpen" class="o_dms_menu shadow-sm">
                         <t t-foreach="newTypes" t-as="nt" t-key="nt[0]">
-                            <DropdownItem t-if="nt[0] !== 'folder'"
-                                          onSelected="() => this.newDocument(nt[0])">
-                                <t t-esc="nt[1]"/>
-                            </DropdownItem>
+                            <a t-if="nt[0] !== 'folder'" href="#" class="dropdown-item"
+                               t-on-click.prevent="() => this.pickNewType(nt[0])"
+                               t-esc="nt[1]"/>
                         </t>
-                    </t>
-                </Dropdown>
+                    </div>
+                </div>
 
-                <button class="btn btn-sm btn-secondary" title="Refresh"
+                <button class="btn btn-sm btn-light" title="Refresh"
                         t-on-click="() => this.refresh()">
                     <i class="fa fa-refresh"/>
                 </button>
