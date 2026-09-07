@@ -1,4 +1,5 @@
 from odoo import http
+from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.http import request
 from odoo.addons.portal.controllers.portal import CustomerPortal, pager as portal_pager
 
@@ -79,27 +80,7 @@ class SanareDmsWebsite(http.Controller):
         document = request.env["sanare.document"].sudo().browse(document_id).exists()
         if not document or not self._is_public(document):
             return request.not_found()
-        version = document.approved_version_id
-        if document.content_type == "onlyoffice":
-            attachment = (version.attachment_id or document.attachment_id).sudo()
-            if not attachment:
-                return request.not_found()
-            return request.env["ir.binary"]._get_stream_from(
-                attachment, "raw"
-            ).get_response(as_attachment=True)
-        if document.content_type == "html":
-            data = (version.content_html or document.content_html or "").encode()
-            filename = "%s.html" % document.name
-        else:
-            data = (version.content_markdown or document.content_markdown or "").encode()
-            filename = "%s.md" % document.name
-        return request.make_response(
-            data,
-            headers=[
-                ("Content-Type", "application/octet-stream"),
-                ("Content-Disposition", http.content_disposition(filename)),
-            ],
-        )
+        return document._download_response(use_approved=True)
 
     def _is_public(self, document):
         return (
@@ -107,6 +88,30 @@ class SanareDmsWebsite(http.Controller):
             and document.state == "approved"
             and document.effective_visibility == "public"
         )
+
+    # ------------------------------------------------------------------
+    # Backend/portal download - any document the requesting user can
+    # already view (draft or not), not just published-public ones. Runs
+    # unsudo'd deliberately: normal ir.rule access applies exactly as it
+    # would opening the document itself, same pattern as
+    # sanare.document.get_embedded_content.
+    # ------------------------------------------------------------------
+    @http.route(
+        "/sanare_dms/document/<int:document_id>/download",
+        type="http", auth="user", sitemap=False,
+    )
+    def documents_download_authenticated(self, document_id, **kw):
+        document = request.env["sanare.document"].browse(document_id).exists()
+        if not document:
+            return request.not_found()
+        try:
+            return document._download_response(use_approved=False)
+        except (AccessError, MissingError, UserError):
+            # AccessError/MissingError: no read access, or the record
+            # vanished under us. UserError: folder, or a document with no
+            # content yet (e.g. onlyoffice type with no file uploaded).
+            # 404 either way rather than leaking which case it was.
+            return request.not_found()
 
 
 class SanareDmsPortal(CustomerPortal):

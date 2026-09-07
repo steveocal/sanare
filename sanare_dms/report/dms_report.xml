@@ -14,28 +14,48 @@
     <template id="report_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
-                     style="margin: 12mm;">
-                    <h1 t-out="doc.name"/>
-                    <p class="text-muted">
-                        <span t-out="doc.complete_name"/> —
-                        revision v<span t-out="doc.version_number"/> —
-                        <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
-                    </p>
-                    <hr/>
-                    <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
-                    <div t-elif="doc.content_type == 'markdown'"
-                         t-out="doc.content_markdown_html"/>
-                    <div t-elif="doc.content_type == 'onlyoffice'">
-                        <p>Office document: <span t-out="doc.file_name"/>
-                           (<span t-out="doc.file_size"/> bytes).</p>
-                        <p>Open in ONLYOFFICE to view the full contents.</p>
-                    </div>
-                    <div t-else="">
-                        <p>This is a folder containing
-                           <span t-out="doc.child_count"/> item(s).</p>
-                    </div>
-                </div>
+                <t t-call="sanare_dms.report_document_body">
+                    <t t-set="doc" t-value="doc"/>
+                    <t t-set="level" t-value="1"/>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Recursive: renders `doc`, then every child with display_in_print set,
+         each in turn calling this same template one level deeper - printing
+         a folder pulls in its full descendant subtree, in tree order, and a
+         child with the flag off is skipped along with its own subtree
+         rather than left "orphaned" with no parent section above it. -->
+    <template id="report_document_body">
+        <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
+             t-attf-style="margin: 12mm;#{'page-break-before: always;' if level > 1 else ''}">
+            <t t-tag="'h%d' % (level if level &lt; 4 else 4)" t-out="doc.name"/>
+            <p class="text-muted">
+                <span t-out="doc.complete_name"/> —
+                revision v<span t-out="doc.version_number"/> —
+                <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
+            </p>
+            <hr/>
+            <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
+            <div t-elif="doc.content_type == 'markdown'"
+                 t-out="doc.content_markdown_html"/>
+            <div t-elif="doc.content_type == 'onlyoffice'">
+                <p>Office document: <span t-out="doc.file_name"/>
+                   (<span t-out="doc.file_size"/> bytes).</p>
+                <p>Open in ONLYOFFICE to view the full contents.</p>
+            </div>
+            <div t-else="">
+                <p t-if="not doc.child_ids.filtered(lambda c: c.display_in_print)">
+                    This is an empty folder.
+                </p>
+            </div>
+        </div>
+        <t t-foreach="doc.child_ids.filtered(lambda c: c.display_in_print).sorted(key=lambda c: c.sequence)"
+           t-as="child">
+            <t t-call="sanare_dms.report_document_body">
+                <t t-set="doc" t-value="child"/>
+                <t t-set="level" t-value="level + 1"/>
             </t>
         </t>
     </template>

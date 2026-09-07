@@ -100,6 +100,12 @@
                         <button name="action_open_website" type="object"
                                 class="oe_stat_button" icon="fa-globe"
                                 invisible="not is_published" string="View on Website"/>
+                        <button name="action_report" type="object"
+                                class="oe_stat_button" icon="fa-print"
+                                invisible="content_type == 'folder'" string="Print"/>
+                        <button name="action_download" type="object"
+                                class="oe_stat_button" icon="fa-download"
+                                invisible="content_type == 'folder'" string="Download"/>
                     </div>
                     <div class="oe_title">
                         <label for="name"/>
@@ -129,6 +135,8 @@
                             <field name="is_published" widget="boolean_toggle"
                                    readonly="not can_publish"
                                    help="Publish the approved revision to the public website."/>
+                            <field name="display_in_print" invisible="not parent_id"
+                                   help="When the parent folder is printed, its full descendant tree is pulled into one combined document. Turn this off to skip this document (and everything under it) from that rollup."/>
                             <field name="can_publish" invisible="1"/>
                             <field name="can_submit" invisible="1"/>
                             <field name="can_approve" invisible="1"/>
@@ -216,12 +224,27 @@
                               invisible="content_type != 'folder'">
                             <field name="child_ids" context="{'default_parent_id': id}">
                                 <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="content_type"/>
                                     <field name="owner_id"/>
                                     <field name="state" widget="badge"/>
+                                    <field name="display_in_print" string="In Print"/>
                                 </list>
                             </field>
+                        </page>
+                        <page string="Properties" name="properties" invisible="not parent_id">
+                            <!-- No standalone widget for properties_definition exists in Odoo
+                                 core (confirmed: only properties/card.properties/
+                                 calendar.properties are registered field widgets) - the
+                                 `properties` widget below is how new fields actually get
+                                 defined, same pattern as project.task's task_properties (its
+                                 container's task_properties_definition is never shown on
+                                 project.project's own view either). Defining a new property
+                                 here writes back to this document's parent_id's
+                                 properties_definition transparently, so it then appears on
+                                 every sibling under that same parent too. -->
+                            <field name="properties" widget="properties"/>
                         </page>
                     </notebook>
                 </sheet>

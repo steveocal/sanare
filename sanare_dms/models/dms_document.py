@@ -26,10 +26,11 @@ class SanareDocument(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin", "website.published.mixin"]
     _parent_store = True
     _parent_name = "parent_id"
-    _order = "is_folder desc, name"
+    _order = "is_folder desc, sequence, name"
 
     name = fields.Char(required=True, tracking=True)
     active = fields.Boolean(default=True)
+    sequence = fields.Integer(default=10)
 
     # -- hierarchy ---------------------------------------------------------
     parent_id = fields.Many2one(
@@ -40,6 +41,23 @@ class SanareDocument(models.Model):
     child_count = fields.Integer(compute="_compute_child_count")
     complete_name = fields.Char(
         compute="_compute_complete_name", recursive=True, store=True, string="Path"
+    )
+    display_in_print = fields.Boolean(
+        string="Include in Parent Print", default=True,
+        help="When a parent folder is printed, its descendant tree is pulled "
+             "into one combined document - turn this off to skip this "
+             "document (and everything under it) from that rollup. It still "
+             "shows normally in the tree and can still be printed on its own.",
+    )
+
+    # -- custom properties ------------------------------------------------
+    # Scoped per-folder: a folder defines the schema its own children fill
+    # in. A folder nested inside another folder does both - it fills in its
+    # parent's schema via `properties`, and defines its own children's
+    # schema via `properties_definition`, same model either way.
+    properties_definition = fields.PropertiesDefinition(string="Document Properties")
+    properties = fields.Properties(
+        string="Properties", definition="parent_id.properties_definition"
     )
 
     # -- type & content --------------------------------------------------
@@ -696,7 +714,7 @@ class SanareDocument(models.Model):
         """Folders directly under ``parent_id`` (falsy = top level)."""
         folders = self.search(
             [("content_type", "=", "folder"), ("parent_id", "=", parent_id or False)],
-            order="name",
+            order="sequence, name",
         )
         sub = dict(
             self._read_group(
@@ -747,7 +765,7 @@ class SanareDocument(models.Model):
     @api.model
     def browser_contents(self, parent_id=False):
         recs = self.search(
-            [("parent_id", "=", parent_id or False)], order="is_folder desc, name"
+            [("parent_id", "=", parent_id or False)], order="is_folder desc, sequence, name"
         )
         ctypes = dict(CONTENT_TYPES)
         states = dict(self._fields["state"].selection)
@@ -766,6 +784,10 @@ class SanareDocument(models.Model):
                     "visibility": r.effective_visibility,
                     "child_count": r.child_count if r.is_folder else 0,
                     "updated": fields.Datetime.to_string(r.write_date),
+                    "sequence": r.sequence,
+                    "display_in_print": r.display_in_print,
+                    "is_published": r.is_published,
+                    "can_publish": r.can_publish,
                 }
                 for r in recs
             ],
@@ -784,6 +806,101 @@ class SanareDocument(models.Model):
                 raise UserError(self.env._("You cannot move a folder into itself."))
         docs.write({"parent_id": target.id if target else False})
         return True
+
+    @api.model
+    def browser_reorder(self, doc_ids_in_order, parent_id=False):
+        """Rewrite sequence (10, 20, 30...) for a sibling group under
+        ``parent_id`` (falsy = top level), in the order given. Only ids that
+        are actually children of ``parent_id`` are touched - a stray id from
+        a stale client-side list is silently ignored rather than letting it
+        move a document into a sibling group it doesn't belong to."""
+        docs = self.browse(doc_ids_in_order).exists().filtered(
+            lambda d: d.parent_id.id == (parent_id or False)
+        )
+        for i, doc in enumerate(docs):
+            doc.sequence = (i + 1) * 10
+        return True
+
+    @api.model
+    def browser_paste(self, doc_ids, target_parent_id):
+        """Copy each of ``doc_ids`` into ``target_parent_id`` (falsy = top
+        level). All the reset-on-duplicate logic (state back to draft,
+        version/approval/publish cleared) already lives in copy_data - this
+        is pure wiring. Folders bring their whole subtree with them for
+        free: Odoo's default copy() already cascades one2many child_ids."""
+        docs = self.browse(doc_ids).exists()
+        if not docs:
+            return []
+        target = self.browse(target_parent_id) if target_parent_id else self.browse()
+        if target and target.content_type != "folder":
+            raise UserError(self.env._("Items can only be pasted into a folder."))
+        pasted = docs.copy({"parent_id": target.id if target else False})
+        return pasted.ids
+
+    def browser_toggle_publish(self):
+        """Flip is_published for a single document from a browser row
+        action. write()'s existing guard (state=approved + visibility=public)
+        already protects this - no new validation needed here."""
+        self.ensure_one()
+        self.write({"is_published": not self.is_published})
+        return self.is_published
+
+    def action_report(self):
+        """Print entry point for the custom browser (which has no generic
+        framework print menu of its own) - mirrors the action_print pattern
+        used for eos_dashboard's board records."""
+        self.ensure_one()
+        return self.env.ref("sanare_dms.action_report_dms_document").report_action(self)
+
+    def action_download(self):
+        """Download entry point for both the classic form and the custom
+        browser - a plain URL action so the browser handles the file
+        download natively rather than round-tripping through the ORM."""
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/sanare_dms/document/%s/download" % self.id,
+            "target": "self",
+        }
+
+    def _download_response(self, use_approved=False):
+        """Shared by the public /documents/<id>/download route (existing,
+        refactored to call this) and the new authenticated backend one - same
+        content-type branching either way, only the *version* selected
+        differs. Public downloads always serve the approved/published
+        snapshot (``use_approved=True``, matching the site's existing
+        behaviour); the authenticated route serves whatever is currently on
+        the record, draft or not, since that's what "download this document
+        I'm working on" means."""
+        from odoo import http
+        from odoo.http import request
+
+        self.ensure_one()
+        version = self.approved_version_id if use_approved else False
+        if self.content_type == "onlyoffice":
+            attachment = (version.attachment_id if version else False) or self.attachment_id
+            if not attachment:
+                raise UserError(self.env._("This document has no file to download."))
+            return self.env["ir.binary"]._get_stream_from(
+                attachment, "raw"
+            ).get_response(as_attachment=True)
+        if self.content_type == "html":
+            data = ((version.content_html if version else False) or self.content_html or "").encode()
+            filename = "%s.html" % self.name
+        elif self.content_type == "markdown":
+            data = (
+                (version.content_markdown if version else False) or self.content_markdown or ""
+            ).encode()
+            filename = "%s.md" % self.name
+        else:
+            raise UserError(self.env._("Folders can't be downloaded directly."))
+        return request.make_response(
+            data,
+            headers=[
+                ("Content-Type", "application/octet-stream"),
+                ("Content-Disposition", http.content_disposition(filename)),
+            ],
+        )
 
     @api.model
     def browser_create_folder(self, name, parent_id=False):
