@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <menuitem id="menu_dms_root" name="Documents" sequence="90"
+    <menuitem id="menu_dms_root" name="Documents" sequence="50"
               web_icon="sanare_dms,static/description/icon.png"/>
 
-    <menuitem id="menu_dms_documents" name="Documents"
+    <!-- Browse: opens at the top of the tree, drill into folders from the form -->
+    <menuitem id="menu_dms_browse" name="Browse"
               parent="menu_dms_root" action="action_dms_document" sequence="10"/>
 
+    <!-- Flat list of every document the user may see -->
+    <menuitem id="menu_dms_all" name="All Documents"
+              parent="menu_dms_root" action="action_dms_document_all" sequence="20"/>
+
     <menuitem id="menu_dms_pending" name="Pending My Approval"
-              parent="menu_dms_root" action="action_dms_document_pending" sequence="20"/>
+              parent="menu_dms_root" action="action_dms_document_pending" sequence="30"/>
 
     <menuitem id="menu_dms_config" name="Configuration"
               parent="menu_dms_root" sequence="90"
