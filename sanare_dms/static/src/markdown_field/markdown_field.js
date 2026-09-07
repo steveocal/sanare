@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
-import { Component, useState, onWillStart, markup } from "@odoo/owl";
+import { Component, useState, useEffect, onWillStart, onMounted, markup } from "@odoo/owl";
 import { CodeEditor } from "@web/core/code_editor/code_editor";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
 import { useService } from "@web/core/utils/hooks";
@@ -19,6 +19,17 @@ export class SanareMarkdownField extends Component {
         this.state = useState({ preview: markup(""), view: "editor" });
         this.renderPreview = useDebounced((text) => this._render(text), 300);
         onWillStart(() => this._render(this.value));
+
+        // The bundled ACE editor measures its container once on mount and never
+        // again; if the form/notebook layout is not settled yet it renders at a
+        // tiny width. Kick a resize after mount and whenever the view changes.
+        const kick = () => {
+            for (const d of [0, 60, 250]) {
+                setTimeout(() => window.dispatchEvent(new Event("resize")), d);
+            }
+        };
+        onMounted(kick);
+        useEffect(kick, () => [this.state.view]);
     }
 
     get value() {

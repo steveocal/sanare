@@ -9,23 +9,23 @@
                         t-on-click="() => this.setView('editor')">Editor</button>
                 <button type="button" class="btn btn-outline-secondary"
                         t-att-class="{ active: state.view === 'split' }"
-                        t-on-click="() => this.setView('split')">Split</button>
+                        t-on-click="() => this.setView('split')">Editor + Preview</button>
                 <button type="button" class="btn btn-outline-secondary"
                         t-att-class="{ active: state.view === 'preview' }"
                         t-on-click="() => this.setView('preview')">Preview</button>
             </div>
-            <div class="o_sanare_markdown_panes">
-                <div class="o_sanare_markdown_editor" t-if="state.view !== 'preview'">
-                    <CodeEditor
-                        value="value"
-                        readonly="props.readonly"
-                        theme="editorTheme"
-                        onChange="(v) => this.onChange(v)"
-                        class="'o_sanare_markdown_code'"/>
-                </div>
-                <div class="o_sanare_markdown_preview" t-if="state.view !== 'editor'"
-                     t-out="state.preview"/>
+
+            <div class="o_sanare_markdown_editor" t-if="state.view !== 'preview'">
+                <CodeEditor
+                    value="value"
+                    readonly="props.readonly"
+                    theme="editorTheme"
+                    onChange="(v) => this.onChange(v)"
+                    class="'o_sanare_markdown_code'"/>
             </div>
+
+            <div class="o_sanare_markdown_preview" t-if="state.view !== 'editor'"
+                 t-out="state.preview"/>
         </div>
     </t>
 
