@@ -72,7 +72,7 @@
         <field name="name">sanare.document.form</field>
         <field name="model">sanare.document</field>
         <field name="arch" type="xml">
-            <form string="Document">
+            <form string="Document" class="o_dms_document_form">
                 <header>
                     <button name="action_submit" type="object" string="Submit for Approval"
                             class="btn-primary" invisible="not can_submit"/>

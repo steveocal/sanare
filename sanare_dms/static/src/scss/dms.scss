@@ -1,3 +1,25 @@
+.o_dms_document_form {
+    /* full width for the editors */
+    .o_form_sheet {
+        max-width: 100%;
+    }
+
+    /* Backend is dark mode here; the native HTML editor renders a white
+       editing surface - force it dark so it matches the form. */
+    .odoo-editor-editable,
+    .o_readonly[name="content_html"],
+    .note-editable,
+    .o_field_html .oe-editor,
+    .o_field_html .odoo-editor {
+        background: #212529 !important;
+        color: #dee2e6 !important;
+    }
+    .o_field_html {
+        --o-we-toolbar-bg: #2b3035;
+    }
+}
+
+/* keep the folder kanban tidy */
 .o_kanban_dashboard .oe_kanban_global_click {
     padding: 12px;
 }
