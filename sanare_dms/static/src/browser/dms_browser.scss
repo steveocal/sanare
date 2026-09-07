@@ -1,10 +1,21 @@
+/* Theme-agnostic: transparent surfaces + translucent greys, so the browser
+   inherits the webclient's light OR dark surface. No opaque backgrounds. */
+
+$dms-line: rgba(128, 128, 128, .28);
+$dms-soft: rgba(128, 128, 128, .10);
+$dms-hover: rgba(128, 128, 128, .16);
+$dms-sel: rgba(128, 128, 128, .24);
+
 .o_dms_browser {
-    background: var(--o-view-background-color, #fff);
+    background: transparent;
+    color: inherit;
 
     .o_dms_toolbar {
-        background: var(--o-list-header-bg-color, var(--o-gray-100, #f9f9f9));
+        background: $dms-soft;
+        border-bottom: 1px solid $dms-line;
+
         .breadcrumb-item + .breadcrumb-item::before { opacity: .5; }
-        .breadcrumb-item a { text-decoration: none; }
+        .breadcrumb-item a { text-decoration: none; color: inherit; }
     }
 
     .o_dms_body { min-height: 0; }
@@ -14,23 +25,25 @@
         min-width: 200px;
         flex: 0 0 auto;
         user-select: none;
+        border-right: 1px solid $dms-line;
     }
 
     .o_dms_tree_row {
         cursor: pointer;
         white-space: nowrap;
         font-size: 13px;
+        color: inherit;
 
-        &:hover { background: var(--o-gray-200, #ededed); }
+        &:hover { background: $dms-hover; }
         &.o_dms_selected {
             background: var(--o-brand-primary, #714b67);
             color: #fff;
-            .text-warning, .text-primary { color: #fff !important; }
+            i { color: #fff !important; }
         }
         &.o_dms_drop_target {
             outline: 2px dashed var(--o-brand-primary, #714b67);
             outline-offset: -2px;
-            background: rgba(113, 75, 103, .12);
+            background: $dms-sel;
         }
 
         .o_dms_caret {
@@ -44,38 +57,29 @@
     .o_dms_list { min-width: 0; }
 
     .o_dms_table {
+        color: inherit;
+        background: transparent;
+
         .o_dms_thead th {
             position: sticky;
             top: 0;
-            background: var(--o-list-header-bg-color, var(--o-gray-100, #f9f9f9));
+            background: $dms-soft;
+            backdrop-filter: blur(2px);
+            box-shadow: inset 0 -1px 0 $dms-line;
             z-index: 1;
             font-weight: 600;
             font-size: 12px;
             text-transform: uppercase;
-            color: var(--o-gray-600, #6c6c6c);
+            opacity: .9;
         }
         .o_dms_row {
             cursor: pointer;
-            &.o_dms_selected > td { background: rgba(113, 75, 103, .12); }
+            &:hover > td { background: $dms-soft; }
+            &.o_dms_selected > td { background: $dms-sel; }
             &.o_dms_drop_target > td {
-                background: rgba(113, 75, 103, .16);
+                background: $dms-sel;
                 box-shadow: inset 0 0 0 2px var(--o-brand-primary, #714b67);
             }
         }
-    }
-
-    .o_dms_menu {
-        position: absolute;
-        right: 0;
-        top: calc(100% + 2px);
-        z-index: 1000;
-        min-width: 190px;
-        background: var(--o-view-background-color, #fff);
-        border: 1px solid var(--o-gray-300, #d1d1d1);
-        border-radius: 4px;
-        padding: 4px 0;
-
-        .dropdown-item { padding: 6px 14px; font-size: 13px; cursor: pointer; }
-        .dropdown-item:hover { background: var(--o-gray-200, #ededed); }
     }
 }

@@ -3,6 +3,8 @@
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
+import { Dropdown } from "@web/core/dropdown/dropdown";
+import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { Component, useState, useChildSubEnv, useEffect, useRef, onWillStart } from "@odoo/owl";
 
 const MODEL = "sanare.document";
@@ -37,7 +39,7 @@ DmsTreeNode.components = { DmsTreeNode };
  * ------------------------------------------------------------------ */
 export class DmsBrowser extends Component {
     static template = "sanare_dms.DmsBrowser";
-    static components = { DmsTreeNode };
+    static components = { DmsTreeNode, Dropdown, DropdownItem };
     static props = ["*"];
 
     setup() {
@@ -60,7 +62,6 @@ export class DmsBrowser extends Component {
             dragOverId: null,
             creatingFolder: false,
             newFolderName: "",
-            newMenuOpen: false,
         });
 
         this.newFolderInput = useRef("newFolderInput");
@@ -158,11 +159,6 @@ export class DmsBrowser extends Component {
     refresh() {
         this.refreshTree();
         this.loadContents(this.state.selectedId);
-    }
-
-    pickNewType(type) {
-        this.state.newMenuOpen = false;
-        this.newDocument(type);
     }
 
     onNewFolderKeydown(ev) {

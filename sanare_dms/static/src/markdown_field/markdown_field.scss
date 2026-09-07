@@ -1,14 +1,19 @@
+/* Theme-agnostic: transparent surfaces + translucent greys so the widget
+   inherits the webclient's light or dark background. No opaque colours. */
+
+$md-line: rgba(128, 128, 128, .30);
+$md-soft: rgba(128, 128, 128, .14);
+
 .o_sanare_markdown {
     width: 100%;
 
     .o_sanare_markdown_panes {
         display: flex;
-        gap: 0;
         align-items: stretch;
-        border: 1px solid var(--o-gray-300, #ced4da);
+        border: 1px solid $md-line;
         border-radius: 4px;
         overflow: hidden;
-        background: var(--o-view-background-color, #fff);
+        background: transparent;
     }
 
     .o_sanare_markdown_editor {
@@ -18,7 +23,33 @@
     .o_sanare_markdown_preview {
         flex: 1 1 50%;
         min-width: 0;
-        border-left: 1px solid var(--o-gray-300, #ced4da);
+        border-left: 1px solid $md-line;
+        height: 460px;
+        overflow-y: auto;
+        padding: 12px 16px;
+        color: inherit;
+        background: transparent;
+        line-height: 1.6;
+
+        h1, h2, h3 { margin-top: .6em; }
+        pre {
+            background: $md-soft;
+            padding: .75rem 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        code { background: $md-soft; padding: .1em .3em; border-radius: 3px; }
+        blockquote {
+            border-left: 3px solid $md-line;
+            padding-left: 1rem;
+            margin-left: 0;
+            opacity: .85;
+        }
+        table {
+            border-collapse: collapse;
+            th, td { border: 1px solid $md-line; padding: .3rem .5rem; }
+        }
+        img { max-width: 100%; }
     }
 
     &.o_sanare_md_view_editor .o_sanare_markdown_editor { flex-basis: 100%; }
@@ -31,37 +62,5 @@
     .o_sanare_markdown_code {
         height: 460px;
         width: 100%;
-    }
-    .o_sanare_markdown_preview {
-        height: 460px;
-        overflow-y: auto;
-        padding: 12px 16px;
-        color: var(--o-main-text-color, inherit);
-        background: var(--o-view-background-color, #fff);
-        line-height: 1.6;
-
-        h1, h2, h3 { margin-top: .6em; }
-        pre {
-            background: var(--o-gray-200, #f1f3f5);
-            padding: .75rem 1rem;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-        code {
-            background: var(--o-gray-200, #f1f3f5);
-            padding: .1em .3em;
-            border-radius: 3px;
-        }
-        blockquote {
-            border-left: 3px solid var(--o-gray-400, #adb5bd);
-            padding-left: 1rem;
-            margin-left: 0;
-            opacity: .85;
-        }
-        table {
-            border-collapse: collapse;
-            th, td { border: 1px solid var(--o-gray-400, #adb5bd); padding: .3rem .5rem; }
-        }
-        img { max-width: 100%; }
     }
 }
