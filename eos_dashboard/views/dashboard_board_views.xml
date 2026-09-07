@@ -13,9 +13,28 @@
                             string="History / Trend" icon="fa-line-chart"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_rocks_on_track" type="object" class="oe_stat_button"
+                                icon="fa-check-circle" invisible="report_key != 'eos'">
+                            <field name="eos_rocks_on_track" widget="statinfo" string="On Track"/>
+                        </button>
+                        <button name="action_view_rocks_at_risk" type="object" class="oe_stat_button"
+                                icon="fa-exclamation-triangle" invisible="report_key != 'eos'">
+                            <field name="eos_rocks_at_risk" widget="statinfo" string="At Risk"/>
+                        </button>
+                        <button name="action_view_risks_red" type="object" class="oe_stat_button"
+                                icon="fa-fire" invisible="report_key != 'risks'">
+                            <field name="risks_open_red" widget="statinfo" string="Red Risks"/>
+                        </button>
+                        <button name="action_view_risks_yellow" type="object" class="oe_stat_button"
+                                icon="fa-exclamation-triangle" invisible="report_key != 'risks'">
+                            <field name="risks_open_yellow" widget="statinfo" string="Yellow Risks"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1" nolabel="1"/></h1>
                     </div>
+                    <field name="currency_id" invisible="1"/>
                     <group>
                         <group>
                             <field name="report_key" readonly="1"/>
@@ -33,7 +52,180 @@
                         </group>
                     </group>
 
-                    <field name="board_html" widget="html" readonly="1"/>
+                    <!-- 01 · Executive -->
+                    <group invisible="report_key != 'exec'" col="4">
+                        <field name="exec_overall_health" string="Overall Health"/>
+                        <field name="exec_report_status" string="Report Status"/>
+                        <field name="exec_active_quarter" string="Active Quarter"/>
+                        <field name="exec_thailand_readiness_pct" string="Thailand Readiness %"/>
+                        <field name="exec_rocks_on_track" string="Rocks On Track"/>
+                        <field name="exec_rocks_at_risk" string="Rocks At Risk"/>
+                        <field name="exec_ending_cash" string="Ending Cash" widget="monetary"/>
+                        <field name="exec_runway_months" string="Runway (Months)"/>
+                        <field name="exec_hospitals_engaged" string="Hospitals Engaged+"/>
+                        <field name="exec_hospitals_ordering" string="Ordering Hospitals"/>
+                        <field name="exec_qualified_pipeline_cm2" string="Qualified Pipeline cm²"/>
+                    </group>
+
+                    <!-- 02 · EOS Execution -->
+                    <group invisible="report_key != 'eos'" col="4">
+                        <field name="eos_rocks_off_track" string="Off Track"/>
+                        <field name="eos_rocks_complete" string="Complete"/>
+                    </group>
+                    <field name="rock_ids" invisible="report_key != 'eos'" string="Rocks">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="health == 'red'" decoration-warning="health == 'yellow'">
+                            <field name="rock_id"/>
+                            <field name="name"/>
+                            <field name="accountable_owner"/>
+                            <field name="status"/>
+                            <field name="health"/>
+                            <field name="percent_complete" widget="progressbar"/>
+                            <field name="due_date"/>
+                            <field name="next_milestone"/>
+                        </list>
+                    </field>
+
+                    <!-- 04 · Commercial -->
+                    <group invisible="report_key != 'commercial'" col="4">
+                        <field name="commercial_qualified_pipeline_cm2" string="Qualified Pipeline cm²"/>
+                        <field name="commercial_ordering_hospitals" string="Ordering/Repeat Hospitals"/>
+                    </group>
+                    <group string="Funnel by Stage" invisible="report_key != 'commercial'" col="4">
+                        <field name="commercial_stage_identified" string="Identified"/>
+                        <field name="commercial_stage_engaged" string="Engaged"/>
+                        <field name="commercial_stage_evaluating" string="Evaluating"/>
+                        <field name="commercial_stage_contracting" string="Contracting"/>
+                        <field name="commercial_stage_approved" string="Approved"/>
+                        <field name="commercial_stage_ordering" string="Ordering"/>
+                        <field name="commercial_stage_repeat_ordering" string="Repeat Ordering"/>
+                        <field name="commercial_stage_contracted" string="Contracted"/>
+                    </group>
+                    <field name="pipeline_lead_ids" invisible="report_key != 'commercial'" string="Active Commercial Pipeline">
+                        <list create="false" delete="false" edit="false">
+                            <field name="name" string="Opportunity"/>
+                            <field name="hospital_id" string="Hospital/Account"/>
+                            <field name="city"/>
+                            <field name="primary_physician_id"/>
+                            <field name="stage_id"/>
+                            <field name="probability" widget="progressbar"/>
+                            <field name="est_annual_cm2" string="Annual cm²"/>
+                            <field name="expected_first_order" string="First Order"/>
+                            <field name="user_id" string="Owner"/>
+                            <field name="next_action"/>
+                        </list>
+                    </field>
+
+                    <!-- 05 · Clinical & KOL -->
+                    <group invisible="report_key != 'clinical'" col="4">
+                        <field name="clinical_kol_count" string="KOL/Advisors"/>
+                        <field name="clinical_active_count" string="Active"/>
+                        <field name="clinical_trained_certified" string="Trained/Certified"/>
+                        <field name="clinical_cases_ytd" string="Cases YTD"/>
+                        <field name="clinical_cm2_ytd" string="cm² YTD"/>
+                    </group>
+                    <field name="physician_ids" invisible="report_key != 'clinical'" string="Physicians / KOLs">
+                        <list create="false" delete="false" edit="false"
+                              decoration-success="relationship_stage == 'kol'"
+                              decoration-info="relationship_stage == 'active'">
+                            <field name="display_name" string="Physician/KOL"/>
+                            <field name="hospital_id"/>
+                            <field name="specialty"/>
+                            <field name="relationship_stage"/>
+                            <field name="training_status"/>
+                            <field name="first_case_date" string="First Case"/>
+                            <field name="cases_ytd"/>
+                            <field name="cm2_ytd"/>
+                            <field name="owner"/>
+                        </list>
+                    </field>
+
+                    <!-- 06 · Regulatory & Supply -->
+                    <group invisible="report_key != 'reg_supply'" col="4">
+                        <field name="reg_status" string="Regulatory Rock Status"/>
+                        <field name="reg_tasks_complete" string="Tasks Complete"/>
+                        <field name="reg_tasks_open" string="Tasks Open"/>
+                        <field name="reg_percent_complete" string="% Complete" widget="progressbar"/>
+                    </group>
+                    <field name="regulatory_task_ids" invisible="report_key != 'reg_supply'" string="Regulatory Tasks">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="status == 'off_track'" decoration-warning="status == 'at_risk'">
+                            <field name="name"/>
+                            <field name="owner"/>
+                            <field name="due_date"/>
+                            <field name="status"/>
+                            <field name="next_action"/>
+                        </list>
+                    </field>
+                    <field name="sku_ids" invisible="report_key != 'reg_supply'" string="Supply Chain">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="stockout_risk == 'red'" decoration-warning="stockout_risk == 'yellow'">
+                            <field name="name"/>
+                            <field name="manufacturer"/>
+                            <field name="inventory_cm2"/>
+                            <field name="weeks_supply"/>
+                            <field name="earliest_expiry"/>
+                            <field name="stockout_risk"/>
+                            <field name="owner"/>
+                        </list>
+                    </field>
+
+                    <!-- 07 · Financial -->
+                    <group invisible="report_key != 'financial'" col="4">
+                        <field name="fp_ending_cash" widget="monetary"/>
+                        <field name="fp_available_capital" widget="monetary"/>
+                        <field name="fp_net_cash_burn" widget="monetary"/>
+                        <field name="fp_runway_months"/>
+                        <field name="fp_gross_margin_pct"/>
+                    </group>
+                    <field name="financial_line_ids" invisible="report_key != 'financial'" string="Profit &amp; Loss">
+                        <list create="false" delete="false" edit="false">
+                            <field name="category"/>
+                            <field name="actual" sum="Total" widget="monetary"/>
+                            <field name="budget" sum="Total" widget="monetary"/>
+                            <field name="variance" sum="Total" widget="monetary"/>
+                            <field name="variance_pct"/>
+                            <field name="ytd_actual" sum="Total" widget="monetary"/>
+                            <field name="ytd_budget" sum="Total" widget="monetary"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+
+                    <!-- 08 · Use of Funds -->
+                    <group invisible="report_key != 'use_of_funds'" col="4">
+                        <field name="fp_capital_received" widget="monetary"/>
+                        <field name="fp_committed_unspent" widget="monetary"/>
+                        <field name="fp_available_capital" widget="monetary"/>
+                    </group>
+                    <field name="use_of_funds_ids" invisible="report_key != 'use_of_funds'" string="Use of Funds">
+                        <list create="false" delete="false" edit="false" decoration-danger="percent_used > 100">
+                            <field name="category"/>
+                            <field name="approved_budget" widget="monetary"/>
+                            <field name="spent_to_date" widget="monetary"/>
+                            <field name="committed" widget="monetary"/>
+                            <field name="remaining" widget="monetary"/>
+                            <field name="percent_used" widget="progressbar"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+
+                    <!-- 09 · Enterprise Risks -->
+                    <group invisible="report_key != 'risks'" col="4">
+                        <field name="risks_worsening" string="Worsening Risks"/>
+                    </group>
+                    <field name="top_risk_ids" invisible="report_key != 'risks'" string="Top Risks">
+                        <list create="false" delete="false" edit="false"
+                              decoration-danger="rating == 'red'" decoration-warning="rating == 'yellow'">
+                            <field name="name"/>
+                            <field name="category"/>
+                            <field name="probability"/>
+                            <field name="impact"/>
+                            <field name="rating"/>
+                            <field name="owner"/>
+                            <field name="mitigation"/>
+                            <field name="trend"/>
+                        </list>
+                    </field>
 
                     <group string="Commentary — shared with the Monthly Report"
                            invisible="report_key not in ['exec', 'eos', 'thailand', 'risks']">

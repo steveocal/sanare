@@ -10,6 +10,8 @@ fields for inline editing.
 Report 03 keeps its own dedicated board (``eos.thailand.readiness``) as well -
 this model's ``thailand`` key is the consistent entry in the Dashboards menu.
 """
+from datetime import date
+
 from odoo import api, fields, models
 
 REPORT_KEYS = [
@@ -66,6 +68,87 @@ class EosDashboardBoard(models.Model):
     secondary_metric = fields.Float(compute="_compute_metrics", store=True, aggregator="avg")
     tertiary_label = fields.Char(compute="_compute_metrics", store=True)
     tertiary_metric = fields.Float(compute="_compute_metrics", store=True, aggregator="avg")
+
+    # ------------------------------------------------------------------
+    # Native-widget report fields (replace the injected board_html for the
+    # on-screen view). Non-stored, always live - same fidelity characteristic
+    # as board_html/_headline_metrics before them: current state, not a
+    # dated snapshot, except where the source helper is itself month-scoped
+    # (_financial_period, _thailand_readiness_data).
+    currency_id = fields.Many2one("res.currency", compute="_compute_report_fields")
+
+    # 01 · Executive
+    exec_overall_health = fields.Char(compute="_compute_report_fields")
+    exec_thailand_readiness_pct = fields.Float(compute="_compute_report_fields")
+    exec_active_quarter = fields.Char(compute="_compute_report_fields")
+    exec_report_status = fields.Char(compute="_compute_report_fields")
+    exec_rocks_on_track = fields.Integer(compute="_compute_report_fields")
+    exec_rocks_at_risk = fields.Integer(compute="_compute_report_fields")
+    exec_ending_cash = fields.Monetary(compute="_compute_report_fields", currency_field="currency_id")
+    exec_runway_months = fields.Float(compute="_compute_report_fields")
+    exec_hospitals_engaged = fields.Integer(compute="_compute_report_fields")
+    exec_hospitals_ordering = fields.Integer(compute="_compute_report_fields")
+    exec_qualified_pipeline_cm2 = fields.Float(compute="_compute_report_fields")
+
+    # 02 · EOS Execution
+    eos_rocks_on_track = fields.Integer(compute="_compute_report_fields")
+    eos_rocks_at_risk = fields.Integer(compute="_compute_report_fields")
+    eos_rocks_off_track = fields.Integer(compute="_compute_report_fields")
+    eos_rocks_complete = fields.Integer(compute="_compute_report_fields")
+    rock_ids = fields.Many2many("eos.rock", compute="_compute_report_fields")
+
+    # 04 · Commercial
+    commercial_qualified_pipeline_cm2 = fields.Float(compute="_compute_report_fields")
+    commercial_ordering_hospitals = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_identified = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_engaged = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_evaluating = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_contracting = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_approved = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_ordering = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_repeat_ordering = fields.Integer(compute="_compute_report_fields")
+    commercial_stage_contracted = fields.Integer(compute="_compute_report_fields")
+    pipeline_lead_ids = fields.Many2many("crm.lead", compute="_compute_report_fields")
+
+    # 05 · Clinical & KOL
+    clinical_kol_count = fields.Integer(compute="_compute_report_fields")
+    clinical_active_count = fields.Integer(compute="_compute_report_fields")
+    clinical_trained_certified = fields.Integer(compute="_compute_report_fields")
+    clinical_cases_ytd = fields.Integer(compute="_compute_report_fields")
+    clinical_cm2_ytd = fields.Float(compute="_compute_report_fields")
+    physician_ids = fields.Many2many("eos.physician", compute="_compute_report_fields")
+
+    # 06 · Regulatory & Supply
+    reg_status = fields.Char(compute="_compute_report_fields")
+    reg_tasks_complete = fields.Integer(compute="_compute_report_fields")
+    reg_tasks_open = fields.Integer(compute="_compute_report_fields")
+    reg_percent_complete = fields.Float(compute="_compute_report_fields")
+    regulatory_task_ids = fields.Many2many("eos.task", compute="_compute_report_fields")
+    sku_ids = fields.Many2many("eos.sku", compute="_compute_report_fields")
+
+    # 07 · Financial / 08 · Use of Funds (financial_period_id is shared)
+    financial_period_id = fields.Many2one("eos.financial.period", compute="_compute_report_fields")
+    fp_ending_cash = fields.Monetary(related="financial_period_id.ending_cash", string="Ending Cash")
+    fp_available_capital = fields.Monetary(
+        related="financial_period_id.available_capital", string="Available Capital")
+    fp_net_cash_burn = fields.Monetary(related="financial_period_id.net_cash_burn", string="Net Cash Burn")
+    fp_runway_months = fields.Float(related="financial_period_id.runway_months", string="Runway (Months)")
+    fp_gross_margin_pct = fields.Float(
+        related="financial_period_id.gross_margin_pct", string="Gross Margin %")
+    fp_capital_received = fields.Monetary(
+        related="financial_period_id.capital_received", string="Capital Received")
+    fp_committed_unspent = fields.Monetary(
+        related="financial_period_id.committed_unspent", string="Committed but Unspent")
+    financial_line_ids = fields.Many2many("eos.financial.period.line", compute="_compute_report_fields")
+
+    # 08 · Use of Funds
+    use_of_funds_ids = fields.Many2many("eos.use.of.funds", compute="_compute_report_fields")
+
+    # 09 · Enterprise Risks
+    risks_open_red = fields.Integer(compute="_compute_report_fields")
+    risks_open_yellow = fields.Integer(compute="_compute_report_fields")
+    risks_worsening = fields.Integer(compute="_compute_report_fields")
+    top_risk_ids = fields.Many2many("eos.risk", compute="_compute_report_fields")
 
     # editable, write-through to the monthly report
     executive_summary = fields.Text(related="monthly_report_id.executive_summary", readonly=False)
@@ -179,6 +262,184 @@ class EosDashboardBoard(models.Model):
             b.secondary_label, b.secondary_metric = m[1][0], float(m[1][1])
             b.tertiary_label, b.tertiary_metric = m[2][0], float(m[2][1])
             b.computed_on = fields.Datetime.now()
+
+    @api.depends("report_key", "as_of_date", "monthly_report_id")
+    def _compute_report_fields(self):
+        """Fill the native-widget fields (tiles + list relations) for the
+        board's own report_key. Reuses the same env lookups and query
+        fragments already written in _headline_metrics - this fills in the
+        rest of what that method already half-computes for the top-3
+        headline numbers, it isn't new query logic."""
+        env = self.env
+        Rock = env["eos.rock"]
+        Task = env["eos.task"]
+        Lead = env["crm.lead"]
+        Risk = env["eos.risk"]
+        Phys = env["eos.physician"]
+        Sku = env["eos.sku"]
+        Uof = env["eos.use.of.funds"]
+
+        for b in self:
+            # Reset everything to its empty value; only the branch matching
+            # report_key below fills anything in.
+            b.currency_id = False
+            b.exec_overall_health = b.exec_active_quarter = b.exec_report_status = ""
+            b.exec_thailand_readiness_pct = b.exec_runway_months = 0.0
+            b.exec_rocks_on_track = b.exec_rocks_at_risk = 0
+            b.exec_ending_cash = 0.0
+            b.exec_hospitals_engaged = b.exec_hospitals_ordering = 0
+            b.exec_qualified_pipeline_cm2 = 0.0
+            b.eos_rocks_on_track = b.eos_rocks_at_risk = 0
+            b.eos_rocks_off_track = b.eos_rocks_complete = 0
+            b.rock_ids = Rock.browse()
+            b.commercial_qualified_pipeline_cm2 = 0.0
+            b.commercial_ordering_hospitals = 0
+            b.commercial_stage_identified = b.commercial_stage_engaged = 0
+            b.commercial_stage_evaluating = b.commercial_stage_contracting = 0
+            b.commercial_stage_approved = b.commercial_stage_ordering = 0
+            b.commercial_stage_repeat_ordering = b.commercial_stage_contracted = 0
+            b.pipeline_lead_ids = Lead.browse()
+            b.clinical_kol_count = b.clinical_active_count = 0
+            b.clinical_trained_certified = b.clinical_cases_ytd = 0
+            b.clinical_cm2_ytd = 0.0
+            b.physician_ids = Phys.browse()
+            b.reg_status = ""
+            b.reg_tasks_complete = b.reg_tasks_open = 0
+            b.reg_percent_complete = 0.0
+            b.regulatory_task_ids = Task.browse()
+            b.sku_ids = Sku.browse()
+            b.financial_period_id = False
+            b.use_of_funds_ids = Uof.browse()
+            b.risks_open_red = b.risks_open_yellow = b.risks_worsening = 0
+            b.top_risk_ids = Risk.browse()
+
+            o = b.monthly_report_id
+            k = b.report_key
+            if not o or not k:
+                continue
+            b.currency_id = o.currency_id or env.company.currency_id
+
+            if k == "exec":
+                q = o._report_quarter()
+                thai = o._thailand_readiness_data()
+                eng = Lead.search([("sanare_stage", "in", [
+                    "engaged", "evaluating", "contracting", "approved", "ordering", "repeat_ordering"])])
+                ordr = Lead.search([("sanare_stage", "in", ["ordering", "repeat_ordering"])])
+                qual = Lead.search([("probability", ">=", 50)])
+                b.exec_overall_health = dict(o._fields["overall_health"].selection).get(o.overall_health) or ""
+                b.exec_thailand_readiness_pct = thai["overall_readiness"] * 100.0
+                b.exec_active_quarter = o._quarter_label()
+                b.exec_report_status = dict(o._fields["report_status"].selection).get(o.report_status) or ""
+                b.exec_rocks_on_track = Rock.search_count([("quarter", "=", q), ("status", "=", "on_track")])
+                b.exec_rocks_at_risk = Rock.search_count([("quarter", "=", q), ("status", "=", "at_risk")])
+                b.exec_ending_cash = o.ending_cash or 0.0
+                b.exec_runway_months = o.runway_months or 0.0
+                b.exec_hospitals_engaged = len(eng)
+                b.exec_hospitals_ordering = len(ordr)
+                b.exec_qualified_pipeline_cm2 = sum(
+                    lead.est_annual_cm2 * (lead.probability / 100.0) for lead in qual)
+
+            elif k == "eos":
+                q = o._report_quarter()
+                b.eos_rocks_on_track = Rock.search_count([("quarter", "=", q), ("status", "=", "on_track")])
+                b.eos_rocks_at_risk = Rock.search_count([("quarter", "=", q), ("status", "=", "at_risk")])
+                b.eos_rocks_off_track = Rock.search_count([("quarter", "=", q), ("status", "=", "off_track")])
+                b.eos_rocks_complete = Rock.search_count([("quarter", "=", q), ("status", "=", "complete")])
+                b.rock_ids = Rock.search([("quarter", "=", q)], order="rock_id")
+
+            elif k == "commercial":
+                qual = Lead.search([("probability", ">=", 50)])
+                b.commercial_qualified_pipeline_cm2 = sum(
+                    lead.est_annual_cm2 * (lead.probability / 100.0) for lead in qual)
+                b.commercial_ordering_hospitals = Lead.search_count(
+                    [("sanare_stage", "in", ["ordering", "repeat_ordering"])])
+                stage_fields = {
+                    "identified": "commercial_stage_identified",
+                    "engaged": "commercial_stage_engaged",
+                    "evaluating": "commercial_stage_evaluating",
+                    "contracting": "commercial_stage_contracting",
+                    "approved": "commercial_stage_approved",
+                    "ordering": "commercial_stage_ordering",
+                    "repeat_ordering": "commercial_stage_repeat_ordering",
+                }
+                for stage, fname in stage_fields.items():
+                    setattr(b, fname, Lead.search_count([("sanare_stage", "=", stage)]))
+                b.commercial_stage_contracted = Lead.search_count([("contracted", "=", True)])
+                b.pipeline_lead_ids = Lead.search(
+                    [("sanare_stage", "!=", "identified"), ("sanare_stage", "!=", False)],
+                    order="est_annual_cm2 desc", limit=16)
+
+            elif k == "clinical":
+                rows = Phys.search([], order="name")
+                b.clinical_kol_count = Phys.search_count([("relationship_stage", "=", "kol")])
+                b.clinical_active_count = Phys.search_count([("relationship_stage", "=", "active")])
+                b.clinical_trained_certified = Phys.search_count(
+                    [("training_status", "in", ["trained", "certified"])])
+                b.clinical_cases_ytd = int(sum(rows.mapped("cases_ytd")))
+                b.clinical_cm2_ytd = sum(rows.mapped("cm2_ytd"))
+                b.physician_ids = rows
+
+            elif k == "reg_supply":
+                reg = Rock.search([("rock_id", "in", ["R6", "R06"])], limit=1)
+                if reg:
+                    b.reg_status = dict(reg._fields["status"].selection).get(reg.status) or ""
+                    b.reg_tasks_complete = len(reg.task_ids.filtered(lambda t: t.status == "complete"))
+                    b.reg_tasks_open = len(
+                        reg.task_ids.filtered(lambda t: t.status not in ("complete", "deferred")))
+                    b.reg_percent_complete = reg.percent_complete or 0.0
+                    b.regulatory_task_ids = reg.task_ids.sorted(key=lambda t: (t.due_date or date.max, t.sequence))
+                b.sku_ids = Sku.search([], order="name")
+
+            elif k in ("financial", "use_of_funds"):
+                b.financial_period_id = o._financial_period()
+                if k == "financial":
+                    b.financial_line_ids = b.financial_period_id.line_ids
+                else:
+                    b.use_of_funds_ids = Uof.search([], order="sequence, id")
+
+            elif k == "risks":
+                b.risks_open_red = Risk.search_count([("rating", "=", "red"), ("status", "!=", "resolved")])
+                b.risks_open_yellow = Risk.search_count(
+                    [("rating", "=", "yellow"), ("status", "!=", "resolved")])
+                b.risks_worsening = Risk.search_count(
+                    [("trend", "=", "worsening"), ("status", "!=", "resolved")])
+                b.top_risk_ids = Risk.search(
+                    [("status", "!=", "resolved")], order="risk_score desc, risk_id", limit=10)
+
+    # ------------------------------------------------------------------
+    def _open_rocks(self, status):
+        self.ensure_one()
+        o = self.monthly_report_id
+        q = o._report_quarter() if o else False
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Rocks — %s" % dict(self.env["eos.rock"]._fields["status"].selection).get(status, status),
+            "res_model": "eos.rock",
+            "view_mode": "list,form",
+            "domain": [("quarter", "=", q), ("status", "=", status)],
+        }
+
+    def action_view_rocks_on_track(self):
+        return self._open_rocks("on_track")
+
+    def action_view_rocks_at_risk(self):
+        return self._open_rocks("at_risk")
+
+    def _open_risks(self, rating):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Risks — %s" % dict(self.env["eos.risk"]._fields["rating"].selection).get(rating, rating),
+            "res_model": "eos.risk",
+            "view_mode": "list,form",
+            "domain": [("rating", "=", rating), ("status", "!=", "resolved")],
+        }
+
+    def action_view_risks_red(self):
+        return self._open_risks("red")
+
+    def action_view_risks_yellow(self):
+        return self._open_risks("yellow")
 
     # ------------------------------------------------------------------
     @api.model
