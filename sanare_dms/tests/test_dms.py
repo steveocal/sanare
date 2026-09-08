@@ -24,6 +24,16 @@ class TestSanareDms(TransactionCase):
             'data-embedded-props=\'{"documentId": %d, "documentName": "%s"}\'></div>'
         ) % (target_id, name)
 
+    @staticmethod
+    def _render_report_html(report, res_ids):
+        """report._render_qweb_html() (not a bare ir.qweb._render) - layouts
+        like web.internal_layout/external_layout need context helpers
+        (context_timestamp, is_html_empty, ...) only the real report-
+        rendering pipeline injects. May return bytes depending on Odoo
+        version/report_type, so normalize to str."""
+        html, _report_type = report._render_qweb_html(report.report_name, res_ids)
+        return html.decode() if isinstance(html, bytes) else html
+
     def test_hierarchy_and_visibility_inheritance(self):
         folder = self.Doc.create(
             {"name": "F", "content_type": "folder", "visibility": "public"}
@@ -347,18 +357,19 @@ class TestSanareDms(TransactionCase):
         doc = self.Doc.create(
             {"name": "LayoutDoc", "content_type": "html", "content_html": "<p>layout-marker</p>"}
         )
-        none_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        report = self.env.ref("sanare_dms.action_report_dms_document")
+        none_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", none_html)
         self.assertIn("position: fixed", none_html)
         self.assertNotIn("o_report_layout_standard", none_html)
 
         doc.report_layout = "internal"
-        internal_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        internal_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", internal_html)
         self.assertIn('class="header"', internal_html)
 
         doc.report_layout = "external"
-        external_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        external_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", external_html)
         self.assertIn("o_report_layout_standard", external_html)
 

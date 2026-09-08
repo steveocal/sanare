@@ -8,6 +8,16 @@ class TestDmsSale(TransactionCase):
         super().setUpClass()
         cls.Doc = cls.env["sanare.document"]
         cls.partner = cls.env["res.partner"].create({"name": "DMS Sale Test Partner"})
+        cls.report = cls.env.ref("sale.action_report_saleorder")
+
+    @staticmethod
+    def _render_report_html(report, res_ids):
+        """report._render_qweb_html() (not a bare ir.qweb._render) -
+        web.external_layout needs context helpers (is_html_empty, ...) only
+        the real report-rendering pipeline injects. May return bytes
+        depending on Odoo version/report_type, so normalize to str."""
+        html, _report_type = report._render_qweb_html(report.report_name, res_ids)
+        return html.decode() if isinstance(html, bytes) else html
 
     def test_pre_post_document_render_in_report(self):
         pre = self.Doc.create(
@@ -21,14 +31,14 @@ class TestDmsSale(TransactionCase):
             "dms_pre_document_id": pre.id,
             "dms_post_document_id": post.id,
         })
-        html = self.env["ir.qweb"]._render("sale.report_saleorder_document", {"doc": order})
+        html = self._render_report_html(self.report, order.ids)
         self.assertIn("pre-marker", html)
         self.assertIn("post-marker", html)
 
     def test_pre_post_document_optional(self):
         # neither set - report still renders fine, no stray empty divs error
         order = self.env["sale.order"].create({"partner_id": self.partner.id})
-        html = self.env["ir.qweb"]._render("sale.report_saleorder_document", {"doc": order})
+        html = self._render_report_html(self.report, order.ids)
         self.assertNotIn("sanare_dms_pre_document", html)
         self.assertNotIn("sanare_dms_post_document", html)
 
