@@ -219,6 +219,24 @@ class TestSanareDms(TransactionCase):
         self.assertTrue(shown.display_in_print)
         self.assertFalse(hidden.display_in_print)
 
+    def test_print_combines_children_flow_with_parent_footer(self):
+        folder = self.Doc.create({"name": "PrintFolder", "content_type": "folder"})
+        self.Doc.create(
+            {"name": "Shown", "content_type": "html", "parent_id": folder.id,
+             "content_html": "<p>shown-marker</p>"}
+        )
+        html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": folder})
+        # parent + child render into a single wkhtmltopdf "body" (one
+        # .article), not one per node, and nothing forces a page break
+        # between them - they should print as one combined, flowing document.
+        self.assertEqual(html.count('class="article"'), 1)
+        self.assertNotIn("page-break-before", html)
+        # the footer names the printed (parent) document, not the nested child
+        footer_start = html.index('class="footer"')
+        footer_html = html[footer_start:footer_start + 300]
+        self.assertIn("PrintFolder", footer_html)
+        self.assertNotIn("Shown", footer_html)
+
     def test_record_rule_hides_private_docs(self):
         self.Doc.create(
             {"name": "secret", "content_type": "html", "owner_id": self.manager.id,

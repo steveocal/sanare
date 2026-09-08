@@ -14,42 +14,64 @@
     <template id="report_document">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
-                <t t-call="sanare_dms.report_document_body">
-                    <t t-set="doc" t-value="doc"/>
-                    <t t-set="level" t-value="1"/>
-                </t>
+                <!-- One .article per top-level selected doc, not per node -
+                     _prepare_html() (base/models/ir_actions_report.py) treats
+                     every ".article" div as a separate wkhtmltopdf "body"
+                     that starts on its own page. Nested children are only
+                     ever rendered *inside* this single wrapper via
+                     report_document_body, so a parent with descendants comes
+                     out as one continuous flowing document instead of a new
+                     page per nested doc. -->
+                <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
+                     style="margin: 12mm;">
+                    <t t-call="sanare_dms.report_document_body">
+                        <t t-set="doc" t-value="doc"/>
+                        <t t-set="level" t-value="1"/>
+                    </t>
+                </div>
+                <!-- Footer is collected globally by _prepare_html() (any
+                     ".footer" div, wherever it sits) and repeated on every
+                     page of this doc's body - name/version of the printed
+                     (parent) doc only, never a nested child's. -->
+                <div class="footer">
+                    <p class="text-muted small mb-0 text-end" style="font-size: 8px;">
+                        <span t-out="doc.name"/> · v<span t-out="doc.version_number"/>
+                    </p>
+                </div>
             </t>
         </t>
     </template>
 
-    <!-- Recursive: renders `doc`, then every child with display_in_print set,
-         each in turn calling this same template one level deeper - printing
-         a folder pulls in its full descendant subtree, in tree order, and a
-         child with the flag off is skipped along with its own subtree
-         rather than left "orphaned" with no parent section above it. -->
+    <!-- Recursive: renders `doc`'s own content, then every child with
+         display_in_print set, each in turn calling this same template one
+         level deeper - printing a folder (or an html/markdown page) pulls in
+         its full descendant subtree, in tree order, and a child with the
+         flag off is skipped along with its own subtree rather than left
+         "orphaned" with no parent section above it. All levels render into
+         the *same* .article wrapper (see report_document) so the whole
+         subtree flows as one combined document; page breaks only happen
+         where the content naturally overflows a page, never forced between
+         sections. -->
     <template id="report_document_body">
-        <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
-             t-attf-style="margin: 12mm;#{'page-break-before: always;' if level > 1 else ''}">
-            <t t-tag="'h%d' % (level if level &lt; 4 else 4)" t-out="doc.name"/>
-            <p class="text-muted">
-                <span t-out="doc.complete_name"/> —
-                revision v<span t-out="doc.version_number"/> —
-                <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
+        <t t-tag="'h%d' % (level if level &lt; 4 else 4)" t-out="doc.name"/>
+        <p class="text-muted">
+            <span t-out="doc.complete_name"/> —
+            revision v<span t-out="doc.version_number"/> —
+            <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
+        </p>
+        <hr/>
+        <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
+        <div t-elif="doc.content_type == 'markdown'"
+             t-out="doc.content_markdown_html"/>
+        <div t-elif="doc.content_type == 'onlyoffice'">
+            <p>Office document: <span t-out="doc.file_name"/>
+               (<span t-out="doc.file_size"/> bytes).</p>
+            <p>Open in ONLYOFFICE to view the full contents.</p>
+        </div>
+        <div t-else="">
+            <p t-if="not doc.child_ids.filtered(lambda c: c.display_in_print)">
+                This is an empty folder.
             </p>
-            <hr/>
-            <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
-            <div t-elif="doc.content_type == 'markdown'"
-                 t-out="doc.content_markdown_html"/>
-            <div t-elif="doc.content_type == 'onlyoffice'">
-                <p>Office document: <span t-out="doc.file_name"/>
-                   (<span t-out="doc.file_size"/> bytes).</p>
-                <p>Open in ONLYOFFICE to view the full contents.</p>
-            </div>
-            <div t-else="">
-                <p t-if="not doc.child_ids.filtered(lambda c: c.display_in_print)">
-                    This is an empty folder.
-                </p>
-            </div>
         </div>
         <t t-foreach="doc.child_ids.filtered(lambda c: c.display_in_print).sorted(key=lambda c: c.sequence)"
            t-as="child">
