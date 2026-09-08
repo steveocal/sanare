@@ -14,6 +14,7 @@ const MODEL = "sanare.document";
 const NEW_TYPES = [
     ["folder", _t("Folder")],
     ["html", _t("Web Page (HTML)")],
+    ["knowledge_html", _t("Knowledge Page")],
     ["markdown", _t("Markdown")],
     ["onlyoffice", _t("Office Document")],
 ];
@@ -500,6 +501,7 @@ export class DmsBrowser extends Component {
         return {
             onlyoffice: "fa-file-word-o",
             html: "fa-file-code-o",
+            knowledge_html: "fa-book",
             markdown: "fa-file-text-o",
         }[rec.content_type] || "fa-file-o";
     }

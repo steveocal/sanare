@@ -76,7 +76,11 @@
              document, not a stack of labeled sections. Only the printed
              (top-level) document's name belongs anywhere in the output now,
              and only in the footer - see report_document. -->
-        <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
+        <!-- Resolved, not raw: an embedded-document marker in content_html
+             is an empty div until _resolve_embedded_refs expands it - see
+             that method's docstring. -->
+        <div t-if="doc.content_type in ('html', 'knowledge_html')"
+             t-out="doc._resolve_embedded_refs(doc.content_html)"/>
         <div t-elif="doc.content_type == 'markdown'"
              t-out="doc.content_markdown_html"/>
         <div t-elif="doc.content_type == 'onlyoffice'">

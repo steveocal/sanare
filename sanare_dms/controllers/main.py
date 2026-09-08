@@ -62,8 +62,13 @@ class SanareDmsWebsite(http.Controller):
         if not document or not self._is_public(document):
             return request.not_found()
         body = None
-        if document.content_type == "html":
-            body = document.approved_version_id.content_html or document.content_html
+        if document.content_type in ("html", "knowledge_html"):
+            raw = document.approved_version_id.content_html or document.content_html
+            # public_only=True: this route runs sudo()'d for anonymous
+            # visitors, so any document this one embeds must independently
+            # clear the same public/approved/published bar - see
+            # _resolve_embedded_refs's docstring for why that matters.
+            body = document._resolve_embedded_refs(raw, public_only=True)
         elif document.content_type == "markdown":
             src = document.approved_version_id.content_markdown or document.content_markdown
             body = document._render_markdown(src)
@@ -83,11 +88,7 @@ class SanareDmsWebsite(http.Controller):
         return document._download_response(use_approved=True)
 
     def _is_public(self, document):
-        return (
-            document.is_published
-            and document.state == "approved"
-            and document.effective_visibility == "public"
-        )
+        return document._is_publicly_visible()
 
     # ------------------------------------------------------------------
     # Backend/portal download - any document the requesting user can

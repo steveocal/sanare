@@ -41,7 +41,7 @@ export class EmbeddedDocRefPlugin extends Plugin {
     // content is inserted as raw HTML via t-out, so it never re-hydrates
     // into a live embedded component of its own).
     const recordInfo = this.config.getRecordInfo?.()
-    const domain = [["content_type", "=", "html"]]
+    const domain = [["content_type", "in", ["html", "knowledge_html"]]]
     if (recordInfo?.resId) {
       domain.push(["id", "!=", recordInfo.resId])
     }

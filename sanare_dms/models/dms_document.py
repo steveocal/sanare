@@ -1,6 +1,8 @@
+import json
 import re
 
-from markupsafe import escape
+import lxml.html
+from markupsafe import Markup, escape
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -11,14 +13,24 @@ CONTENT_TYPES = [
     ("onlyoffice", "Office Document"),
     ("html", "Web Page (HTML)"),
     ("markdown", "Markdown"),
+    ("knowledge_html", "Knowledge Page (HTML)"),
 ]
+
+# Types that store their content in content_html and share its versioning/
+# approval/embed-picker machinery - "knowledge_html" is a labeled variant of
+# "html" for a knowledge-base/wiki use case, not a mechanically different
+# field: same widget, same resolver, same everything except the label and
+# its place in the New Document menu.
+HTML_TYPES = {"html", "knowledge_html"}
 
 # Folders, HTML pages and Markdown pages can all contain nested documents -
 # an HTML/Markdown page with children forms one combined document that
 # prints as a single unit (see report_document_body's recursion). Office
-# Documents can never be a container: they can't have children, and they
-# can't be nested inside a non-folder document either (see
-# _check_onlyoffice_containment).
+# Documents and Knowledge Pages can never be containers: they can't have
+# children, and they can't be nested inside a non-container document either
+# (see _check_container_integrity). Knowledge Pages compose with *other*
+# documents purely through in-content includes (_resolve_embedded_refs),
+# not the parent/child tree.
 CONTAINER_TYPES = {"folder", "html", "markdown"}
 
 VISIBILITY = [
@@ -339,7 +351,7 @@ class SanareDocument(models.Model):
 
     def _ensure_content(self):
         self.ensure_one()
-        if self.content_type == "html" and not (self.content_html or "").strip():
+        if self.content_type in HTML_TYPES and not (self.content_html or "").strip():
             raise UserError(self.env._("Add HTML content before submitting for approval."))
         if self.content_type == "markdown" and not (self.content_markdown or "").strip():
             raise UserError(self.env._("Add Markdown content before submitting for approval."))
@@ -360,7 +372,7 @@ class SanareDocument(models.Model):
             }
             changed = True
             snap_source = None
-            if doc.content_type == "html":
+            if doc.content_type in HTML_TYPES:
                 changed = not (latest and (latest.content_html or "") == (doc.content_html or ""))
                 vals["content_html"] = doc.content_html
             elif doc.content_type == "markdown":
@@ -544,7 +556,7 @@ class SanareDocument(models.Model):
         res = super().write(vals)
         if touching_content and not self.env.context.get("dms_skip_version"):
             for doc in self:
-                if doc.content_type in ("html", "markdown"):
+                if doc.content_type in HTML_TYPES or doc.content_type == "markdown":
                     doc._snapshot_version(
                         changelog=self.env._("Content edited"), trigger="edit"
                     )
@@ -720,6 +732,77 @@ class SanareDocument(models.Model):
         self.ensure_one()
         return self.env["website"].get_client_action(self.website_url)
 
+    def _is_publicly_visible(self):
+        """The single authoritative "is this document visible to an
+        anonymous website visitor" check - shared by the public website
+        controller's own gate and by _resolve_embedded_refs(public_only=True)
+        so an embedded document is held to exactly the same bar as the page
+        embedding it, not a looser one (see _resolve_embedded_refs)."""
+        self.ensure_one()
+        return (
+            self.is_published
+            and self.state == "approved"
+            and self.effective_visibility == "public"
+        )
+
+    def _resolve_embedded_refs(self, html_content, public_only=False, _seen=None):
+        """Expand every "Embed Document" marker in ``html_content`` into the
+        referenced document's own (recursively resolved) content.
+
+        The marker (see EmbeddedDocRefPlugin/embedded_doc_ref.xml) is an
+        empty `<div data-embedded="sanareDocRef" data-embedded-props='{"..."}
+        '>` - the *client-side* editor component fetches and fills it in
+        live on every mount, but that never happens outside the browser, so
+        the stored field itself never contains the actual embedded content.
+        Anything rendered server-side (print, download, the public website
+        page) needs this method first, or embeds render as nothing.
+
+        public_only=True is for the public website route specifically: that
+        route runs everything sudo()'d (anonymous visitors have no ir.rule
+        grants at all), so without an extra check here a private or draft
+        document embedded inside an otherwise-public one would leak its
+        content to anonymous visitors. Backend callers (print, download)
+        don't need it - they run unsudo'd, so normal ir.rule access already
+        gates each embedded target exactly like opening it directly would
+        (same pattern as get_embedded_content).
+
+        _seen accumulates document ids across the recursion so a document
+        that transitively embeds itself renders empty at the repeat instead
+        of recursing forever.
+        """
+        self.ensure_one()
+        if not html_content or "data-embedded" not in html_content:
+            return html_content or ""
+        seen = _seen or set()
+        if self.id in seen:
+            return ""
+        seen = seen | {self.id}
+        root = lxml.html.fromstring("<div>%s</div>" % html_content)
+        for marker in root.xpath('//div[@data-embedded="sanareDocRef"]'):
+            replacement_html = self.env._(
+                "<p><em>[Referenced document unavailable]</em></p>"
+            )
+            try:
+                props = json.loads(marker.get("data-embedded-props") or "{}")
+                target = self.browse(int(props["documentId"])).exists()
+            except (ValueError, TypeError, KeyError):
+                target = self.browse()
+            if target and target.content_type in HTML_TYPES and target.id not in seen:
+                if not public_only or target._is_publicly_visible():
+                    replacement_html = target._resolve_embedded_refs(
+                        target.content_html or "", public_only=public_only, _seen=seen
+                    )
+            replacement = lxml.html.fromstring("<div>%s</div>" % replacement_html)
+            marker.getparent().replace(marker, replacement)
+        # Markup, not a plain str: t-out/t-field auto-escape a plain string
+        # (same as doc.content_html would render as literal "&lt;p&gt;..."
+        # text instead of real HTML if this weren't marked safe) - lxml's
+        # tostring() only ever returns a plain str, so the safe-marking has
+        # to be redone here explicitly.
+        return Markup((root.text or "") + "".join(
+            lxml.html.tostring(child, encoding="unicode") for child in root
+        ))
+
     @api.constrains("parent_id")
     def _check_parent_recursion(self):
         if self._has_cycle():
@@ -728,46 +811,46 @@ class SanareDocument(models.Model):
             )
 
     @api.constrains("content_type", "parent_id", "child_ids")
-    def _check_onlyoffice_containment(self):
-        """Office Documents can't act as a container in either direction:
-        they can't have children, and they can't be filed under another
-        document (only directly under a folder, or at the top level).
+    def _check_container_integrity(self):
+        """Non-container types (Office Documents, Knowledge Pages - anything
+        outside CONTAINER_TYPES) can't act as a container in either
+        direction: they can't have children, and they can't be filed under
+        another non-container document. On top of that, Office Documents
+        specifically can only go directly inside a folder - not even under
+        an html/markdown container - since they don't participate in the
+        "children form one printed document" composition those container
+        types support; Knowledge Pages have no such extra restriction, since
+        their composition is via in-content includes, not the tree.
 
         Checked from both sides deliberately, not just the "obvious" one:
-        creating a new child under an existing Office Document writes only
-        the *child's* own parent_id, and @api.constrains re-validates the
-        records actually written to, not other records an inverse one2many
-        happens to affect - so a parent-side-only check (doc.child_ids) would
-        silently miss that case. Checking doc.parent_id.content_type from the
-        child's own perspective always fires, since the child is always in
-        the written recordset whenever its parent_id changes. The
-        child_ids-based checks stay too, since they still catch the reverse
-        direction: an existing folder holding an Office Document gets
-        retyped away from 'folder' (content_type is a trigger field, so the
-        folder itself re-validates and does a fresh, live read of its own
-        child_ids)."""
+        creating a new child under an existing non-container document writes
+        only the *child's* own parent_id, and @api.constrains re-validates
+        the records actually written to, not other records an inverse
+        one2many happens to affect - so a parent-side-only check
+        (doc.child_ids) would silently miss that case. Checking
+        doc.parent_id.content_type from the child's own perspective always
+        fires, since the child is always in the written recordset whenever
+        its parent_id changes. The child_ids-based check stays too, since it
+        still catches the reverse direction: an existing folder holding
+        children gets retyped into a non-container type (content_type is a
+        trigger field, so the folder itself re-validates and does a fresh,
+        live read of its own child_ids)."""
         for doc in self:
-            if doc.content_type == "onlyoffice" and doc.child_ids:
+            if doc.content_type not in CONTAINER_TYPES and doc.child_ids:
                 raise ValidationError(
-                    self.env._("An Office Document cannot contain other documents.")
+                    self.env._("This document type cannot contain other documents.")
                 )
-            if doc.parent_id and doc.parent_id.content_type == "onlyoffice":
+            if doc.parent_id and doc.parent_id.content_type not in CONTAINER_TYPES:
                 raise ValidationError(
-                    self.env._("An Office Document cannot contain other documents.")
+                    self.env._(
+                        "This document can only be placed directly inside a "
+                        "folder, HTML page, or Markdown page."
+                    )
                 )
             if (
                 doc.content_type == "onlyoffice"
                 and doc.parent_id
                 and doc.parent_id.content_type != "folder"
-            ):
-                raise ValidationError(
-                    self.env._(
-                        "An Office Document can only be placed directly inside "
-                        "a folder, not inside another document."
-                    )
-                )
-            if doc.content_type != "folder" and any(
-                c.content_type == "onlyoffice" for c in doc.child_ids
             ):
                 raise ValidationError(
                     self.env._(
@@ -833,11 +916,17 @@ class SanareDocument(models.Model):
         doc = self.browse(int(document_id)).exists()
         if not doc:
             return {"error": "not_found"}
-        if doc.content_type != "html":
+        if doc.content_type not in HTML_TYPES:
             return {"error": "unsupported_type"}
         return {
             "name": doc.name,
-            "content_html": doc.content_html or "",
+            # Resolved, not raw: if this document itself embeds another one,
+            # that nested embed's marker would otherwise render as an empty
+            # div here - this simple read-only card doesn't re-scan its own
+            # t-out'd HTML for embedded components the way the full editor
+            # does, so without resolving here a chain more than one level
+            # deep would silently stop at the first hop.
+            "content_html": doc._resolve_embedded_refs(doc.content_html or ""),
             "write_date": fields.Datetime.to_string(doc.write_date),
         }
 
@@ -970,11 +1059,16 @@ class SanareDocument(models.Model):
         """This node's own html/markdown content for the given
         approved/live choice - the same version-resolution _download_response
         used for a single document, factored out so _iter_display_subtree
-        can reuse it per node when bundling a parent with its children."""
+        can reuse it per node when bundling a parent with its children.
+        html/knowledge_html content is resolved (any embedded document
+        references expanded in place) before it's returned - the raw stored
+        value only ever contains an empty marker div, never actual content
+        (see _resolve_embedded_refs)."""
         self.ensure_one()
         version = self.approved_version_id if use_approved else False
-        if self.content_type == "html":
-            return (version.content_html if version else False) or self.content_html or ""
+        if self.content_type in HTML_TYPES:
+            raw = (version.content_html if version else False) or self.content_html or ""
+            return self._resolve_embedded_refs(raw)
         if self.content_type == "markdown":
             return (version.content_markdown if version else False) or self.content_markdown or ""
         return ""
@@ -1017,12 +1111,9 @@ class SanareDocument(models.Model):
             return self.env["ir.binary"]._get_stream_from(
                 attachment, "raw"
             ).get_response(as_attachment=True)
-        if self.content_type == "html":
+        if self.content_type in HTML_TYPES:
             parts = [
-                "<h%d>%s</h%d>\n%s" % (
-                    min(level, 4), escape(node.name), min(level, 4),
-                    node._print_content(use_approved),
-                )
+                node._print_content(use_approved)
                 for node, level in self._iter_display_subtree()
             ]
             data = "\n<hr/>\n".join(parts).encode()

@@ -15,6 +15,15 @@ class TestSanareDms(TransactionCase):
         )
         cls.Doc = cls.env["sanare.document"]
 
+    @staticmethod
+    def _embed_marker(target_id, name="Embedded"):
+        """The exact marker EmbeddedDocRefPlugin stores in content_html -
+        see embedded_doc_ref.xml's EmbeddedDocRefBlueprint."""
+        return (
+            '<div data-embedded="sanareDocRef" '
+            'data-embedded-props=\'{"documentId": %d, "documentName": "%s"}\'></div>'
+        ) % (target_id, name)
+
     def test_hierarchy_and_visibility_inheritance(self):
         folder = self.Doc.create(
             {"name": "F", "content_type": "folder", "visibility": "public"}
@@ -166,6 +175,100 @@ class TestSanareDms(TransactionCase):
             self.Doc.browser_move([office.id], page.id)
         with self.assertRaises(UserError):
             self.Doc.browser_paste([office.id], page.id)
+
+    def test_knowledge_html_shares_html_versioning_and_approval(self):
+        doc = self.Doc.create(
+            {"name": "K", "content_type": "knowledge_html", "content_html": "<p>one</p>"}
+        )
+        self.assertEqual(doc.version_number, 1)
+        doc.content_html = "<p>two</p>"
+        self.assertEqual(doc.version_number, 2)
+        doc.action_submit()
+        self.assertEqual(doc.state, "to_approve")
+        doc.with_user(self.manager).action_approve()
+        self.assertEqual(doc.state, "approved")
+
+    def test_knowledge_html_cannot_have_children_or_be_parented_under_onlyoffice(self):
+        office = self.Doc.create({"name": "Office2", "content_type": "onlyoffice"})
+        kb = self.Doc.create(
+            {"name": "KB", "content_type": "knowledge_html", "content_html": "<p>x</p>"}
+        )
+        with self.assertRaises(ValidationError):
+            self.Doc.create({"name": "child", "content_type": "html",
+                              "content_html": "<p>x</p>", "parent_id": kb.id})
+        with self.assertRaises(ValidationError):
+            kb.parent_id = office.id
+        # ...but a folder (or an html/markdown page) is fine, same as html
+        folder = self.Doc.create({"name": "F2", "content_type": "folder"})
+        kb.parent_id = folder.id
+        self.assertEqual(kb.parent_id, folder)
+
+    def test_resolve_embedded_refs_expands_simple_embed(self):
+        target = self.Doc.create(
+            {"name": "Target", "content_type": "html", "content_html": "<p>target-marker</p>"}
+        )
+        host = self.Doc.create(
+            {"name": "Host", "content_type": "knowledge_html",
+             "content_html": self._embed_marker(target.id)}
+        )
+        resolved = host._resolve_embedded_refs(host.content_html)
+        self.assertIn("target-marker", resolved)
+
+    def test_resolve_embedded_refs_expands_nested_chain(self):
+        # A embeds B, B embeds C - resolving A should pull in C's content
+        # too, not stop after one hop.
+        c = self.Doc.create(
+            {"name": "C", "content_type": "html", "content_html": "<p>c-marker</p>"}
+        )
+        b = self.Doc.create(
+            {"name": "B", "content_type": "knowledge_html",
+             "content_html": self._embed_marker(c.id)}
+        )
+        a = self.Doc.create(
+            {"name": "A", "content_type": "knowledge_html",
+             "content_html": self._embed_marker(b.id)}
+        )
+        resolved = a._resolve_embedded_refs(a.content_html)
+        self.assertIn("c-marker", resolved)
+
+    def test_resolve_embedded_refs_cycle_guard(self):
+        a = self.Doc.create(
+            {"name": "SelfA", "content_type": "knowledge_html",
+             "content_html": "<p>placeholder</p>"}
+        )
+        a.content_html = a._embed_marker(a.id) + "<p>after-marker</p>"
+        # must not hang or crash on a document that embeds itself
+        resolved = a._resolve_embedded_refs(a.content_html)
+        self.assertIn("after-marker", resolved)
+
+    def test_get_embedded_content_resolves_nested_embed(self):
+        c = self.Doc.create(
+            {"name": "C2", "content_type": "html", "content_html": "<p>c2-marker</p>"}
+        )
+        b = self.Doc.create(
+            {"name": "B2", "content_type": "knowledge_html",
+             "content_html": self._embed_marker(c.id)}
+        )
+        data = self.Doc.get_embedded_content(b.id)
+        self.assertIn("c2-marker", data["content_html"])
+
+    def test_public_page_does_not_leak_private_embedded_content(self):
+        private_doc = self.Doc.create(
+            {"name": "PrivateSecret", "content_type": "html",
+             "content_html": "<p>secret-marker</p>", "visibility": "private"}
+        )
+        public_doc = self.Doc.create(
+            {"name": "PublicHost", "content_type": "knowledge_html",
+             "content_html": self._embed_marker(private_doc.id),
+             "visibility": "public", "visibility_inherited": False}
+        )
+        public_doc.action_submit()
+        public_doc.with_user(self.manager).action_approve()
+        public_doc.write({"website_published": True})
+        resolved = public_doc._resolve_embedded_refs(
+            public_doc.content_html, public_only=True
+        )
+        self.assertNotIn("secret-marker", resolved)
 
     def test_parent_recursion_blocked(self):
         f1 = self.Doc.create({"name": "f1", "content_type": "folder"})
