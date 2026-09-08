@@ -25,18 +25,28 @@
                 <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
                      style="margin: 12mm;">
                     <!-- Not a class="footer" div: Odoo's normal wkhtmltopdf
-                         header/footer pipeline (a separate footer-html
-                         page, stitched in via the minimal_layout subst() JS
-                         trick) turned out to be broken in this environment -
+                         header/footer pipeline (a separate footer-html page,
+                         stitched in via the minimal_layout subst() JS trick)
+                         turned out to be broken in this environment -
                          verified against an unrelated, unmodified core Odoo
-                         report on the same box, so it's a pre-existing infra
-                         issue, not something introduced here. Using
-                         position:fixed instead: wkhtmltopdf's WebKit engine
-                         repeats any position:fixed element from the body on
-                         every generated page, which sidesteps that broken
-                         pipeline entirely. Placed once per top-level doc
-                         (not per recursed node), so it always names the
-                         printed parent, never a nested child. -->
+                         report (an invoice PDF) on the same box, so it's a
+                         pre-existing infra issue, not something introduced
+                         here. Using position:fixed instead. This still has a
+                         real limitation on this box, verified directly: it
+                         only shows on the LAST physical page of a multi-page
+                         document, not repeated on every page (wkhtmltopdf
+                         here renders the whole document as one continuous
+                         canvas before slicing it into pages, rather than
+                         truly re-flowing position:fixed content per page) -
+                         acceptable given these are typically short documents
+                         and it's strictly better than no footer at all.
+                         minimal_layout's own wrapper sets `html{height:0}`
+                         (meant only for the header/footer file, but it also
+                         wraps this body), which silently collapses
+                         position:fixed's positioning box to nothing - the
+                         inline !important override below is required, not
+                         decorative. -->
+                    <style>html { height: auto !important; }</style>
                     <div style="position: fixed; bottom: 0; left: 0; right: 0;
                                  font-size: 8px; color: #999; text-align: right;
                                  border-top: 1px solid #ddd; padding-top: 2px;">
@@ -44,7 +54,6 @@
                     </div>
                     <t t-call="sanare_dms.report_document_body">
                         <t t-set="doc" t-value="doc"/>
-                        <t t-set="level" t-value="1"/>
                     </t>
                 </div>
             </t>
@@ -62,14 +71,11 @@
          where the content naturally overflows a page, never forced between
          sections. -->
     <template id="report_document_body">
-        <!-- Section heading only - no per-section name/version/state byline
-             (that metadata belongs to the printed parent alone, and only in
-             the footer - see report_document). Keeping the heading so a
-             combined document with several sections still reads as
-             distinct sections, just without repeating name/version noise
-             at every level. -->
-        <t t-tag="'h%d' % (level if level &lt; 4 else 4)" t-out="doc.name"/>
-        <hr/>
+        <!-- No per-section heading/separator, and no name/version/state
+             byline - a combined document should read as one continuous
+             document, not a stack of labeled sections. Only the printed
+             (top-level) document's name belongs anywhere in the output now,
+             and only in the footer - see report_document. -->
         <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
         <div t-elif="doc.content_type == 'markdown'"
              t-out="doc.content_markdown_html"/>
@@ -87,7 +93,6 @@
            t-as="child">
             <t t-call="sanare_dms.report_document_body">
                 <t t-set="doc" t-value="child"/>
-                <t t-set="level" t-value="level + 1"/>
             </t>
         </t>
     </template>

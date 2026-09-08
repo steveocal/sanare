@@ -212,7 +212,7 @@ class TestSanareDms(TransactionCase):
              "content_html": "<p>hidden-marker</p>", "display_in_print": False}
         )
         html = self.env["ir.qweb"]._render(
-            "sanare_dms.report_document_body", {"doc": folder, "level": 1}
+            "sanare_dms.report_document_body", {"doc": folder}
         )
         self.assertIn("shown-marker", html)
         self.assertNotIn("hidden-marker", html)
