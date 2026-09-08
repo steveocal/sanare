@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="sanare_dms.SnippetPanel">
+        <div class="o_sanare_snippet_panel">
+            <div class="o_sanare_snippet_panel_title text-muted small text-uppercase px-2 pt-2">
+                Blocks
+            </div>
+            <div class="o_sanare_snippet_panel_hint text-muted small px-2 pb-2">
+                Drag a block into the document
+            </div>
+            <div t-foreach="blocks" t-as="block" t-key="block.id"
+                 class="o_sanare_snippet_card d-flex align-items-center"
+                 draggable="true"
+                 t-on-dragstart="(ev) => this.onDragStart(block.id, ev)">
+                <i t-attf-class="fa {{block.icon}} me-2"/>
+                <span t-esc="block.label"/>
+            </div>
+        </div>
+    </t>
+
+</templates>

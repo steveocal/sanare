@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.3.1",
+    "version": "19.0.1.4.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -46,6 +46,11 @@
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref.xml",
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref.js",
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref_plugin.js",
+            "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.scss",
+            "sanare_dms/static/src/html_field/snippet_panel/snippet_blocks.js",
+            "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.xml",
+            "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.js",
+            "sanare_dms/static/src/html_field/sanare_html_field.xml",
             "sanare_dms/static/src/html_field/sanare_html_field.js",
         ],
         "web.assets_frontend": [

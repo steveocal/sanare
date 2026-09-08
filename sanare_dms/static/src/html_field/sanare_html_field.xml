@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Wraps html_editor's own HtmlField template unchanged (t-call, same
+         component instance/state/methods since SanareHtmlField extends it)
+         in a flex row with our own sidebar alongside - the override exists
+         purely to add that sidebar, not to change anything about the
+         editor itself. -->
+    <t t-name="sanare_dms.SanareHtmlField">
+        <div class="d-flex h-100 position-relative">
+            <div class="flex-grow-1 overflow-auto position-relative"
+                 t-on-dragover="onDragOver" t-on-drop="onDrop">
+                <t t-call="html_editor.HtmlField"/>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary o_sanare_snippet_toggle"
+                    t-on-click="toggleSnippetPanel" title="Insert Block">
+                <i class="fa fa-th-large"/>
+            </button>
+            <SnippetPanel t-if="snippetState.showPanel"/>
+        </div>
+    </t>
+
+</templates>
