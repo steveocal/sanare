@@ -37,16 +37,23 @@
          layout.
 
          Fix: only reachable, low-risk change without touching Odoo core or
-         the wkhtmltopdf binary itself - patch subst()'s two lookups to fall
-         back to the first (index 0) header/footer whenever the derived
-         index doesn't resolve to an actual child, instead of throwing.
-         Every site this project has ever printed from renders exactly one
-         document per combined wkhtmltopdf call in practice, so falling back
-         to "the only header/footer that's there" is correct here and
-         matches original behaviour byte-for-byte whenever the index DOES
-         resolve correctly (e.g. on a box whose TMPDIR happens not to embed
-         extra dots) - nothing is removed, only a safety net is added right
-         before the two lines that were throwing. -->
+         the wkhtmltopdf binary itself - patch subst()'s index derivation to
+         read the real page index straight out of the body temp file's own
+         name (`report.body.tmp.<N>.<random>.html` - `_run_wkhtmltopdf`'s own
+         hardcoded naming, confirmed by capturing the real `webpage` value
+         this box actually substitutes:
+         "/var/odoo/gxcgtpype1.cloudpepper.site/tmp/report.body.tmp.0.XXXXXXXX.html")
+         via a regex anchored on that fixed "report.body.tmp." prefix, instead
+         of the fragile "blindly split the whole URL by every dot and take
+         the 4th piece" trick, which breaks on ANY path containing 3+ extra
+         dots before the filename - not just this box's TMPDIR. This keeps
+         correct per-document header/footer selection for real multi-document
+         batch prints (e.g. printing several invoices at once), which a
+         naive "always fall back to the first header/footer" fix would have
+         silently broken (every page would show page 1's header/footer).
+         Falling back to the first header/footer is now only a last-resort
+         safety net for the (should never happen, given Odoo core's own
+         hardcoded naming) case where even the regex doesn't match. -->
     <template id="minimal_layout_header_footer_index_fix" inherit_id="web.minimal_layout">
         <xpath expr="//script[1]" position="replace">
             <script t-if="subst">
@@ -65,12 +72,19 @@
                             y[j].textContent = vars[x[i]];
                     }
 
-                    // sanare_dms fix: 'index' can fail to resolve to a real
-                    // child (e.g. a TMPDIR path with extra dots throws the
-                    // split-by-4 trick off) - fall back to the first header/
-                    // footer instead of appendChild(undefined), which used
-                    // to throw and wipe the header/footer entirely.
-                    var index = vars['webpage'] ? vars['webpage'].split('.', 4)[3] : undefined;
+                    // sanare_dms fix: derive the real page index from the
+                    // body temp file's own name (report.body.tmp.N.*) via
+                    // regex instead of the fragile dot-split-by-4 trick,
+                    // which garbles on any TMPDIR path with extra dots (this
+                    // box's site domain is exactly such a path). Falls back
+                    // to the first header/footer only if even that fails, to
+                    // avoid the appendChild(undefined) exception that used to
+                    // wipe the header/footer entirely.
+                    var index = 0;
+                    if (vars['webpage']) {
+                        var m = /report\.body\.tmp\.(\d+)\./.exec(vars['webpage']);
+                        index = m ? parseInt(m[1], 10) : (vars['webpage'].split('.', 4)[3] || 0);
+                    }
                     var header = document.getElementById('minimal_layout_report_headers');
                     if(header){
                         var companyHeader = header.children[index] || header.children[0];

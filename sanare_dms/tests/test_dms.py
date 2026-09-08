@@ -387,11 +387,12 @@ class TestSanareDms(TransactionCase):
         # between them - they should print as one combined, flowing document.
         self.assertEqual(html.count('class="article"'), 1)
         self.assertNotIn("page-break-before", html)
-        # the footer (position:fixed, not wkhtmltopdf's separate header/
-        # footer pipeline - see report/dms_report.xml) names the printed
-        # (parent) document, appears once, and never a nested child's
-        self.assertEqual(html.count("position: fixed"), 1)
-        footer_start = html.index("position: fixed")
+        # the footer (a genuine class="footer" div, extracted into
+        # wkhtmltopdf's real footer pass - see report/dms_report.xml) names
+        # the printed (parent) document, appears once, and never a nested
+        # child's
+        self.assertEqual(html.count('class="footer"'), 1)
+        footer_start = html.index('class="footer"')
         footer_html = html[footer_start:footer_start + 300]
         self.assertIn("PrintFolder", footer_html)
         self.assertNotIn("Shown", footer_html)
@@ -403,14 +404,14 @@ class TestSanareDms(TransactionCase):
         report = self.env.ref("sanare_dms.action_report_dms_document")
         none_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", none_html)
-        self.assertIn("position: fixed", none_html)
+        self.assertIn('class="footer"', none_html)
         self.assertNotIn("o_report_layout_standard", none_html)
 
         doc.report_layout = "internal"
         internal_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", internal_html)
         self.assertIn('class="header"', internal_html)
-        self.assertIn("position: fixed", internal_html)
+        self.assertIn('class="footer"', internal_html)
         self.assertIn("LayoutDoc", internal_html)
 
         doc.report_layout = "external"
@@ -420,16 +421,19 @@ class TestSanareDms(TransactionCase):
         # this company is configured with - assert on the generic
         # external_layout marker, not a specific theme name.
         self.assertIn("o_report_layout_", external_html)
-        self.assertIn("position: fixed", external_html)
         # The name belongs only in the footer, never as a body heading -
         # layout_document_title is deliberately never set (see
-        # report_document's comment), so external_layout_standard's <h2>
+        # report_document's comment), so external_layout's own <h2>
         # renders empty.
         h2_start = external_html.index("<h2")
         h2_end = external_html.index("</h2>", h2_start)
         self.assertNotIn("LayoutDoc", external_html[h2_start:h2_end])
-        footer_start = external_html.index("position: fixed")
-        self.assertIn("LayoutDoc", external_html[footer_start:footer_start + 300])
+        # 'external' reuses Odoo's own single footer div (display_name_in_
+        # footer=True) instead of adding a second one - see report_document's
+        # comment on why exactly one footer div per document matters.
+        self.assertEqual(external_html.count('class="footer'), 1)
+        footer_start = external_html.index('class="footer')
+        self.assertIn("LayoutDoc", external_html[footer_start:footer_start + 500])
 
     def test_download_bundles_children_like_print(self):
         page = self.Doc.create(
