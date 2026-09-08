@@ -36,9 +36,8 @@
                         <i class="fa fa-plus me-1"/>New Document <i class="fa fa-caret-down ms-1"/>
                     </button>
                     <t t-set-slot="content">
-                        <t t-foreach="newTypes" t-as="nt" t-key="nt[0]">
-                            <DropdownItem t-if="nt[0] !== 'folder'"
-                                          onSelected="() => this.newDocument(nt[0])">
+                        <t t-foreach="this.newTypesFor(state.containerContentType)" t-as="nt" t-key="nt[0]">
+                            <DropdownItem onSelected="() => this.newDocument(nt[0])">
                                 <t t-esc="nt[1]"/>
                             </DropdownItem>
                         </t>
@@ -126,18 +125,18 @@
                                 draggable="true"
                                 t-att-class="{
                                     'o_dms_selected': state.selection.has(rec.id),
-                                    'o_dms_drop_target': rec.is_folder and state.dragOverId === rec.id,
+                                    'o_dms_drop_target': rec.can_have_children and state.dragOverId === rec.id,
                                     'o_dms_is_folder': rec.is_folder }"
                                 t-on-click="(ev) => this.onRowClick(rec, ev)"
                                 t-on-dblclick="() => this.onRowDblClick(rec)"
                                 t-on-dragstart="(ev) => this.onItemDragStart(rec, ev)"
-                                t-on-dragover="(ev) => rec.is_folder ? this.onFolderDragOver(rec.id, ev) : null"
-                                t-on-dragleave="() => rec.is_folder ? this.onFolderDragLeave() : null"
-                                t-on-drop="(ev) => rec.is_folder ? this.onFolderDrop(rec.id, ev) : null">
+                                t-on-dragover="(ev) => rec.can_have_children ? this.onFolderDragOver(rec.id, ev) : null"
+                                t-on-dragleave="() => rec.can_have_children ? this.onFolderDragLeave() : null"
+                                t-on-drop="(ev) => rec.can_have_children ? this.onFolderDrop(rec.id, ev) : null">
                                 <td>
                                     <i class="fa me-2" t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
                                     <span t-esc="rec.name"/>
-                                    <span t-if="rec.is_folder and rec.child_count"
+                                    <span t-if="rec.can_have_children and rec.child_count"
                                           class="badge text-bg-light ms-2" t-esc="rec.child_count"/>
                                 </td>
                                 <td class="text-muted" t-esc="rec.is_folder ? 'Folder' : rec.content_type_label"/>
@@ -167,13 +166,12 @@
                                        t-att-class="rec.display_in_print ? 'fa-eye' : 'fa-eye-slash text-muted'"
                                        t-att-title="rec.display_in_print ? 'Included when parent is printed - click to exclude' : 'Excluded when parent is printed - click to include'"
                                        t-on-click="(ev) => this.toggleDisplayInPrint(rec, ev)"/>
-                                    <span t-if="rec.is_folder" class="mx-1" t-on-click.stop="() => {}">
+                                    <span t-if="rec.can_have_children" class="mx-1" t-on-click.stop="() => {}">
                                         <Dropdown>
                                             <i class="fa fa-plus-circle" title="Add a document here"/>
                                             <t t-set-slot="content">
-                                                <t t-foreach="newTypes" t-as="nt" t-key="nt[0]">
-                                                    <DropdownItem t-if="nt[0] !== 'folder'"
-                                                                  onSelected="() => this.newDocument(nt[0], rec.id)">
+                                                <t t-foreach="this.newTypesFor(rec.content_type)" t-as="nt" t-key="nt[0]">
+                                                    <DropdownItem onSelected="() => this.newDocument(nt[0], rec.id)">
                                                         <t t-esc="nt[1]"/>
                                                     </DropdownItem>
                                                 </t>
@@ -206,12 +204,12 @@
              t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
              t-att-class="{ 'o_dms_selected': isSelected, 'o_dms_drop_target': isDragOver }"
              draggable="true"
-             t-on-click="() => props.node.is_folder ? env.dms.select(props.node.id) : null"
+             t-on-click="() => props.node.can_have_children ? env.dms.select(props.node.id) : null"
              t-on-dblclick="() => props.node.is_folder ? null : env.dms.open(props.node.id)"
              t-on-dragstart="(ev) => env.dms.dragStart(props.node, ev)"
-             t-on-dragover="(ev) => props.node.is_folder ? env.dms.dragOver(props.node.id, ev) : null"
-             t-on-dragleave="() => props.node.is_folder ? env.dms.dragLeave() : null"
-             t-on-drop="(ev) => props.node.is_folder ? env.dms.drop(props.node.id, ev) : null">
+             t-on-dragover="(ev) => props.node.can_have_children ? env.dms.dragOver(props.node.id, ev) : null"
+             t-on-dragleave="() => props.node.can_have_children ? env.dms.dragLeave() : null"
+             t-on-drop="(ev) => props.node.can_have_children ? env.dms.drop(props.node.id, ev) : null">
             <span class="o_dms_caret" title="Expand/collapse"
                   t-on-click.stop="() => env.dms.toggle(props.node)">
                 <i t-if="props.node.has_children" class="fa"
@@ -222,14 +220,13 @@
             <span class="text-truncate flex-grow-1" t-esc="props.node.name"/>
             <i t-if="props.node.loading" class="fa fa-spinner fa-spin ms-2 small"/>
 
-            <span t-if="props.node.is_folder" class="o_dms_tree_row_actions ms-2"
+            <span t-if="props.node.can_have_children" class="o_dms_tree_row_actions ms-2"
                   t-on-click.stop="() => {}">
                 <Dropdown>
                     <i class="fa fa-plus-circle" title="Add a document here"/>
                     <t t-set-slot="content">
-                        <t t-foreach="env.dms.newTypes" t-as="nt" t-key="nt[0]">
-                            <DropdownItem t-if="nt[0] !== 'folder'"
-                                          onSelected="() => env.dms.newDocument(nt[0], props.node.id)">
+                        <t t-foreach="env.dms.newTypesFor(props.node.content_type)" t-as="nt" t-key="nt[0]">
+                            <DropdownItem onSelected="() => env.dms.newDocument(nt[0], props.node.id)">
                                 <t t-esc="nt[1]"/>
                             </DropdownItem>
                         </t>

@@ -13,6 +13,14 @@ CONTENT_TYPES = [
     ("markdown", "Markdown"),
 ]
 
+# Folders, HTML pages and Markdown pages can all contain nested documents -
+# an HTML/Markdown page with children forms one combined document that
+# prints as a single unit (see report_document_body's recursion). Office
+# Documents can never be a container: they can't have children, and they
+# can't be nested inside a non-folder document either (see
+# _check_onlyoffice_containment).
+CONTAINER_TYPES = {"folder", "html", "markdown"}
+
 VISIBILITY = [
     ("private", "Private"),
     ("shared", "Shared"),
@@ -72,6 +80,11 @@ class SanareDocument(models.Model):
         CONTENT_TYPES, required=True, default="folder", string="Type"
     )
     is_folder = fields.Boolean(compute="_compute_is_folder", store=True)
+    can_have_children = fields.Boolean(
+        compute="_compute_is_folder", store=True,
+        help="Folders, HTML pages and Markdown pages can contain nested "
+             "documents; Office Documents cannot.",
+    )
 
     content_html = fields.Html(sanitize=True, sanitize_overridable=True)
     content_markdown = fields.Text()
@@ -168,6 +181,7 @@ class SanareDocument(models.Model):
     def _compute_is_folder(self):
         for doc in self:
             doc.is_folder = doc.content_type == "folder"
+            doc.can_have_children = doc.content_type in CONTAINER_TYPES
 
     def _compute_child_count(self):
         data = self.env["sanare.document"]._read_group(
@@ -713,6 +727,55 @@ class SanareDocument(models.Model):
                 self.env._("A document cannot be placed inside itself.")
             )
 
+    @api.constrains("content_type", "parent_id", "child_ids")
+    def _check_onlyoffice_containment(self):
+        """Office Documents can't act as a container in either direction:
+        they can't have children, and they can't be filed under another
+        document (only directly under a folder, or at the top level).
+
+        Checked from both sides deliberately, not just the "obvious" one:
+        creating a new child under an existing Office Document writes only
+        the *child's* own parent_id, and @api.constrains re-validates the
+        records actually written to, not other records an inverse one2many
+        happens to affect - so a parent-side-only check (doc.child_ids) would
+        silently miss that case. Checking doc.parent_id.content_type from the
+        child's own perspective always fires, since the child is always in
+        the written recordset whenever its parent_id changes. The
+        child_ids-based checks stay too, since they still catch the reverse
+        direction: an existing folder holding an Office Document gets
+        retyped away from 'folder' (content_type is a trigger field, so the
+        folder itself re-validates and does a fresh, live read of its own
+        child_ids)."""
+        for doc in self:
+            if doc.content_type == "onlyoffice" and doc.child_ids:
+                raise ValidationError(
+                    self.env._("An Office Document cannot contain other documents.")
+                )
+            if doc.parent_id and doc.parent_id.content_type == "onlyoffice":
+                raise ValidationError(
+                    self.env._("An Office Document cannot contain other documents.")
+                )
+            if (
+                doc.content_type == "onlyoffice"
+                and doc.parent_id
+                and doc.parent_id.content_type != "folder"
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "An Office Document can only be placed directly inside "
+                        "a folder, not inside another document."
+                    )
+                )
+            if doc.content_type != "folder" and any(
+                c.content_type == "onlyoffice" for c in doc.child_ids
+            ):
+                raise ValidationError(
+                    self.env._(
+                        "An Office Document can only be placed directly inside "
+                        "a folder, not inside another document."
+                    )
+                )
+
     # ==================================================================
     # Tree browser  (client action "sanare_dms.browser")
     # ==================================================================
@@ -721,15 +784,14 @@ class SanareDocument(models.Model):
         """All direct children - folders *and* documents - under
         ``parent_id`` (falsy = top level), for the nested tree pane.
         Contrast with browser_contents, which returns the same set with
-        richer columns for the flat detail table. Documents are leaves
-        (has_children always False for them); a folder's has_children
-        reflects any child at all, not just subfolders, since the tree now
-        shows documents as expandable-into content too."""
+        richer columns for the flat detail table. A container (folder, html
+        or markdown - see CONTAINER_TYPES) can have has_children True;
+        Office Documents are always leaves."""
         recs = self.search(
             [("parent_id", "=", parent_id or False)], order="is_folder desc, sequence, name"
         )
         data = self._read_group(
-            [("parent_id", "in", recs.filtered("is_folder").ids)],
+            [("parent_id", "in", recs.filtered("can_have_children").ids)],
             ["parent_id"], ["__count"],
         )
         counts = {parent.id: count for parent, count in data}
@@ -738,8 +800,9 @@ class SanareDocument(models.Model):
                 "id": r.id,
                 "name": r.name,
                 "is_folder": r.is_folder,
+                "can_have_children": r.can_have_children,
                 "content_type": r.content_type,
-                "has_children": bool(counts.get(r.id)) if r.is_folder else False,
+                "has_children": bool(counts.get(r.id)) if r.can_have_children else False,
             }
             for r in recs
         ]
@@ -783,22 +846,25 @@ class SanareDocument(models.Model):
         recs = self.search(
             [("parent_id", "=", parent_id or False)], order="is_folder desc, sequence, name"
         )
+        container = self.browse(parent_id) if parent_id else self.browse()
         ctypes = dict(CONTENT_TYPES)
         states = dict(self._fields["state"].selection)
         return {
             "breadcrumb": self._browser_breadcrumb(parent_id),
+            "container_content_type": container.content_type if container else False,
             "records": [
                 {
                     "id": r.id,
                     "name": r.name,
                     "is_folder": r.is_folder,
+                    "can_have_children": r.can_have_children,
                     "content_type": r.content_type,
                     "content_type_label": ctypes.get(r.content_type),
                     "state": r.state,
                     "state_label": states.get(r.state),
                     "owner": r.owner_id.display_name,
                     "visibility": r.effective_visibility,
-                    "child_count": r.child_count if r.is_folder else 0,
+                    "child_count": r.child_count if r.can_have_children else 0,
                     "updated": fields.Datetime.to_string(r.write_date),
                     "sequence": r.sequence,
                     "display_in_print": r.display_in_print,
@@ -816,8 +882,18 @@ class SanareDocument(models.Model):
             return False
         target = self.browse(target_parent_id) if target_parent_id else self.browse()
         if target:
-            if target.content_type != "folder":
-                raise UserError(self.env._("Items can only be moved into a folder."))
+            if not target.can_have_children:
+                raise UserError(
+                    self.env._("Items can only be moved into a folder, HTML page or "
+                                "Markdown page.")
+                )
+            if target.content_type != "folder" and any(
+                d.content_type == "onlyoffice" for d in docs
+            ):
+                raise UserError(
+                    self.env._("Office Documents can only be moved directly into "
+                                "a folder.")
+                )
             if target in docs:
                 raise UserError(self.env._("You cannot move a folder into itself."))
         docs.write({"parent_id": target.id if target else False})
@@ -848,8 +924,19 @@ class SanareDocument(models.Model):
         if not docs:
             return []
         target = self.browse(target_parent_id) if target_parent_id else self.browse()
-        if target and target.content_type != "folder":
-            raise UserError(self.env._("Items can only be pasted into a folder."))
+        if target:
+            if not target.can_have_children:
+                raise UserError(
+                    self.env._("Items can only be pasted into a folder, HTML page or "
+                                "Markdown page.")
+                )
+            if target.content_type != "folder" and any(
+                d.content_type == "onlyoffice" for d in docs
+            ):
+                raise UserError(
+                    self.env._("Office Documents can only be pasted directly into "
+                                "a folder.")
+                )
         pasted = docs.copy({"parent_id": target.id if target else False})
         return pasted.ids
 

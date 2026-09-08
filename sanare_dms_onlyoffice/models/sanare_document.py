@@ -1,18 +1,44 @@
-from odoo import models
+from odoo import fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.onlyoffice_odoo.utils import file_utils
 
 BLANK_EXT = {"docx", "xlsx", "pptx"}
 
+OFFICE_KINDS = [
+    ("docx", "Word Document"),
+    ("xlsx", "Spreadsheet"),
+    ("pptx", "Presentation"),
+]
+
 
 class SanareDocument(models.Model):
     _inherit = "sanare.document"
 
+    office_kind = fields.Selection(
+        OFFICE_KINDS, default="docx", string="Office Document Type",
+        help="Which kind of blank file to create the first time this "
+             "document is opened in ONLYOFFICE. Has no effect once a file "
+             "already exists.",
+    )
+
     def _office_ext(self):
+        """The extension to use for this document's ONLYOFFICE file.
+
+        Bug fixed here: this used to fall back to `file_extension`, which is
+        computed from `file_name` (odoo/models/dms_document.py) - but that's
+        always empty before the blank file is created, so every new Office
+        Document silently fell through to the "docx" default regardless of
+        what the user actually wanted. `file_extension` is still trusted
+        first, for a document whose file was uploaded directly (not created
+        blank) - only the *fallback* changes, from a hardcoded "docx" to the
+        user's own office_kind choice.
+        """
         self.ensure_one()
-        ext = (self.file_extension or "docx").lower()
-        return ext if ext in BLANK_EXT else "docx"
+        ext = (self.file_extension or "").lower()
+        if ext in BLANK_EXT:
+            return ext
+        return self.office_kind or "docx"
 
     def _ensure_office_attachment(self):
         self.ensure_one()

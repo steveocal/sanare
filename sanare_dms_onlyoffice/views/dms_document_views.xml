@@ -7,6 +7,10 @@
         <field name="inherit_id" ref="sanare_dms.view_dms_document_form"/>
         <field name="arch" type="xml">
 
+            <xpath expr="//field[@name='mimetype']" position="after">
+                <field name="office_kind" invisible="attachment_id"/>
+            </xpath>
+
             <xpath expr="//div[hasclass('o_dms_oo_hint')]" position="replace">
                 <div colspan="2" class="mt-2">
                     <button name="action_edit_onlyoffice" type="object"

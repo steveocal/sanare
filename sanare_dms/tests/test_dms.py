@@ -1,4 +1,4 @@
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, HttpCase, tagged, new_test_user
 
 
@@ -114,9 +114,58 @@ class TestSanareDms(TransactionCase):
         # cannot move a folder into itself / its descendant
         with self.assertRaises(Exception):
             self.Doc.browser_move([root.id], a.id)
-        # cannot drop onto a non-folder
+        # html/markdown documents are containers too now - dropping onto one
+        # succeeds
+        self.Doc.browser_move([b.id], doc.id)
+        self.assertEqual(b.parent_id, doc)
+        # ...but an Office Document is never a valid drop target
+        office = self.Doc.create({"name": "office1", "content_type": "onlyoffice"})
         with self.assertRaises(UserError):
-            self.Doc.browser_move([b.id], doc.id)
+            self.Doc.browser_move([b.id], office.id)
+
+    def test_html_markdown_containers(self):
+        page = self.Doc.create(
+            {"name": "Page", "content_type": "html", "content_html": "<p>x</p>"}
+        )
+        sub = self.Doc.create(
+            {"name": "Sub", "content_type": "markdown", "parent_id": page.id,
+             "content_markdown": "y"}
+        )
+        self.assertTrue(page.can_have_children)
+        self.assertFalse(page.is_folder)
+        top = self.Doc.browser_tree_children(False)
+        entry = next(f for f in top if f["id"] == page.id)
+        self.assertTrue(entry["can_have_children"])
+        self.assertTrue(entry["has_children"])
+        kids = self.Doc.browser_tree_children(page.id)
+        self.assertEqual([f["name"] for f in kids], ["Sub"])
+        # browser_paste can target an html/markdown container too
+        target = self.Doc.create({"name": "Target", "content_type": "markdown",
+                                   "content_markdown": "z"})
+        pasted_ids = self.Doc.browser_paste([sub.id], target.id)
+        self.assertEqual(self.Doc.browse(pasted_ids).parent_id, target)
+
+    def test_onlyoffice_cannot_contain_or_be_contained(self):
+        office = self.Doc.create({"name": "Office", "content_type": "onlyoffice"})
+        page = self.Doc.create(
+            {"name": "Page", "content_type": "html", "content_html": "<p>x</p>"}
+        )
+        folder = self.Doc.create({"name": "F", "content_type": "folder"})
+        # an Office Document cannot have children
+        with self.assertRaises(ValidationError):
+            self.Doc.create({"name": "child", "content_type": "html",
+                              "content_html": "<p>x</p>", "parent_id": office.id})
+        # an Office Document cannot be nested inside another document
+        with self.assertRaises(ValidationError):
+            office.parent_id = page.id
+        # ...but directly inside a folder is fine
+        office.parent_id = folder.id
+        self.assertEqual(office.parent_id, folder)
+        # the browser RPCs give a friendly UserError for the same cases
+        with self.assertRaises(UserError):
+            self.Doc.browser_move([office.id], page.id)
+        with self.assertRaises(UserError):
+            self.Doc.browser_paste([office.id], page.id)
 
     def test_parent_recursion_blocked(self):
         f1 = self.Doc.create({"name": "f1", "content_type": "folder"})

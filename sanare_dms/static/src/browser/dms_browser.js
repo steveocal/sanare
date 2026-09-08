@@ -53,7 +53,6 @@ export class DmsBrowser extends Component {
         this.action = useService("action");
         this.notification = useService("notification");
         this.dialog = useService("dialog");
-        this.newTypes = NEW_TYPES;
 
         this.expandedIds = new Set();
         this.dragIds = [];
@@ -61,6 +60,11 @@ export class DmsBrowser extends Component {
         this.state = useState({
             tree: [],
             selectedId: false, // false === the "Documents" root
+            // content_type of the folder/HTML/Markdown page currently open
+            // in the flat pane, or false for the root - drives which "New
+            // Document" types are offered (Office Documents only inside a
+            // folder, never nested inside another document).
+            containerContentType: false,
             breadcrumb: [],
             records: [],
             selection: new Set(),
@@ -86,12 +90,12 @@ export class DmsBrowser extends Component {
         useChildSubEnv({
             dms: {
                 state: this.state,
-                newTypes: NEW_TYPES,
                 iconFor: (node) => this.iconFor(node),
                 toggle: (n) => this.toggleNode(n),
                 select: (id) => this.selectFolder(id),
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
+                newTypesFor: (contentType) => this.newTypesFor(contentType),
                 deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself
                 // (folder or leaf document) is all it needs.
@@ -130,13 +134,14 @@ export class DmsBrowser extends Component {
         const raw = await this.orm.call(MODEL, "browser_tree_children", [parentId || false]);
         const nodes = [];
         for (const f of raw) {
-            const expanded = f.is_folder && this.expandedIds.has(f.id);
+            const expanded = f.can_have_children && this.expandedIds.has(f.id);
             nodes.push({
                 ...f,
                 expanded,
                 loading: false,
-                // Leaf documents (is_folder false) never recurse - they're
-                // shown, not expanded into.
+                // Leaf items (folders, HTML/Markdown pages and Office
+                // Documents all included - can_have_children is false for
+                // Office Documents and for empty containers) never recurse.
                 children:
                     expanded && f.has_children ? await this.buildBranch(f.id) : null,
             });
@@ -164,9 +169,11 @@ export class DmsBrowser extends Component {
             const res = await this.orm.call(MODEL, "browser_contents", [folderId || false]);
             this.state.breadcrumb = res.breadcrumb;
             this.state.records = res.records;
+            this.state.containerContentType = res.container_content_type || false;
         } catch (err) {
             this.state.breadcrumb = [];
             this.state.records = [];
+            this.state.containerContentType = false;
             this.notification.add(_t("Could not load this folder."), { type: "danger" });
         } finally {
             this.state.loadingList = false;
@@ -174,9 +181,10 @@ export class DmsBrowser extends Component {
     }
 
     async toggleNode(node) {
-        if (!node.is_folder) {
-            // Leaf documents have no caret in the template, but guard here
-            // too in case this is ever reached another way.
+        if (!node.can_have_children) {
+            // Leaf documents (and Office Documents, which can never
+            // contain anything) have no caret in the template, but guard
+            // here too in case this is ever reached another way.
             return;
         }
         if (node.expanded) {
@@ -307,6 +315,23 @@ export class DmsBrowser extends Component {
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
+    // Office Documents can only be created directly inside a folder, never
+    // nested inside an HTML/Markdown page - mirrors the model's
+    // _check_onlyoffice_containment constraint. "Folder" itself is never
+    // offered here since these dropdowns are all "add a *document*" menus;
+    // new folders are created via the toolbar's dedicated button.
+    newTypesFor(parentContentType) {
+        return NEW_TYPES.filter((nt) => {
+            if (nt[0] === "folder") {
+                return false;
+            }
+            if (nt[0] === "onlyoffice") {
+                return (parentContentType || "folder") === "folder";
+            }
+            return true;
+        });
+    }
+
     // parentId lets a tree row's own "+" target that folder directly,
     // regardless of which folder is currently open in the flat pane -
     // defaults to the currently selected folder (the toolbar's own "New
@@ -343,8 +368,10 @@ export class DmsBrowser extends Component {
     deleteRecord(rec, ev) {
         ev.stopPropagation();
         this.dialog.add(ConfirmationDialog, {
+            // Called for both flat-pane rows (which carry child_count) and
+            // tree nodes (which carry has_children instead) - check either.
             title: _t("Delete"),
-            body: rec.is_folder
+            body: rec.can_have_children && (rec.child_count || rec.has_children)
                 ? _t(
                     "Delete “%s” and everything inside it? This cannot be undone.",
                     rec.name
