@@ -236,7 +236,7 @@ class TestSanareDms(TransactionCase):
             {"name": "SelfA", "content_type": "knowledge_html",
              "content_html": "<p>placeholder</p>"}
         )
-        a.content_html = a._embed_marker(a.id) + "<p>after-marker</p>"
+        a.content_html = self._embed_marker(a.id) + "<p>after-marker</p>"
         # must not hang or crash on a document that embeds itself
         resolved = a._resolve_embedded_refs(a.content_html)
         self.assertIn("after-marker", resolved)
