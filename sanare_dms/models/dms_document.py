@@ -966,6 +966,31 @@ class SanareDocument(models.Model):
             "target": "self",
         }
 
+    def _print_content(self, use_approved):
+        """This node's own html/markdown content for the given
+        approved/live choice - the same version-resolution _download_response
+        used for a single document, factored out so _iter_display_subtree
+        can reuse it per node when bundling a parent with its children."""
+        self.ensure_one()
+        version = self.approved_version_id if use_approved else False
+        if self.content_type == "html":
+            return (version.content_html if version else False) or self.content_html or ""
+        if self.content_type == "markdown":
+            return (version.content_markdown if version else False) or self.content_markdown or ""
+        return ""
+
+    def _iter_display_subtree(self, level=1):
+        """Yield (doc, level) for self then every display_in_print-flagged
+        descendant, in tree order - the same traversal `report_document_body`
+        uses for recursive print, reused here so downloading a parent
+        document bundles its children exactly like printing does."""
+        self.ensure_one()
+        yield self, level
+        for child in self.child_ids.filtered(lambda c: c.display_in_print).sorted(
+            key=lambda c: c.sequence
+        ):
+            yield from child._iter_display_subtree(level + 1)
+
     def _download_response(self, use_approved=False):
         """Shared by the public /documents/<id>/download route (existing,
         refactored to call this) and the new authenticated backend one - same
@@ -974,7 +999,12 @@ class SanareDocument(models.Model):
         snapshot (``use_approved=True``, matching the site's existing
         behaviour); the authenticated route serves whatever is currently on
         the record, draft or not, since that's what "download this document
-        I'm working on" means."""
+        I'm working on" means.
+
+        html/markdown downloads bundle every display_in_print-flagged
+        descendant into the one file, same set and order as recursive print -
+        a parent with nested pages downloads as one combined document, not
+        just its own top-level content."""
         from odoo import http
         from odoo.http import request
 
@@ -988,12 +1018,21 @@ class SanareDocument(models.Model):
                 attachment, "raw"
             ).get_response(as_attachment=True)
         if self.content_type == "html":
-            data = ((version.content_html if version else False) or self.content_html or "").encode()
+            parts = [
+                "<h%d>%s</h%d>\n%s" % (
+                    min(level, 4), escape(node.name), min(level, 4),
+                    node._print_content(use_approved),
+                )
+                for node, level in self._iter_display_subtree()
+            ]
+            data = "\n<hr/>\n".join(parts).encode()
             filename = "%s.html" % self.name
         elif self.content_type == "markdown":
-            data = (
-                (version.content_markdown if version else False) or self.content_markdown or ""
-            ).encode()
+            parts = [
+                "%s %s\n\n%s" % ("#" * min(level, 4), node.name, node._print_content(use_approved))
+                for node, level in self._iter_display_subtree()
+            ]
+            data = "\n\n---\n\n".join(parts).encode()
             filename = "%s.md" % self.name
         else:
             raise UserError(self.env._("Folders can't be downloaded directly."))

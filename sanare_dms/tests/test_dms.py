@@ -231,11 +231,32 @@ class TestSanareDms(TransactionCase):
         # between them - they should print as one combined, flowing document.
         self.assertEqual(html.count('class="article"'), 1)
         self.assertNotIn("page-break-before", html)
-        # the footer names the printed (parent) document, not the nested child
-        footer_start = html.index('class="footer"')
+        # the footer (position:fixed, not wkhtmltopdf's separate header/
+        # footer pipeline - see report/dms_report.xml) names the printed
+        # (parent) document, appears once, and never a nested child's
+        self.assertEqual(html.count("position: fixed"), 1)
+        footer_start = html.index("position: fixed")
         footer_html = html[footer_start:footer_start + 300]
         self.assertIn("PrintFolder", footer_html)
         self.assertNotIn("Shown", footer_html)
+
+    def test_download_bundles_children_like_print(self):
+        page = self.Doc.create(
+            {"name": "Page", "content_type": "html", "content_html": "<p>parent-marker</p>"}
+        )
+        shown = self.Doc.create(
+            {"name": "Shown", "content_type": "markdown", "parent_id": page.id,
+             "content_markdown": "shown-marker"}
+        )
+        self.Doc.create(
+            {"name": "Hidden", "content_type": "html", "parent_id": page.id,
+             "content_html": "<p>hidden-marker</p>", "display_in_print": False}
+        )
+        # same set/order/flag-filtering _iter_display_subtree uses, which
+        # _download_response bundles a parent's own file with
+        subtree = list(page._iter_display_subtree())
+        self.assertEqual([(d.name, level) for d, level in subtree], [("Page", 1), ("Shown", 2)])
+        self.assertIn("shown-marker", shown._print_content(False))
 
     def test_record_rule_hides_private_docs(self):
         self.Doc.create(

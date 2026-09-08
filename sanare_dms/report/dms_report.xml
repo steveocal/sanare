@@ -24,19 +24,28 @@
                      page per nested doc. -->
                 <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
                      style="margin: 12mm;">
+                    <!-- Not a class="footer" div: Odoo's normal wkhtmltopdf
+                         header/footer pipeline (a separate footer-html
+                         page, stitched in via the minimal_layout subst() JS
+                         trick) turned out to be broken in this environment -
+                         verified against an unrelated, unmodified core Odoo
+                         report on the same box, so it's a pre-existing infra
+                         issue, not something introduced here. Using
+                         position:fixed instead: wkhtmltopdf's WebKit engine
+                         repeats any position:fixed element from the body on
+                         every generated page, which sidesteps that broken
+                         pipeline entirely. Placed once per top-level doc
+                         (not per recursed node), so it always names the
+                         printed parent, never a nested child. -->
+                    <div style="position: fixed; bottom: 0; left: 0; right: 0;
+                                 font-size: 8px; color: #999; text-align: right;
+                                 border-top: 1px solid #ddd; padding-top: 2px;">
+                        <span t-out="doc.name"/> · v<span t-out="doc.version_number"/>
+                    </div>
                     <t t-call="sanare_dms.report_document_body">
                         <t t-set="doc" t-value="doc"/>
                         <t t-set="level" t-value="1"/>
                     </t>
-                </div>
-                <!-- Footer is collected globally by _prepare_html() (any
-                     ".footer" div, wherever it sits) and repeated on every
-                     page of this doc's body - name/version of the printed
-                     (parent) doc only, never a nested child's. -->
-                <div class="footer">
-                    <p class="text-muted small mb-0 text-end" style="font-size: 8px;">
-                        <span t-out="doc.name"/> · v<span t-out="doc.version_number"/>
-                    </p>
                 </div>
             </t>
         </t>
