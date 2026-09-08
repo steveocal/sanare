@@ -52,10 +52,18 @@ $dms-sel:   rgba(255, 255, 255, .16);
         }
 
         .o_dms_caret {
-            width: 16px;
+            width: 18px;
             display: inline-flex;
             justify-content: center;
-            flex: 0 0 16px;
+            flex: 0 0 18px;
+        }
+
+        .o_dms_tree_row_actions {
+            i {
+                cursor: pointer;
+                opacity: .6;
+                &:hover { opacity: 1; color: var(--o-brand-primary, #9c6f96); }
+            }
         }
     }
 

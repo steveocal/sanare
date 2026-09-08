@@ -167,6 +167,21 @@
                                        t-att-class="rec.display_in_print ? 'fa-eye' : 'fa-eye-slash text-muted'"
                                        t-att-title="rec.display_in_print ? 'Included when parent is printed - click to exclude' : 'Excluded when parent is printed - click to include'"
                                        t-on-click="(ev) => this.toggleDisplayInPrint(rec, ev)"/>
+                                    <span t-if="rec.is_folder" class="mx-1" t-on-click.stop="() => {}">
+                                        <Dropdown>
+                                            <i class="fa fa-plus-circle" title="Add a document here"/>
+                                            <t t-set-slot="content">
+                                                <t t-foreach="newTypes" t-as="nt" t-key="nt[0]">
+                                                    <DropdownItem t-if="nt[0] !== 'folder'"
+                                                                  onSelected="() => this.newDocument(nt[0], rec.id)">
+                                                        <t t-esc="nt[1]"/>
+                                                    </DropdownItem>
+                                                </t>
+                                            </t>
+                                        </Dropdown>
+                                    </span>
+                                    <i class="fa fa-trash-o mx-1" title="Delete"
+                                       t-on-click="(ev) => this.deleteRecord(rec, ev)"/>
                                 </td>
                             </tr>
 
@@ -197,14 +212,34 @@
              t-on-dragover="(ev) => props.node.is_folder ? env.dms.dragOver(props.node.id, ev) : null"
              t-on-dragleave="() => props.node.is_folder ? env.dms.dragLeave() : null"
              t-on-drop="(ev) => props.node.is_folder ? env.dms.drop(props.node.id, ev) : null">
-            <span class="o_dms_caret" t-on-click.stop="() => env.dms.toggle(props.node)">
+            <span class="o_dms_caret" title="Expand/collapse"
+                  t-on-click.stop="() => env.dms.toggle(props.node)">
                 <i t-if="props.node.has_children" class="fa"
-                   t-att-class="props.node.expanded ? 'fa-caret-down' : 'fa-caret-right'"/>
+                   t-att-class="props.node.expanded ? 'fa-minus-square-o' : 'fa-plus-square-o'"/>
                 <i t-else="" class="fa fa-fw"/>
             </span>
             <i class="fa me-2" t-att-class="icon + (props.node.is_folder ? ' text-warning' : ' text-muted')"/>
-            <span class="text-truncate" t-esc="props.node.name"/>
+            <span class="text-truncate flex-grow-1" t-esc="props.node.name"/>
             <i t-if="props.node.loading" class="fa fa-spinner fa-spin ms-2 small"/>
+
+            <span t-if="props.node.is_folder" class="o_dms_tree_row_actions ms-2"
+                  t-on-click.stop="() => {}">
+                <Dropdown>
+                    <i class="fa fa-plus-circle" title="Add a document here"/>
+                    <t t-set-slot="content">
+                        <t t-foreach="env.dms.newTypes" t-as="nt" t-key="nt[0]">
+                            <DropdownItem t-if="nt[0] !== 'folder'"
+                                          onSelected="() => env.dms.newDocument(nt[0], props.node.id)">
+                                <t t-esc="nt[1]"/>
+                            </DropdownItem>
+                        </t>
+                    </t>
+                </Dropdown>
+                <i class="fa fa-trash-o ms-2" title="Delete"
+                   t-on-click="(ev) => env.dms.deleteRecord(props.node, ev)"/>
+            </span>
+            <i t-else="" class="fa fa-trash-o o_dms_tree_row_actions ms-2" title="Delete"
+               t-on-click="(ev) => env.dms.deleteRecord(props.node, ev)"/>
         </div>
         <t t-if="props.node.expanded and props.node.children">
             <t t-foreach="props.node.children" t-as="child" t-key="child.id">

@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import {
     Component, useState, useChildSubEnv, useEffect, useRef, onMounted, useExternalListener,
 } from "@odoo/owl";
@@ -37,7 +38,7 @@ export class DmsTreeNode extends Component {
         return this.env.dms.iconFor(this.props.node);
     }
 }
-DmsTreeNode.components = { DmsTreeNode };
+DmsTreeNode.components = { DmsTreeNode, Dropdown, DropdownItem };
 
 /* ------------------------------------------------------------------ *
  *  Main client action
@@ -51,6 +52,7 @@ export class DmsBrowser extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.dialog = useService("dialog");
         this.newTypes = NEW_TYPES;
 
         this.expandedIds = new Set();
@@ -84,10 +86,13 @@ export class DmsBrowser extends Component {
         useChildSubEnv({
             dms: {
                 state: this.state,
+                newTypes: NEW_TYPES,
                 iconFor: (node) => this.iconFor(node),
                 toggle: (n) => this.toggleNode(n),
                 select: (id) => this.selectFolder(id),
                 open: (id) => this.openDocument(id),
+                newDocument: (type, parentId) => this.newDocument(type, parentId),
+                deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself
                 // (folder or leaf document) is all it needs.
                 dragStart: (node, ev) => this.onItemDragStart(node, ev),
@@ -302,7 +307,12 @@ export class DmsBrowser extends Component {
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
-    newDocument(type) {
+    // parentId lets a tree row's own "+" target that folder directly,
+    // regardless of which folder is currently open in the flat pane -
+    // defaults to the currently selected folder (the toolbar's own "New
+    // Document" button calls this with no parentId).
+    newDocument(type, parentId) {
+        const targetParentId = parentId !== undefined ? parentId : (this.state.selectedId || false);
         this.action.doAction(
             {
                 type: "ir.actions.act_window",
@@ -310,13 +320,65 @@ export class DmsBrowser extends Component {
                 views: [[false, "form"]],
                 target: "current",
                 context: {
-                    default_parent_id: this.state.selectedId || false,
+                    default_parent_id: targetParentId,
                     default_content_type: type,
-                    default_visibility_inherited: Boolean(this.state.selectedId),
+                    default_visibility_inherited: Boolean(targetParentId),
                 },
             },
-            { onClose: () => this.loadContents(this.state.selectedId) }
+            {
+                onClose: () => {
+                    if (targetParentId) {
+                        this.expandedIds.add(targetParentId);
+                    }
+                    return Promise.all([
+                        this.refreshTree(),
+                        this.loadContents(this.state.selectedId),
+                    ]);
+                },
+            }
         );
+    }
+
+    // ---- delete -------------------------------------------------------
+    deleteRecord(rec, ev) {
+        ev.stopPropagation();
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Delete"),
+            body: rec.is_folder
+                ? _t(
+                    "Delete “%s” and everything inside it? This cannot be undone.",
+                    rec.name
+                )
+                : _t("Delete “%s”? This cannot be undone.", rec.name),
+            confirmLabel: _t("Delete"),
+            confirmClass: "btn-danger",
+            confirm: async () => {
+                try {
+                    await this.orm.unlink(MODEL, [rec.id]);
+                } catch (err) {
+                    const msg =
+                        (err && err.data && err.data.message) ||
+                        (err && err.message) ||
+                        _t("Could not delete this item.");
+                    this.notification.add(msg, { type: "danger" });
+                    return;
+                }
+                if (this.state.selectedId === rec.id) {
+                    // Deleted the folder we're currently looking inside of -
+                    // neither browser_contents nor browser_tree_children
+                    // return parent_id, so there's no "go up one level" id
+                    // to navigate to here. Root is a safe, always-valid
+                    // fallback rather than showing a now-deleted folder's
+                    // stale contents.
+                    this.selectFolder(false);
+                }
+                await Promise.all([
+                    this.refreshTree(),
+                    this.loadContents(this.state.selectedId),
+                ]);
+            },
+            cancel: () => {},
+        });
     }
 
     // ---- copy / paste -----------------------------------------------
