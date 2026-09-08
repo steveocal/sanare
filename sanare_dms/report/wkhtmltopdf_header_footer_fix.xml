@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Infra-level compatibility fix, not sanare_dms-specific: affects every
+         Odoo report on this box that uses header/footer chrome (invoices,
+         quotations, internal/external report layouts, ...), not just this
+         module's own report_layout='internal'/'external' branches.
+
+         Root cause (confirmed 2026-09-08 by capturing the real header/footer
+         HTML _run_wkhtmltopdf generates and replaying it through wkhtmltopdf
+         by hand, then bisecting with the debug-javascript flag down to the exact
+         thrown error): web.minimal_layout's own subst() script - the
+         mechanism Odoo uses to pick which company's header/footer to show
+         when multiple documents share one combined wkhtmltopdf invocation -
+         derives an array index from wkhtmltopdf's auto-substituted
+         `webpage` querystring variable via
+         `vars['webpage'].split('.', 4)[3]`. That variable is the header/
+         footer page's own source file URL, and _run_wkhtmltopdf() names
+         that temp file `report.body.tmp.<N>.<random>.html` under this site's
+         TMPDIR - which on this CloudPepper box is
+         /var/odoo/gxcgtpype1.cloudpepper.site/tmp (systemd override,
+         confirmed via `systemctl cat`). The site's own domain name embedded
+         in that path (gxcgtpype1.cloudpepper.site) contributes two EXTRA
+         dots before the filename's own dots, so splitting the whole URL by
+         '.' with a hardcoded limit of 4 lands on the literal string "body"
+         instead of the intended numeric index. `header.children["body"]` is
+         `undefined`, and the very next line - `header.appendChild(
+         companyHeader)` - throws (confirmed verbatim via the debug-javascript flag:
+         "NOT_FOUND_ERR: DOM Exception 8: An attempt was made to reference a
+         Node in a context where it does not exist."). Because
+         `header.textContent = ''` runs immediately before that throwing
+         line, the exception leaves the header (and, by the same logic,
+         the footer) completely empty - this is why every report using
+         Odoo's stock header/footer mechanism has rendered blank chrome on
+         this box, verified earlier against an unmodified core invoice
+         report and re-confirmed here against this module's own external
+         layout.
+
+         Fix: only reachable, low-risk change without touching Odoo core or
+         the wkhtmltopdf binary itself - patch subst()'s two lookups to fall
+         back to the first (index 0) header/footer whenever the derived
+         index doesn't resolve to an actual child, instead of throwing.
+         Every site this project has ever printed from renders exactly one
+         document per combined wkhtmltopdf call in practice, so falling back
+         to "the only header/footer that's there" is correct here and
+         matches original behaviour byte-for-byte whenever the index DOES
+         resolve correctly (e.g. on a box whose TMPDIR happens not to embed
+         extra dots) - nothing is removed, only a safety net is added right
+         before the two lines that were throwing. -->
+    <template id="minimal_layout_header_footer_index_fix" inherit_id="web.minimal_layout">
+        <xpath expr="//script[1]" position="replace">
+            <script t-if="subst">
+                function subst() {
+                    var vars = {};
+                    var x = document.location.search.substring(1).split('&amp;');
+                    for (var i in x) {
+                        var z = x[i].split('=', 2);
+                        vars[z[0]] = unescape(z[1]);
+                    }
+                    var x = ['sitepage', 'sitepages', 'section', 'subsection', 'subsubsection'];
+                    var z = {'sitepage': 'page', 'sitepages': 'topage'};
+                    for (var i in x) {
+                        var y = document.getElementsByClassName(z[x[i]] || x[i])
+                        for (var j=0; j&lt;y.length; ++j)
+                            y[j].textContent = vars[x[i]];
+                    }
+
+                    // sanare_dms fix: 'index' can fail to resolve to a real
+                    // child (e.g. a TMPDIR path with extra dots throws the
+                    // split-by-4 trick off) - fall back to the first header/
+                    // footer instead of appendChild(undefined), which used
+                    // to throw and wipe the header/footer entirely.
+                    var index = vars['webpage'] ? vars['webpage'].split('.', 4)[3] : undefined;
+                    var header = document.getElementById('minimal_layout_report_headers');
+                    if(header){
+                        var companyHeader = header.children[index] || header.children[0];
+                        if (companyHeader) {
+                            header.textContent = '';
+                            header.appendChild(companyHeader);
+                        }
+                    }
+                    var footer = document.getElementById('minimal_layout_report_footers');
+                    if(footer){
+                        var companyFooter = footer.children[index] || footer.children[0];
+                        if (companyFooter) {
+                            footer.textContent = '';
+                            footer.appendChild(companyFooter);
+                        }
+                    }
+                }
+            </script>
+        </xpath>
+    </template>
+
+</odoo>

@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.5.0",
+    "version": "19.0.1.6.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -28,6 +28,7 @@
         "views/dms_document_views.xml",
         "views/dms_browser_views.xml",
         "views/dms_menus.xml",
+        "report/wkhtmltopdf_header_footer_fix.xml",
         "report/dms_report.xml",
         "views/dms_portal_templates.xml",
         "views/dms_website_templates.xml",

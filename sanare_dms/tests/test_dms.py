@@ -406,11 +406,23 @@ class TestSanareDms(TransactionCase):
         internal_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", internal_html)
         self.assertIn('class="header"', internal_html)
+        self.assertIn("position: fixed", internal_html)
+        self.assertIn("LayoutDoc", internal_html)
 
         doc.report_layout = "external"
         external_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", external_html)
         self.assertIn("o_report_layout_standard", external_html)
+        self.assertIn("position: fixed", external_html)
+        # The name belongs only in the footer, never as a body heading -
+        # layout_document_title is deliberately never set (see
+        # report_document's comment), so external_layout_standard's <h2>
+        # renders empty.
+        h2_start = external_html.index("<h2")
+        h2_end = external_html.index("</h2>", h2_start)
+        self.assertNotIn("LayoutDoc", external_html[h2_start:h2_end])
+        footer_start = external_html.index("position: fixed")
+        self.assertIn("LayoutDoc", external_html[footer_start:footer_start + 300])
 
     def test_download_bundles_children_like_print(self):
         page = self.Doc.create(

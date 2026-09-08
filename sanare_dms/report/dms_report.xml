@@ -17,16 +17,20 @@
                 <!-- report_layout branches on the top-level printed doc only
                      - a recursed child's own value is never consulted, same
                      rule as its name/version already being footer-only (see
-                     report_document_body). 'internal'/'external' reuse
-                     Odoo's own report chrome as-is; their running header/
-                     footer (page numbers, company tagline) share the same
-                     pre-existing wkhtmltopdf limitation documented below for
-                     'none' - not refixed per-layout, this is a box-wide infra
-                     issue already true for every other company report here. -->
+                     report_document_body). All three branches share the same
+                     proven position:fixed name/version footer
+                     (report_document_footer) so the document's name shows up
+                     in exactly one place - the footer - regardless of which
+                     layout is chosen; 'internal'/'external' never set
+                     layout_document_title, so Odoo's own layouts don't also
+                     print the name a second time as a body heading. -->
                 <t t-if="doc.report_layout == 'internal'">
                     <t t-call="web.internal_layout">
                         <t t-set="o" t-value="doc"/>
                         <div class="page">
+                            <t t-call="sanare_dms.report_document_footer">
+                                <t t-set="doc" t-value="doc"/>
+                            </t>
                             <t t-call="sanare_dms.report_document_body">
                                 <t t-set="doc" t-value="doc"/>
                             </t>
@@ -36,8 +40,10 @@
                 <t t-elif="doc.report_layout == 'external'">
                     <t t-call="web.external_layout">
                         <t t-set="o" t-value="doc"/>
-                        <t t-set="layout_document_title"><span t-out="doc.name"/></t>
                         <div class="page">
+                            <t t-call="sanare_dms.report_document_footer">
+                                <t t-set="doc" t-value="doc"/>
+                            </t>
                             <t t-call="sanare_dms.report_document_body">
                                 <t t-set="doc" t-value="doc"/>
                             </t>
@@ -55,34 +61,9 @@
                          document instead of a new page per nested doc. -->
                     <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id"
                          style="margin: 12mm;">
-                        <!-- Not a class="footer" div: Odoo's normal wkhtmltopdf
-                             header/footer pipeline (a separate footer-html page,
-                             stitched in via the minimal_layout subst() JS trick)
-                             turned out to be broken in this environment -
-                             verified against an unrelated, unmodified core Odoo
-                             report (an invoice PDF) on the same box, so it's a
-                             pre-existing infra issue, not something introduced
-                             here. Using position:fixed instead. This still has a
-                             real limitation on this box, verified directly: it
-                             only shows on the LAST physical page of a multi-page
-                             document, not repeated on every page (wkhtmltopdf
-                             here renders the whole document as one continuous
-                             canvas before slicing it into pages, rather than
-                             truly re-flowing position:fixed content per page) -
-                             acceptable given these are typically short documents
-                             and it's strictly better than no footer at all.
-                             minimal_layout's own wrapper sets `html{height:0}`
-                             (meant only for the header/footer file, but it also
-                             wraps this body), which silently collapses
-                             position:fixed's positioning box to nothing - the
-                             inline !important override below is required, not
-                             decorative. -->
-                        <style>html { height: auto !important; }</style>
-                        <div style="position: fixed; bottom: 0; left: 0; right: 0;
-                                     font-size: 8px; color: #999; text-align: right;
-                                     border-top: 1px solid #ddd; padding-top: 2px;">
-                            <span t-out="doc.name"/> · v<span t-out="doc.version_number"/>
-                        </div>
+                        <t t-call="sanare_dms.report_document_footer">
+                            <t t-set="doc" t-value="doc"/>
+                        </t>
                         <t t-call="sanare_dms.report_document_body">
                             <t t-set="doc" t-value="doc"/>
                         </t>
@@ -90,6 +71,36 @@
                 </t>
             </t>
         </t>
+    </template>
+
+    <!-- Shared by all three report_layout branches above - see their comment.
+         Not a class="footer" div: Odoo's normal wkhtmltopdf header/footer
+         pipeline (a separate footer-html page, stitched in via the
+         minimal_layout subst() JS trick) was broken on this box - root-caused
+         2026-09-08 to web.minimal_layout's own subst() script throwing on
+         this box's TMPDIR path (fixed for every report site-wide by
+         report/wkhtmltopdf_header_footer_fix.xml) - but this position:fixed
+         technique predates that fix, is already proven, and is kept as
+         belt-and-suspenders: it doesn't depend on wkhtmltopdf's header/footer
+         mechanism at all, so it keeps working even if that mechanism ever
+         regresses again. Real limitation, verified directly: it only shows
+         on the LAST physical page of a multi-page document, not repeated on
+         every page (wkhtmltopdf here renders the whole document as one
+         continuous canvas before slicing it into pages, rather than truly
+         re-flowing position:fixed content per page) - acceptable given these
+         are typically short documents and it's strictly better than no
+         footer at all. minimal_layout's own wrapper sets `html{height:0}`
+         (meant only for the header/footer file, but it also wraps this
+         body), which silently collapses position:fixed's positioning box to
+         nothing - the inline !important override below is required, not
+         decorative. -->
+    <template id="report_document_footer">
+        <style>html { height: auto !important; }</style>
+        <div style="position: fixed; bottom: 0; left: 0; right: 0;
+                     font-size: 8px; color: #999; text-align: right;
+                     border-top: 1px solid #ddd; padding-top: 2px;">
+            <span t-out="doc.name"/> · v<span t-out="doc.version_number"/>
+        </div>
     </template>
 
     <!-- Recursive: renders `doc`'s own content, then every child with
