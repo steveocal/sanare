@@ -271,14 +271,18 @@ class TestSanareDms(TransactionCase):
         other = self.Doc.create(
             {"name": "NotATemplate", "content_type": "html", "content_html": "<p>x</p>"}
         )
-        # not a template until flagged
-        self.assertEqual(self.Doc.browser_templates(), [])
+        # not a template until flagged - scoped to this doc's own id, not a
+        # global emptiness check: browser_templates() reflects whatever else
+        # is already flagged in the database (e.g. a real user's templates),
+        # which this test must not assume away.
+        self.assertNotIn(tpl.id, [t["id"] for t in self.Doc.browser_templates()])
 
         self.Doc.browse(tpl.id).browser_set_template(True)
         self.assertTrue(tpl.is_template)
         templates = self.Doc.browser_templates()
-        self.assertEqual([t["id"] for t in templates], [tpl.id])
-        self.assertEqual(templates[0]["parent_name"], "TplFolder")
+        matches = [t for t in templates if t["id"] == tpl.id]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["parent_name"], "TplFolder")
         # flagging doesn't move it - still filed where it always was
         self.assertEqual(tpl.parent_id, folder)
 
@@ -299,7 +303,7 @@ class TestSanareDms(TransactionCase):
         self.assertIn("tpl-marker", data["content_html"])
 
         self.Doc.browse(tpl.id).browser_set_template(False)
-        self.assertEqual(self.Doc.browser_templates(), [])
+        self.assertNotIn(tpl.id, [t["id"] for t in self.Doc.browser_templates()])
 
     def test_public_page_does_not_leak_private_embedded_content(self):
         private_doc = self.Doc.create(
@@ -412,7 +416,10 @@ class TestSanareDms(TransactionCase):
         doc.report_layout = "external"
         external_html = self._render_report_html(report, doc.ids)
         self.assertIn("layout-marker", external_html)
-        self.assertIn("o_report_layout_standard", external_html)
+        # Which concrete theme (standard/bubble/boxed/...) is just whatever
+        # this company is configured with - assert on the generic
+        # external_layout marker, not a specific theme name.
+        self.assertIn("o_report_layout_", external_html)
         self.assertIn("position: fixed", external_html)
         # The name belongs only in the footer, never as a body heading -
         # layout_document_title is deliberately never set (see
