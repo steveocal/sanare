@@ -96,6 +96,13 @@ class SanareDocument(models.Model):
              "printed document's own value matters - a recursed child's is "
              "ignored, same as its name/version already are.",
     )
+    is_template = fields.Boolean(
+        string="Template", default=False,
+        help="Shows up in the browser's separate Templates section and in "
+             "the New from Template picker / \"/template\" editor command. "
+             "A flag, not a move - the document stays in its own folder and "
+             "is still organized/found there exactly as before.",
+    )
 
     # -- custom properties ------------------------------------------------
     # Scoped per-folder: a folder defines the schema its own children fill
@@ -594,6 +601,11 @@ class SanareDocument(models.Model):
                 approval_request_id=False,
                 is_published=False,
                 attachment_id=False,
+                # A copy is a real working document, not another template -
+                # true whether the copy came from the regular Paste feature
+                # or from browser_create_from_template picking a template as
+                # its starting point.
+                is_template=False,
             )
         return vals_list
 
@@ -911,6 +923,78 @@ class SanareDocument(models.Model):
         ]
 
     @api.model
+    def browser_templates(self):
+        """Flat list of every is_template=True document the caller can see,
+        for the browser's separate Templates section. Flat, not a tree - a
+        template keeps its real parent_id (it's a flag, not a move, see
+        is_template's help text), so a hierarchical view here would just
+        reproduce the main tree with most of it filtered out; a flat list
+        of "here are your templates" is what the feature is actually for."""
+        recs = self.search([("is_template", "=", True)], order="name")
+        ctypes = dict(CONTENT_TYPES)
+        return [
+            {
+                "id": r.id,
+                "name": r.name,
+                "is_folder": r.is_folder,
+                "content_type": r.content_type,
+                "content_type_label": ctypes.get(r.content_type),
+                "parent_name": r.parent_id.display_name,
+            }
+            for r in recs
+        ]
+
+    def browser_set_template(self, is_template):
+        """Toggle the Template flag - the drop handler when something is
+        dragged onto the Templates section calls this (with is_template=True)
+        instead of browser_move, since dropping there tags, it doesn't
+        reparent. Also reachable from a per-row icon for anyone who doesn't
+        think to drag."""
+        self.write({"is_template": is_template})
+        return True
+
+    @api.model
+    def browser_create_from_template(self, template_id, parent_id=False, name=False):
+        """New from Template: a real copy of ``template_id`` (not a live
+        reference - see get_template_content for that distinction), filed
+        under ``parent_id``. copy_data() already resets state/version/
+        approval/publish/is_template on any copy, so this is pure wiring,
+        same shape as browser_paste."""
+        template = self.browse(template_id).exists()
+        if not template:
+            raise UserError(self.env._("This template no longer exists."))
+        target = self.browse(parent_id) if parent_id else self.browse()
+        if target and not target.can_have_children:
+            raise UserError(
+                self.env._("Items can only be created inside a folder, HTML page or "
+                            "Markdown page.")
+            )
+        vals = {"parent_id": target.id if target else False}
+        if name and name.strip():
+            vals["name"] = name.strip()
+        return template.copy(vals).id
+
+    @api.model
+    def get_template_content(self, document_id):
+        """RPC target for the "/template" editor command - unlike
+        get_embedded_content (a live reference the editor re-fetches on
+        every mount), this is a one-time read: the caller pastes the
+        returned HTML in as regular, independently-editable content, so
+        there's no ongoing link to the template afterwards. Only documents
+        actually flagged is_template are offered here, even though any
+        HTML_TYPES document's content is technically readable this way -
+        the point of the command is inserting *templates* specifically."""
+        doc = self.browse(int(document_id)).exists()
+        if not doc:
+            return {"error": "not_found"}
+        if not doc.is_template or doc.content_type not in HTML_TYPES:
+            return {"error": "unsupported_type"}
+        return {
+            "name": doc.name,
+            "content_html": doc._resolve_embedded_refs(doc.content_html or ""),
+        }
+
+    @api.model
     def _browser_breadcrumb(self, parent_id):
         crumbs = []
         rec = self.browse(parent_id) if parent_id else self.browse()
@@ -979,6 +1063,7 @@ class SanareDocument(models.Model):
                     "display_in_print": r.display_in_print,
                     "is_published": r.is_published,
                     "can_publish": r.can_publish,
+                    "is_template": r.is_template,
                 }
                 for r in recs
             ],

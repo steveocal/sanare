@@ -7,6 +7,7 @@ import { parseHTML } from "@html_editor/utils/html"
 import { SectionHeadingPlugin } from "./section_heading_plugin"
 import { EmbeddedDocRefPlugin } from "./embedded_doc_ref/embedded_doc_ref_plugin"
 import { PageBreakPlugin } from "./page_break_plugin"
+import { TemplateInsertPlugin } from "./template_insert_plugin"
 import { SnippetPanel } from "./snippet_panel/snippet_panel"
 import { SNIPPET_BLOCKS } from "./snippet_panel/snippet_blocks"
 
@@ -36,7 +37,10 @@ export class SanareHtmlField extends HtmlField {
 
   getConfig() {
     const config = super.getConfig()
-    config.Plugins = [...config.Plugins, SectionHeadingPlugin, EmbeddedDocRefPlugin, PageBreakPlugin]
+    config.Plugins = [
+      ...config.Plugins,
+      SectionHeadingPlugin, EmbeddedDocRefPlugin, PageBreakPlugin, TemplateInsertPlugin,
+    ]
     return config
   }
 

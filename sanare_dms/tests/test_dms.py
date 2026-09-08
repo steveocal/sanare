@@ -262,6 +262,45 @@ class TestSanareDms(TransactionCase):
         data = self.Doc.get_embedded_content(b.id)
         self.assertIn("c2-marker", data["content_html"])
 
+    def test_templates_browse_flag_and_create_from_template(self):
+        folder = self.Doc.create({"name": "TplFolder", "content_type": "folder"})
+        tpl = self.Doc.create(
+            {"name": "Tpl", "content_type": "html", "parent_id": folder.id,
+             "content_html": "<p>tpl-marker</p>"}
+        )
+        other = self.Doc.create(
+            {"name": "NotATemplate", "content_type": "html", "content_html": "<p>x</p>"}
+        )
+        # not a template until flagged
+        self.assertEqual(self.Doc.browser_templates(), [])
+
+        self.Doc.browse(tpl.id).browser_set_template(True)
+        self.assertTrue(tpl.is_template)
+        templates = self.Doc.browser_templates()
+        self.assertEqual([t["id"] for t in templates], [tpl.id])
+        self.assertEqual(templates[0]["parent_name"], "TplFolder")
+        # flagging doesn't move it - still filed where it always was
+        self.assertEqual(tpl.parent_id, folder)
+
+        target = self.Doc.create({"name": "Target", "content_type": "folder"})
+        new_id = self.Doc.browser_create_from_template(tpl.id, target.id)
+        new_doc = self.Doc.browse(new_id)
+        self.assertEqual(new_doc.parent_id, target)
+        self.assertEqual(new_doc.content_html, tpl.content_html)
+        # the copy is a real document, not itself a template
+        self.assertFalse(new_doc.is_template)
+        # the original is untouched
+        self.assertTrue(tpl.is_template)
+
+        # get_template_content only serves documents actually flagged
+        data = self.Doc.get_template_content(other.id)
+        self.assertEqual(data.get("error"), "unsupported_type")
+        data = self.Doc.get_template_content(tpl.id)
+        self.assertIn("tpl-marker", data["content_html"])
+
+        self.Doc.browse(tpl.id).browser_set_template(False)
+        self.assertEqual(self.Doc.browser_templates(), [])
+
     def test_public_page_does_not_leak_private_embedded_content(self):
         private_doc = self.Doc.create(
             {"name": "PrivateSecret", "content_type": "html",

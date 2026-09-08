@@ -16,15 +16,20 @@
                             <i class="fa fa-database me-1"/>Documents
                         </a>
                     </li>
-                    <t t-foreach="state.breadcrumb" t-as="crumb" t-key="crumb.id">
-                        <li class="breadcrumb-item"
-                            t-att-class="{ active: crumb_last }">
-                            <a t-if="!crumb_last" href="#"
-                               t-on-click.prevent="() => this.selectFolder(crumb.id)"
-                               t-esc="crumb.name"/>
-                            <span t-else="" t-esc="crumb.name"/>
-                        </li>
+                    <t t-if="state.viewMode === 'folder'">
+                        <t t-foreach="state.breadcrumb" t-as="crumb" t-key="crumb.id">
+                            <li class="breadcrumb-item"
+                                t-att-class="{ active: crumb_last }">
+                                <a t-if="!crumb_last" href="#"
+                                   t-on-click.prevent="() => this.selectFolder(crumb.id)"
+                                   t-esc="crumb.name"/>
+                                <span t-else="" t-esc="crumb.name"/>
+                            </li>
+                        </t>
                     </t>
+                    <li t-else="" class="breadcrumb-item active">
+                        <i class="fa fa-magic me-1"/>Templates
+                    </li>
                 </ol>
 
                 <button class="btn btn-sm btn-secondary" t-on-click="() => this.startNewFolder()">
@@ -41,6 +46,10 @@
                                 <t t-esc="nt[1]"/>
                             </DropdownItem>
                         </t>
+                        <div class="dropdown-divider"/>
+                        <DropdownItem onSelected="() => this.openTemplatePicker()">
+                            <i class="fa fa-magic me-1"/>From Template…
+                        </DropdownItem>
                     </t>
                 </Dropdown>
 
@@ -79,6 +88,18 @@
                         <i class="fa fa-database me-2 text-primary"/>
                         <span class="fw-bold">Documents</span>
                     </div>
+                    <div class="o_dms_tree_row o_dms_templates_root d-flex align-items-center px-2 py-1 rounded mb-2"
+                         t-att-class="{
+                             'o_dms_selected': state.viewMode === 'templates',
+                             'o_dms_drop_target': state.templatesDragOver }"
+                         t-on-click="() => this.selectTemplates()"
+                         t-on-dragover="(ev) => this.onTemplatesDragOver(ev)"
+                         t-on-dragleave="() => this.onTemplatesDragLeave()"
+                         t-on-drop="(ev) => this.onTemplatesDrop(ev)">
+                        <i class="fa fa-magic me-2 text-primary"/>
+                        <span class="fw-bold">Templates</span>
+                        <span t-if="state.templates.length" class="badge text-bg-light ms-2" t-esc="state.templates.length"/>
+                    </div>
                     <div t-if="state.loadingTree" class="text-muted small px-2 py-1">Loading…</div>
                     <t t-foreach="state.tree" t-as="node" t-key="node.id">
                         <DmsTreeNode node="node" depth="0"/>
@@ -88,7 +109,7 @@
                 </div>
 
                 <!-- list pane -->
-                <div class="o_dms_list flex-grow-1 overflow-auto">
+                <div class="o_dms_list flex-grow-1 overflow-auto" t-if="state.viewMode === 'folder'">
                     <table class="table table-sm table-hover mb-0 o_dms_table">
                         <thead class="o_dms_thead">
                             <tr>
@@ -166,6 +187,10 @@
                                        t-att-class="rec.display_in_print ? 'fa-eye' : 'fa-eye-slash text-muted'"
                                        t-att-title="rec.display_in_print ? 'Included when parent is printed - click to exclude' : 'Excluded when parent is printed - click to include'"
                                        t-on-click="(ev) => this.toggleDisplayInPrint(rec, ev)"/>
+                                    <i class="fa mx-1"
+                                       t-att-class="rec.is_template ? 'fa-magic text-primary' : 'fa-magic text-muted'"
+                                       t-att-title="rec.is_template ? 'Template - click to remove' : 'Mark as a template'"
+                                       t-on-click="(ev) => this.toggleIsTemplate(rec, ev)"/>
                                     <span t-if="rec.can_have_children" class="mx-1" t-on-click.stop="() => {}">
                                         <Dropdown>
                                             <i class="fa fa-plus-circle" title="Add a document here"/>
@@ -186,6 +211,47 @@
                             <tr t-if="!state.loadingList and !state.records.length and !state.creatingFolder">
                                 <td colspan="7" class="text-center text-muted py-4">
                                     This folder is empty. Drag items here, or use “New”.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- templates list pane - flat, not folder-scoped (a
+                     template keeps its real parent_id; this is every
+                     is_template=True document regardless of where it
+                     actually lives - see browser_templates). -->
+                <div class="o_dms_list flex-grow-1 overflow-auto" t-else="">
+                    <table class="table table-sm table-hover mb-0 o_dms_table">
+                        <thead class="o_dms_thead">
+                            <tr>
+                                <th style="width: 45%">Name</th>
+                                <th>Type</th>
+                                <th>In Folder</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.templates" t-as="rec" t-key="rec.id"
+                                class="o_dms_row"
+                                t-on-dblclick="() => this.onRowDblClick(rec)">
+                                <td>
+                                    <i class="fa me-2" t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
+                                    <span t-esc="rec.name"/>
+                                </td>
+                                <td class="text-muted" t-esc="rec.is_folder ? 'Folder' : rec.content_type_label"/>
+                                <td class="text-muted" t-esc="rec.parent_name or 'Documents'"/>
+                                <td class="text-end text-nowrap o_dms_actions">
+                                    <i class="fa fa-magic mx-1 text-primary" title="Remove template flag"
+                                       t-on-click="(ev) => this.toggleIsTemplate(rec, ev)"/>
+                                    <i class="fa fa-trash-o mx-1" title="Delete"
+                                       t-on-click="(ev) => this.deleteRecord(rec, ev)"/>
+                                </td>
+                            </tr>
+                            <tr t-if="!state.loadingTemplates and !state.templates.length">
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No templates yet. Drag a document onto “Templates” in the
+                                    tree, or click the <i class="fa fa-magic"/> icon on any row.
                                 </td>
                             </tr>
                         </tbody>

@@ -6,6 +6,7 @@ import { _t } from "@web/core/l10n/translation";
 import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
 import {
     Component, useState, useChildSubEnv, useEffect, useRef, onMounted, useExternalListener,
 } from "@odoo/owl";
@@ -61,6 +62,12 @@ export class DmsBrowser extends Component {
         this.state = useState({
             tree: [],
             selectedId: false, // false === the "Documents" root
+            // "folder" (normal tree browsing, right pane shows state.records
+            // for state.selectedId) or "templates" (right pane shows the
+            // flat state.templates list instead) - orthogonal to
+            // selectedId, which folder browsing keeps using independently
+            // so switching back to "folder" mode returns to where you were.
+            viewMode: "folder",
             // content_type of the folder/HTML/Markdown page currently open
             // in the flat pane, or false for the root - drives which "New
             // Document" types are offered (Office Documents only inside a
@@ -68,6 +75,9 @@ export class DmsBrowser extends Component {
             containerContentType: false,
             breadcrumb: [],
             records: [],
+            templates: [],
+            loadingTemplates: false,
+            templatesDragOver: false,
             selection: new Set(),
             loadingTree: true,
             loadingList: true,
@@ -112,6 +122,7 @@ export class DmsBrowser extends Component {
         onMounted(() => {
             this.refreshTree();
             this.loadContents(false);
+            this.loadTemplates();
         });
 
         // Ctrl/Cmd+C / Ctrl/Cmd+V, ignored while typing in an input/textarea
@@ -203,7 +214,27 @@ export class DmsBrowser extends Component {
     }
 
     selectFolder(folderId) {
+        this.state.viewMode = "folder";
         this.loadContents(folderId || false);
+    }
+
+    // ---- templates section -------------------------------------------
+    selectTemplates() {
+        this.state.viewMode = "templates";
+        this.state.selection = new Set();
+        this.loadTemplates();
+    }
+
+    async loadTemplates() {
+        this.state.loadingTemplates = true;
+        try {
+            this.state.templates = await this.orm.call(MODEL, "browser_templates", []);
+        } catch (err) {
+            this.state.templates = [];
+            this.notification.add(_t("Could not load templates."), { type: "danger" });
+        } finally {
+            this.state.loadingTemplates = false;
+        }
     }
 
     // ---- open / navigate -------------------------------------------
@@ -290,6 +321,64 @@ export class DmsBrowser extends Component {
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
+    // Dropping onto the Templates section tags, it doesn't reparent - the
+    // dragged item(s) keep their real folder location, same distinction
+    // is_template's own help text draws.
+    onTemplatesDragOver(ev) {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = "move";
+        this.state.templatesDragOver = true;
+    }
+
+    onTemplatesDragLeave() {
+        this.state.templatesDragOver = false;
+    }
+
+    async onTemplatesDrop(ev) {
+        ev.preventDefault();
+        this.state.templatesDragOver = false;
+        const ids = this.dragIds;
+        this.dragIds = [];
+        if (!ids.length) {
+            return;
+        }
+        try {
+            await this.orm.call(MODEL, "browser_set_template", [ids, true]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not tag as a template.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        this.notification.add(
+            ids.length === 1 ? _t("Tagged as a template.") : _t("Tagged %s items as templates.", ids.length),
+            { type: "info" }
+        );
+        await Promise.all([
+            this.loadTemplates(),
+            this.state.viewMode === "folder" ? this.loadContents(this.state.selectedId) : null,
+        ]);
+    }
+
+    async toggleIsTemplate(rec, ev) {
+        ev.stopPropagation();
+        const value = !rec.is_template;
+        try {
+            await this.orm.call(MODEL, "browser_set_template", [[rec.id], value]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not change the template flag.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        rec.is_template = value;
+        this.loadTemplates();
+    }
+
     // ---- create ---------------------------------------------------
     startNewFolder() {
         this.state.creatingFolder = true;
@@ -363,6 +452,42 @@ export class DmsBrowser extends Component {
                 },
             }
         );
+    }
+
+    // parentId same convention as newDocument - defaults to whatever's
+    // currently selected in the folder tree.
+    openTemplatePicker(parentId) {
+        const targetParentId = parentId !== undefined ? parentId : (this.state.selectedId || false);
+        this.dialog.add(SelectCreateDialog, {
+            resModel: MODEL,
+            title: _t("New from Template"),
+            domain: [["is_template", "=", true]],
+            multiSelect: false,
+            noCreate: true,
+            onSelected: async (resIds) => {
+                if (!resIds?.length) {
+                    return;
+                }
+                let newId;
+                try {
+                    newId = await this.orm.call(MODEL, "browser_create_from_template", [
+                        resIds[0], targetParentId,
+                    ]);
+                } catch (err) {
+                    const msg =
+                        (err && err.data && err.data.message) ||
+                        (err && err.message) ||
+                        _t("Could not create a document from this template.");
+                    this.notification.add(msg, { type: "danger" });
+                    return;
+                }
+                if (targetParentId) {
+                    this.expandedIds.add(targetParentId);
+                }
+                await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+                this.openDocument(newId);
+            },
+        });
     }
 
     // ---- delete -------------------------------------------------------
