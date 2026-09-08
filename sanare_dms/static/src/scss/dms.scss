@@ -17,6 +17,23 @@
     .o_field_html {
         --o-we-toolbar-bg: #2b3035;
     }
+
+    /* Same white-surface-on-dark-theme gap as the html editor above, but for
+       plain Selection fields (Print Layout, Office Document Type, ...):
+       a native <select> is themed by the OS/browser, not the page's CSS,
+       unless background-color/color are set explicitly on both the select
+       itself and its <option>s (Chromium honours color/background-color on
+       <option> for the dropdown popup, not just the closed box - most other
+       properties on <option> are ignored by the browser regardless). */
+    select {
+        background-color: #2b3035 !important;
+        color: #dee2e6 !important;
+
+        option {
+            background-color: #2b3035;
+            color: #dee2e6;
+        }
+    }
 }
 
 /* keep the folder kanban tidy */
