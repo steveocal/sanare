@@ -343,6 +343,25 @@ class TestSanareDms(TransactionCase):
         self.assertIn("PrintFolder", footer_html)
         self.assertNotIn("Shown", footer_html)
 
+    def test_report_layout_branches(self):
+        doc = self.Doc.create(
+            {"name": "LayoutDoc", "content_type": "html", "content_html": "<p>layout-marker</p>"}
+        )
+        none_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        self.assertIn("layout-marker", none_html)
+        self.assertIn("position: fixed", none_html)
+        self.assertNotIn("o_report_layout_standard", none_html)
+
+        doc.report_layout = "internal"
+        internal_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        self.assertIn("layout-marker", internal_html)
+        self.assertIn('class="header"', internal_html)
+
+        doc.report_layout = "external"
+        external_html = self.env["ir.qweb"]._render("sanare_dms.report_document", {"docs": doc})
+        self.assertIn("layout-marker", external_html)
+        self.assertIn("o_report_layout_standard", external_html)
+
     def test_download_bundles_children_like_print(self):
         page = self.Doc.create(
             {"name": "Page", "content_type": "html", "content_html": "<p>parent-marker</p>"}

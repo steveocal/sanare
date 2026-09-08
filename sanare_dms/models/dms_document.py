@@ -39,6 +39,17 @@ VISIBILITY = [
     ("public", "Public"),
 ]
 
+# Which Odoo report chrome wraps this document when printed - "external"/
+# "internal" reuse Odoo's own web.external_layout/web.internal_layout as-is
+# (company letterhead, address block, etc; only the *content* wrapper - see
+# report_document in report/dms_report.xml, which branches on the top-level
+# printed document's own value only, never a recursed child's).
+REPORT_LAYOUTS = [
+    ("none", "None"),
+    ("internal", "Internal"),
+    ("external", "External"),
+]
+
 
 class SanareDocument(models.Model):
     _name = "sanare.document"
@@ -75,6 +86,15 @@ class SanareDocument(models.Model):
              "into one combined document - turn this off to skip this "
              "document (and everything under it) from that rollup. It still "
              "shows normally in the tree and can still be printed on its own.",
+    )
+    report_layout = fields.Selection(
+        REPORT_LAYOUTS, string="Print Layout", default="none",
+        help="Report chrome used when this document is printed as the "
+             "top-level document. 'None' keeps the plain print already used "
+             "today; 'Internal'/'External' wrap it in Odoo's own internal/"
+             "external report layout (company letterhead, etc). Only the "
+             "printed document's own value matters - a recursed child's is "
+             "ignored, same as its name/version already are.",
     )
 
     # -- custom properties ------------------------------------------------

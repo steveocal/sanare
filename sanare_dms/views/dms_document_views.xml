@@ -137,6 +137,8 @@
                                    help="Publish the approved revision to the public website."/>
                             <field name="display_in_print" invisible="not parent_id"
                                    help="When the parent folder is printed, its full descendant tree is pulled into one combined document. Turn this off to skip this document (and everything under it) from that rollup."/>
+                            <field name="report_layout"
+                                   help="Report chrome used when this document is printed as the top-level document - a recursed child's own value is ignored."/>
                             <field name="can_publish" invisible="1"/>
                             <field name="can_submit" invisible="1"/>
                             <field name="can_approve" invisible="1"/>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Pre/Post Document render into the two standard oe_structure
+         extension points sale's own report already provides - the first
+         right after <div class="page"> opens, the last right before it
+         closes - rather than xpath-ing relative to business content that
+         could shift under us on a core update. Resolved (not raw): a
+         Pre/Post Document containing its own embedded-document references
+         needs the same expansion sanare_dms's own print/download use -
+         see sanare.document._resolve_embedded_refs's docstring. No
+         approval/publish gating - whatever is selected renders, matching
+         the editor's own embed feature for backend users. -->
+    <template id="report_saleorder_document_dms" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//div[hasclass('page')]/div[hasclass('oe_structure')][1]" position="before">
+            <div t-if="doc.dms_pre_document_id" class="sanare_dms_pre_document"
+                 t-out="doc.dms_pre_document_id._resolve_embedded_refs(doc.dms_pre_document_id.content_html)"/>
+        </xpath>
+        <xpath expr="//div[hasclass('page')]/div[hasclass('oe_structure')][last()]" position="after">
+            <div t-if="doc.dms_post_document_id" class="sanare_dms_post_document"
+                 t-out="doc.dms_post_document_id._resolve_embedded_refs(doc.dms_post_document_id.content_html)"/>
+        </xpath>
+    </template>
+
+</odoo>
