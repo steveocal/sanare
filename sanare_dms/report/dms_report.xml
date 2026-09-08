@@ -62,12 +62,13 @@
          where the content naturally overflows a page, never forced between
          sections. -->
     <template id="report_document_body">
+        <!-- Section heading only - no per-section name/version/state byline
+             (that metadata belongs to the printed parent alone, and only in
+             the footer - see report_document). Keeping the heading so a
+             combined document with several sections still reads as
+             distinct sections, just without repeating name/version noise
+             at every level. -->
         <t t-tag="'h%d' % (level if level &lt; 4 else 4)" t-out="doc.name"/>
-        <p class="text-muted">
-            <span t-out="doc.complete_name"/> —
-            revision v<span t-out="doc.version_number"/> —
-            <span t-out="dict(doc._fields['state'].selection).get(doc.state)"/>
-        </p>
         <hr/>
         <div t-if="doc.content_type == 'html'" t-out="doc.content_html"/>
         <div t-elif="doc.content_type == 'markdown'"
