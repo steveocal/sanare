@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.8.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -48,6 +48,10 @@
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref.xml",
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref.js",
             "sanare_dms/static/src/html_field/embedded_doc_ref/embedded_doc_ref_plugin.js",
+            "sanare_dms/static/src/html_field/email_send/email_send.scss",
+            "sanare_dms/static/src/html_field/email_send/email_send.xml",
+            "sanare_dms/static/src/html_field/email_send/email_send.js",
+            "sanare_dms/static/src/html_field/email_send/email_send_plugin.js",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.scss",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_blocks.js",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.xml",
