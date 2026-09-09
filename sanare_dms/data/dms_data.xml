@@ -31,36 +31,4 @@
         <field name="approval_mode">any</field>
     </record>
 
-    <!-- Starter email template: a Knowledge page carrying a "sanareEmailSend"
-         block (the /Send Email editor command inserts the same marker). Flagged
-         is_template so it shows in the Templates section / New from Template. -->
-    <record id="doc_folder_email_templates" model="sanare.document">
-        <field name="name">Email Templates</field>
-        <field name="content_type">folder</field>
-        <field name="visibility">public</field>
-        <field name="visibility_inherited" eval="False"/>
-    </record>
-    <record id="doc_intro_email" model="sanare.document">
-        <field name="name">Introduction Email</field>
-        <field name="content_type">knowledge_html</field>
-        <field name="parent_id" ref="doc_folder_email_templates"/>
-        <field name="is_template" eval="True"/>
-        <!-- public visibility = readable by every internal user (see
-             rule_dms_document_user_read); "shared" would hide it from
-             everyone but the owner + DMS managers. -->
-        <field name="visibility">public</field>
-        <field name="visibility_inherited" eval="False"/>
-        <field name="content_html" type="html">
-            <div>
-                <div data-embedded="sanareEmailSend" data-oe-protected="true"
-                     contenteditable="false" class="o-contenteditable-false"
-                     data-embedded-props='{"subject": "Introduction from {{sender_name}}", "to": [], "cc": [], "bcc": [], "lastSend": null}'/>
-                <p>Dear {{recipient_first_name}},</p>
-                <p>It was a pleasure connecting. I wanted to introduce myself and
-                   share a little about what we do.</p>
-                <p>Kind regards,<br/>{{sender_name}}<br/>{{company_name}}</p>
-            </div>
-        </field>
-    </record>
-
 </odoo>
