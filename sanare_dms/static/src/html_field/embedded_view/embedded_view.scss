@@ -1,0 +1,19 @@
+.o_sanare_embedded_view {
+    cursor: default;
+
+    .card-header {
+        background-color: var(--o-gray-100, #f8f9fa);
+    }
+
+    .o_sanare_embedded_view_body {
+        max-height: 32rem;
+        overflow: auto;
+
+        // The embedded View brings its own control panel / renderer; keep it
+        // from trying to be full-viewport height inside the card.
+        .o_view_controller {
+            height: auto;
+            min-height: 0;
+        }
+    }
+}

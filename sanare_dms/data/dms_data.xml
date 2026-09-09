@@ -42,6 +42,17 @@
         <field name="visibility">public</field>
         <field name="visibility_inherited" eval="False"/>
     </record>
+
+    <!-- Where "Save as View Template" (the Actions-menu item on every view)
+         files the knowledge_html template it creates. Its body carries a
+         data-embedded="sanareView" block that re-runs the captured search
+         live whenever the document is opened. -->
+    <record id="doc_folder_view_templates" model="sanare.document">
+        <field name="name">View Templates</field>
+        <field name="content_type">folder</field>
+        <field name="visibility">public</field>
+        <field name="visibility_inherited" eval="False"/>
+    </record>
     <record id="doc_intro_email" model="sanare.document">
         <field name="name">Introduction Email</field>
         <field name="content_type">knowledge_html</field>

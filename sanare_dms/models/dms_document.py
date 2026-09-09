@@ -837,6 +837,18 @@ class SanareDocument(models.Model):
         # body itself). The text the author wrote around it renders normally.
         for marker in root.xpath('//div[@data-embedded="sanareEmailSend"]'):
             marker.getparent().remove(marker)
+        # An embedded live view only renders in the browser - replace the
+        # marker with a plain note for print/download/website.
+        for marker in root.xpath('//div[@data-embedded="sanareView"]'):
+            model = ""
+            try:
+                model = json.loads(marker.get("data-embedded-props") or "{}").get("resModel", "")
+            except (ValueError, TypeError):
+                pass
+            note = lxml.html.fromstring(
+                "<p><em>%s</em></p>" % escape(self.env._("[Embedded view: %s]", model or "?"))
+            )
+            marker.getparent().replace(marker, note)
         # Markup, not a plain str: t-out/t-field auto-escape a plain string
         # (same as doc.content_html would render as literal "&lt;p&gt;..."
         # text instead of real HTML if this weren't marked safe) - lxml's
@@ -1250,6 +1262,63 @@ class SanareDocument(models.Model):
             "error": error,
             "message_id": primary.mail_message_id.message_id or "",
             "mail_id": primary.id,
+        }
+
+    # ==================================================================
+    # "Save as View Template"  (data-embedded="sanareView", lives in the body)
+    # ==================================================================
+    @api.model
+    def _view_templates_folder(self):
+        folder = self.env.ref(
+            "sanare_dms.doc_folder_view_templates", raise_if_not_found=False
+        )
+        if not folder:
+            folder = self.search(
+                [("name", "=", "View Templates"), ("content_type", "=", "folder")],
+                limit=1,
+            ) or self.create({
+                "name": "View Templates",
+                "content_type": "folder",
+                "visibility": "public",
+                "visibility_inherited": False,
+            })
+        return folder
+
+    @api.model
+    def create_view_template(self, descriptor):
+        """RPC for the "Save as View Template" cog-menu action. `descriptor`
+        is a self-contained {resModel, viewType, views, domain, context,
+        searchState, title}. Creates a knowledge_html template document
+        under the "View Templates" folder whose body carries a
+        data-embedded="sanareView" marker, and returns an action opening it.
+        """
+        if not descriptor or not descriptor.get("resModel"):
+            raise UserError(self.env._("Nothing to capture from this view."))
+        title = descriptor.get("title") or descriptor["resModel"]
+        name = self.env._("%s (view template)", title)
+        folder = self._view_templates_folder()
+        marker = (
+            '<div data-embedded="sanareView" data-oe-protected="true" '
+            'contenteditable="false" class="o-contenteditable-false" '
+            'data-embedded-props="%s"></div>'
+        ) % escape(json.dumps(descriptor))
+        doc = self.create({
+            "name": name,
+            "content_type": "knowledge_html",
+            "is_template": True,
+            "parent_id": folder.id,
+            "visibility": "public",
+            "visibility_inherited": False,
+            "content_html": "<h1>%s</h1>%s<p><br/></p>" % (escape(name), marker),
+        })
+        return {
+            "action": {
+                "type": "ir.actions.act_window",
+                "res_model": "sanare.document",
+                "res_id": doc.id,
+                "views": [[False, "form"]],
+                "target": "current",
+            }
         }
 
     def action_report(self):

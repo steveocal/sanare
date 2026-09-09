@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="sanare_dms.ViewToTemplateItem">
+        <DropdownItem class="'o_menu_item'" onSelected="() => this.save()">
+            Save as View Template
+        </DropdownItem>
+    </t>
+
+</templates>

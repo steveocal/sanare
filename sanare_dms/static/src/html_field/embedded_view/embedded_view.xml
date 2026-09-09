@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Rendered on <div data-embedded="sanareView"> in a document body.
+         data-embedded-props is the captured view descriptor
+         {resModel, viewType, views, domain, context, searchState, title}. -->
+    <t t-name="sanare_dms.EmbeddedView">
+        <div class="o_sanare_embedded_view card my-2" contenteditable="false">
+            <div class="card-header d-flex align-items-center py-1">
+                <i class="fa fa-table me-2 text-muted" role="img"/>
+                <span class="fw-bold text-truncate" t-esc="d.title || d.resModel"/>
+                <button type="button" class="btn btn-sm btn-link ms-auto p-0"
+                        title="Open in full view" t-on-click="openInFull">
+                    <i class="fa fa-external-link" role="img"/>
+                </button>
+            </div>
+            <div class="card-body p-0 o_sanare_embedded_view_body">
+                <View t-if="ready" t-props="viewProps"/>
+                <div t-else="" class="text-muted fst-italic p-3">
+                    This embedded view can't be shown here.
+                    <a href="#" t-on-click.prevent="openInFull">Open it in full</a>.
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -496,6 +496,41 @@ class TestSanareDms(TransactionCase):
         self.assertIn("visible-body", body)
         self.assertIn("background:#ffffff", body)
 
+    # -- "Save as View Template" ------------------------------------
+    def test_create_view_template(self):
+        res = self.Doc.create_view_template({
+            "resModel": "res.partner", "viewType": "list",
+            "views": [[False, "list"], [False, "search"]],
+            "domain": [["is_company", "=", True]], "context": {},
+            "searchState": None, "title": "Companies",
+        })
+        doc = self.Doc.browse(res["action"]["res_id"])
+        self.assertTrue(doc.exists())
+        self.assertEqual(doc.content_type, "knowledge_html")
+        self.assertTrue(doc.is_template)
+        self.assertEqual(doc.parent_id.name, "View Templates")
+        self.assertIn('data-embedded="sanareView"', doc.content_html)
+        self.assertIn("res.partner", doc.content_html)
+        # a second call reuses the same folder
+        res2 = self.Doc.create_view_template({
+            "resModel": "crm.lead", "viewType": "kanban", "views": [],
+            "domain": [], "context": {}, "title": "Leads",
+        })
+        self.assertEqual(
+            self.Doc.browse(res2["action"]["res_id"]).parent_id, doc.parent_id)
+
+    def test_view_block_stripped_on_server_render(self):
+        marker = ('<div data-embedded="sanareView" '
+                  'data-embedded-props="{&#34;resModel&#34;: &#34;crm.lead&#34;}"></div>')
+        doc = self.Doc.create({
+            "name": "V", "content_type": "knowledge_html",
+            "content_html": marker + "<p>around-marker</p>",
+        })
+        rendered = doc._resolve_embedded_refs(doc.content_html)
+        self.assertNotIn("sanareView", rendered)
+        self.assertIn("Embedded view", rendered)
+        self.assertIn("around-marker", rendered)
+
 
 @tagged("post_install", "-at_install")
 class TestSanareDmsEmailSend(MailCommon):
