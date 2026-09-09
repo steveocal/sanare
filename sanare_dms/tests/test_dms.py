@@ -1,6 +1,8 @@
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, HttpCase, tagged, new_test_user
 
+from odoo.addons.mail.tests.common import MailCommon
+
 
 @tagged("post_install", "-at_install")
 class TestSanareDms(TransactionCase):
@@ -460,6 +462,76 @@ class TestSanareDms(TransactionCase):
         )
         found = self.Doc.with_user(self.user).search([("name", "=", "secret")])
         self.assertFalse(found)
+
+    # -- email-send block ---------------------------------------------
+    _EMAIL_MARKER = '<div data-embedded="sanareEmailSend" data-embedded-props="{}"></div>'
+
+    def test_send_email_block_requires_marker(self):
+        p = self.env["res.partner"].create({"name": "P", "email": "p@example.com"})
+        doc = self.Doc.create({
+            "name": "Plain", "content_type": "html", "content_html": "<p>hi</p>",
+        })
+        with self.assertRaises(UserError):
+            doc.send_email_block(doc.id, {"subject": "x", "to_ids": p.ids})
+
+    def test_send_email_block_missing_email(self):
+        noemail = self.env["res.partner"].create({"name": "No Email Person"})
+        doc = self.Doc.create({
+            "name": "E", "content_type": "knowledge_html",
+            "content_html": self._EMAIL_MARKER + "<p>body</p>",
+        })
+        before = self.env["mail.mail"].search([])
+        res = doc.send_email_block(doc.id, {"subject": "Hi", "to_ids": noemail.ids})
+        self.assertEqual(res["error"], "no_email")
+        self.assertIn("No Email Person", res["partners_without_email"])
+        self.assertFalse(self.env["mail.mail"].search([]) - before)
+
+    def test_email_body_strips_block_and_wraps_light(self):
+        doc = self.Doc.create({
+            "name": "E", "content_type": "knowledge_html",
+            "content_html": self._EMAIL_MARKER + "<p>visible-body</p>",
+        })
+        body = doc._email_body_html()
+        self.assertNotIn("sanareEmailSend", body)
+        self.assertIn("visible-body", body)
+        self.assertIn("background:#ffffff", body)
+
+
+@tagged("post_install", "-at_install")
+class TestSanareDmsEmailSend(MailCommon):
+    _EMAIL_MARKER = '<div data-embedded="sanareEmailSend" data-embedded-props="{}"></div>'
+
+    def test_send_builds_primary_plus_bcc_copies(self):
+        Doc = self.env["sanare.document"]
+        P = self.env["res.partner"]
+        a = P.create({"name": "Alice", "email": "alice@example.com"})
+        b = P.create({"name": "Bob", "email": "bob@example.com"})
+        c = P.create({"name": "Cara", "email": "cara@example.com"})
+        d = P.create({"name": "Dan", "email": "dan@example.com"})
+        doc = Doc.create({
+            "name": "Intro", "content_type": "knowledge_html",
+            "content_html": self._EMAIL_MARKER + "<p>Hello there</p>",
+        })
+        before = self.env["mail.mail"].search([])
+        with self.mock_mail_gateway():
+            res = doc.send_email_block(doc.id, {
+                "subject": "Nice to meet you",
+                "to_ids": (a | b).ids, "cc_ids": c.ids, "bcc_ids": d.ids,
+            })
+        self.assertIn(res["state"], ("sent",))
+        mails = self.env["mail.mail"].search([]) - before
+        self.assertEqual(len(mails), 2)  # To+Cc on one, one blind copy for Bcc
+        primary = mails.filtered(lambda m: m.email_cc)
+        self.assertEqual(len(primary), 1)
+        self.assertIn("alice@example.com", primary.email_to)
+        self.assertIn("cara@example.com", primary.email_cc)
+        self.assertIn("background:#ffffff", primary.body_html)
+        self.assertIn("Hello there", primary.body_html)
+        self.assertNotIn("sanareEmailSend", primary.body_html)
+        bcc = mails - primary
+        self.assertIn("dan@example.com", bcc.email_to)
+        self.assertFalse(bcc.email_cc)
+        self.assertTrue(doc.message_ids.filtered(lambda m: "sent to" in (m.body or "")))
 
 
 @tagged("post_install", "-at_install")

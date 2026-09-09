@@ -33,6 +33,12 @@ HTML_TYPES = {"html", "knowledge_html"}
 # not the parent/child tree.
 CONTAINER_TYPES = {"folder", "html", "markdown"}
 
+# data-embedded name of the email-send control block. A document is "an
+# email" purely by carrying this marker in its content_html - no field, no
+# type, no form change: subject + To/Cc/Bcc + Send all live in the body,
+# rendered by the EmbeddedEmailSend OWL component.
+EMAIL_BLOCK_MARKER = "sanareEmailSend"
+
 VISIBILITY = [
     ("private", "Private"),
     ("shared", "Shared"),
@@ -826,6 +832,11 @@ class SanareDocument(models.Model):
                     )
             replacement = lxml.html.fromstring("<div>%s</div>" % replacement_html)
             marker.getparent().replace(marker, replacement)
+        # The email-send block is an editing tool, not content: drop it from
+        # anything rendered server-side (print, download, website, the email
+        # body itself). The text the author wrote around it renders normally.
+        for marker in root.xpath('//div[@data-embedded="sanareEmailSend"]'):
+            marker.getparent().remove(marker)
         # Markup, not a plain str: t-out/t-field auto-escape a plain string
         # (same as doc.content_html would render as literal "&lt;p&gt;..."
         # text instead of real HTML if this weren't marked safe) - lxml's
@@ -1141,6 +1152,105 @@ class SanareDocument(models.Model):
         self.ensure_one()
         self.write({"is_published": not self.is_published})
         return self.is_published
+
+    # ==================================================================
+    # Email-send block  (data-embedded="sanareEmailSend", lives in the body)
+    # ==================================================================
+    def _email_body_html(self):
+        """This document's content, embedded refs expanded (same pipeline as
+        print/website - which also strips the email block itself), wrapped
+        in an explicit light ground so a mail client doesn't inherit the
+        editor's dark theme."""
+        self.ensure_one()
+        inner = Markup(self._resolve_embedded_refs(self.content_html or ""))
+        return Markup(
+            '<div style="background:#ffffff;color:#111827;'
+            'font-family:Arial,Helvetica,sans-serif;font-size:14px;'
+            'line-height:1.5;padding:16px">{}</div>'
+        ).format(inner)
+
+    @api.model
+    def send_email_block(self, document_id, payload):
+        """RPC for the Send button of a sanareEmailSend block. payload:
+        {subject, to_ids, cc_ids, bcc_ids}. The body is taken from the saved
+        document, not the client. Returns {state, date, error, message_id,
+        mail_id}, or {error:'no_email', partners_without_email, partner_ids}
+        when a recipient has no address.
+        """
+        doc = self.browse(int(document_id)).exists()
+        if not doc:
+            raise UserError(self.env._("This document no longer exists."))
+        if EMAIL_BLOCK_MARKER not in (doc.content_html or ""):
+            raise UserError(self.env._("This document has no email block."))
+
+        Partner = self.env["res.partner"]
+        to = Partner.browse(payload.get("to_ids") or []).exists()
+        cc = Partner.browse(payload.get("cc_ids") or []).exists()
+        bcc = Partner.browse(payload.get("bcc_ids") or []).exists()
+        if not to:
+            raise UserError(self.env._("Add at least one “To” recipient."))
+        subject = (payload.get("subject") or "").strip()
+        if not subject:
+            raise UserError(self.env._("Add a subject."))
+        missing = (to | cc | bcc).filtered(lambda p: not p.email)
+        if missing:
+            return {
+                "error": "no_email",
+                "partners_without_email": missing.mapped("display_name"),
+                "partner_ids": missing.ids,
+            }
+
+        body = doc._email_body_html()
+        Mail = self.env["mail.mail"].sudo()
+        common = {
+            "subject": subject,
+            "body_html": body,
+            "email_from": self.env.user.email_formatted
+            or self.env.company.email_formatted,
+            "author_id": self.env.user.partner_id.id,
+            "auto_delete": False,
+        }
+        primary = Mail.create(dict(
+            common,
+            email_to=", ".join(to.mapped("email_formatted")),
+            email_cc=", ".join(cc.mapped("email_formatted")) or False,
+        ))
+        # mail.mail has no Bcc field - one blind copy per Bcc partner.
+        bcc_mails = Mail.browse()
+        for partner in bcc:
+            bcc_mails |= Mail.create(dict(common, email_to=partner.email_formatted))
+
+        mails = primary | bcc_mails
+        mails.send(raise_exception=False)
+        mails.invalidate_recordset(["state", "failure_reason"])
+
+        states = mails.mapped("state")
+        error = ""
+        if any(s == "exception" for s in states):
+            outcome = "failed"
+            error = next(
+                (m.failure_reason for m in mails if m.state == "exception" and m.failure_reason),
+                self.env._("unknown error"),
+            )
+        elif all(s == "sent" for s in states):
+            outcome = "sent"
+        else:
+            outcome = "sent"  # queued (no mail server, e.g. tests)
+            error = self.env._("Queued for delivery.")
+
+        cc_suffix = self.env._(" (cc: %s)", ", ".join(cc.mapped("name"))) if cc else ""
+        doc.message_post(body=self.env._(
+            "Email “%(subject)s” sent to %(to)s%(cc)s — %(outcome)s",
+            subject=subject, to=", ".join(to.mapped("name")), cc=cc_suffix,
+            outcome=(self.env._("Sent") if outcome == "sent" else self.env._("Failed")),
+        ))
+        return {
+            "state": outcome,
+            "date": fields.Datetime.to_string(fields.Datetime.now()),
+            "error": error,
+            "message_id": primary.mail_message_id.message_id or "",
+            "mail_id": primary.id,
+        }
 
     def action_report(self):
         """Print entry point for the custom browser (which has no generic

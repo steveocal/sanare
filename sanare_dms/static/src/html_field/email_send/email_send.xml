@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Rendered on any <div data-embedded="sanareEmailSend"> in a
+         document body. data-embedded-props holds the whole block state
+         (subject + To/Cc/Bcc partner {id,name} + last send result); the
+         component reads it on mount and writes it back on every change. -->
+    <t t-name="sanare_dms.EmbeddedEmailSend">
+        <div class="o_sanare_email_send card my-2" contenteditable="false">
+            <div class="card-header d-flex align-items-center py-1">
+                <i class="fa fa-paper-plane me-2 text-muted" role="img"/>
+                <span class="fw-bold">Send Email</span>
+                <span class="ms-auto small" t-att-class="lastSendClass" t-esc="lastSendLabel"/>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small text-muted mb-1">Subject</label>
+                    <input type="text" class="form-control form-control-sm"
+                           t-att-value="state.subject" t-on-input="onSubject"/>
+                </div>
+                <t t-foreach="rows" t-as="row" t-key="row.f">
+                    <div class="mb-2 position-relative">
+                        <label class="form-label small text-muted mb-1" t-esc="row.l"/>
+                        <div class="d-flex flex-wrap gap-1 mb-1" t-if="list(row.f).length">
+                            <t t-foreach="list(row.f)" t-as="r" t-key="r.id">
+                                <span class="badge text-bg-secondary d-inline-flex align-items-center">
+                                    <t t-esc="r.name"/>
+                                    <button type="button"
+                                            class="btn-close btn-close-white ms-1"
+                                            style="font-size:.6em"
+                                            t-on-click="() => this.remove(row.f, r.id)"/>
+                                </span>
+                            </t>
+                        </div>
+                        <input type="text" class="form-control form-control-sm"
+                               placeholder="Search a contact, or type a new name…"
+                               t-att-value="pk(row.f).q"
+                               t-on-input="(ev) => this.onSearch(row.f, ev)"
+                               t-on-blur="() => this.onBlur(row.f)"/>
+                        <div t-if="pk(row.f).open"
+                             class="list-group position-absolute w-100 shadow-sm"
+                             style="z-index:1080; max-height:12rem; overflow:auto">
+                            <t t-foreach="pk(row.f).results" t-as="res" t-key="res.id">
+                                <button type="button"
+                                        class="list-group-item list-group-item-action py-1 small"
+                                        t-on-mousedown="() => this.add(row.f, res)">
+                                    <t t-esc="res.display_name"/>
+                                    <span t-if="res.email" class="text-muted"> — <t t-esc="res.email"/></span>
+                                </button>
+                            </t>
+                            <button type="button"
+                                    class="list-group-item list-group-item-action py-1 small text-primary"
+                                    t-if="pk(row.f).q.trim()"
+                                    t-on-mousedown="() => this.createContact(row.f)">
+                                Create "<t t-esc="pk(row.f).q.trim()"/>"
+                            </button>
+                        </div>
+                    </div>
+                </t>
+                <div class="d-flex align-items-center mt-2">
+                    <button type="button" class="btn btn-sm btn-primary"
+                            t-on-click="send" t-att-disabled="ui.sending">
+                        <i class="fa me-1"
+                           t-att-class="ui.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'"
+                           role="img"/>
+                        Send
+                    </button>
+                    <span class="small text-muted ms-3"
+                          t-if="state.lastSend and state.lastSend.error"
+                          t-esc="state.lastSend.error"/>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

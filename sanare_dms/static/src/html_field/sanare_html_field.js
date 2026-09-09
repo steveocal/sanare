@@ -6,6 +6,7 @@ import { useState } from "@odoo/owl"
 import { parseHTML } from "@html_editor/utils/html"
 import { SectionHeadingPlugin } from "./section_heading_plugin"
 import { EmbeddedDocRefPlugin } from "./embedded_doc_ref/embedded_doc_ref_plugin"
+import { EmailSendPlugin } from "./email_send/email_send_plugin"
 import { PageBreakPlugin } from "./page_break_plugin"
 import { TemplateInsertPlugin } from "./template_insert_plugin"
 import { SnippetPanel } from "./snippet_panel/snippet_panel"
@@ -39,7 +40,8 @@ export class SanareHtmlField extends HtmlField {
     const config = super.getConfig()
     config.Plugins = [
       ...config.Plugins,
-      SectionHeadingPlugin, EmbeddedDocRefPlugin, PageBreakPlugin, TemplateInsertPlugin,
+      SectionHeadingPlugin, EmbeddedDocRefPlugin, EmailSendPlugin, PageBreakPlugin,
+      TemplateInsertPlugin,
     ]
     return config
   }

@@ -1,0 +1,17 @@
+.o_sanare_email_send {
+    cursor: default;
+    max-width: 46rem;
+
+    .card-header {
+        background-color: var(--o-gray-100, #f8f9fa);
+    }
+
+    // The results dropdown overlaps whatever follows the block.
+    .list-group.position-absolute {
+        top: 100%;
+    }
+
+    .badge .btn-close {
+        opacity: 0.85;
+    }
+}
