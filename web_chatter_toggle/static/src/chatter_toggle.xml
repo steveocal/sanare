@@ -16,7 +16,7 @@
         <xpath expr="//*[hasclass('o-mail-Chatter-topbar')]" position="inside">
             <button t-if="chatterToggle" type="button"
                     class="o_chatter_toggle btn btn-link btn-sm order-first mx-1 p-0 border-0 text-muted"
-                    t-att-data-chatter-hidden="chatterToggle.hidden"
+                    t-att-data-chatter-hidden="chatterToggle.hidden ? '1' : false"
                     t-att-title="chatterToggleTitle"
                     t-att-aria-label="chatterToggleTitle"
                     t-on-click="onClickToggleChatter">
