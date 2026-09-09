@@ -4,8 +4,8 @@
     <!-- The block lives inside a template document as
          <div data-embedded="sanareEmailSend" data-embedded-props='{...}'>
          (see data/dms_data.xml). data-embedded-props holds the whole block
-         state - subject, To/Cc/Bcc, last send result - and the component
-         reads/writes it in place. -->
+         state - subject, To/Cc/Bcc partner ids, last send result - and the
+         component reads/writes it in place. -->
     <t t-name="sanare_dms.EmbeddedEmailSend">
         <div class="o_sanare_email_send card my-2">
             <div class="card-header d-flex align-items-center py-1">
@@ -25,12 +25,12 @@
                         <label class="form-label small text-muted mb-0 pt-1 me-2"
                                style="width: 3rem;" t-esc="row.label"/>
                         <div class="flex-grow-1">
-                            <TagsList tags="tagsFor(row.field)"/>
-                            <AutoComplete
-                                value="inputs[row.field]"
-                                sources="sourcesFor(row.field)"
-                                placeholder="'Search a contact, or type a new name…'"
-                                onInput="(args) => this.onInput(row.field, args)"/>
+                            <MultiRecordSelector
+                                resModel="'res.partner'"
+                                resIds="ids(row.field)"
+                                update="(ids) => this.setRecipients(row.field, ids)"
+                                activeActions="{ create: true, createEdit: false }"
+                                placeholder="'Search a contact, or type a new name…'"/>
                         </div>
                     </div>
                 </t>

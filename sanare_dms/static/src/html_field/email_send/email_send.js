@@ -4,8 +4,7 @@ import { Component, useState } from "@odoo/owl"
 import { useService } from "@web/core/utils/hooks"
 import { _t } from "@web/core/l10n/translation"
 import * as embedUtils from "@html_editor/others/embedded_component_utils"
-import { AutoComplete } from "@web/core/autocomplete/autocomplete"
-import { TagsList } from "@web/core/tags_list/tags_list"
+import { MultiRecordSelector } from "@web/core/record_selectors/multi_record_selector"
 
 const RECIPIENT_ROWS = [
   { field: "to", label: _t("To") },
@@ -16,13 +15,13 @@ const RECIPIENT_ROWS = [
 const DEFAULT_STATE = { subject: "", to: [], cc: [], bcc: [], lastSend: null }
 
 // The block manages its own data-embedded-props by hand rather than through
-// useEmbeddedState: that helper needs the embedding to supply a
-// getStateChangeManager, and its internals vary between Odoo builds. Reading
-// props (getEmbeddedProps) is the same call embedded_doc_ref already relies
-// on. Writing: set the attribute on the (protected) host node - the editor
-// serialises the live DOM on save, and send() force-saves first, so the
-// stored value is always current when it matters. Trade-off: editing the
-// block alone doesn't flip the form's "unsaved" dot; use Save (or Send).
+// useEmbeddedState (that helper needs a StateChangeManager wired into the
+// embedding, and its internals vary between Odoo builds). Reading props is
+// the same getEmbeddedProps call embedded_doc_ref relies on; writing is a
+// setAttribute on the (protected) host node - the editor serialises the
+// live DOM on save, and send() force-saves first, so the stored value is
+// current when it matters. Trade-off: editing the block alone doesn't flip
+// the form's "unsaved" dot - use Save (or Send).
 function readProps(host) {
   try {
     return { ...DEFAULT_STATE, ...(embedUtils.getEmbeddedProps?.(host) || {}) }
@@ -33,7 +32,7 @@ function readProps(host) {
 
 export class EmbeddedEmailSendComponent extends Component {
   static template = "sanare_dms.EmbeddedEmailSend"
-  static components = { AutoComplete, TagsList }
+  static components = { MultiRecordSelector }
   static props = {
     host: { type: Object },
   }
@@ -43,17 +42,16 @@ export class EmbeddedEmailSendComponent extends Component {
     this.notification = useService("notification")
     this.action = useService("action")
 
-    // {subject, to, cc, bcc, lastSend}; to/cc/bcc are arrays of {id, name}.
+    // {subject, to, cc, bcc, lastSend}; to/cc/bcc are arrays of partner ids.
     this.state = useState(readProps(this.props.host))
     this.ui = useState({ sending: false })
-    this.inputs = useState({ to: "", cc: "", bcc: "" })
   }
 
   get rows() {
     return RECIPIENT_ROWS
   }
 
-  list(field) {
+  ids(field) {
     return this.state[field] || []
   }
 
@@ -68,7 +66,6 @@ export class EmbeddedEmailSendComponent extends Component {
         lastSend: this.state.lastSend,
       })
     )
-    // Best effort nudge so the editor notices the protected node changed.
     try {
       this.props.host.dispatchEvent(new InputEvent("input", { bubbles: true }))
     } catch {
@@ -76,87 +73,11 @@ export class EmbeddedEmailSendComponent extends Component {
     }
   }
 
-  // ---- recipients ----------------------------------------------------
-  tagsFor(field) {
-    return this.list(field).map((r) => ({
-      id: r.id,
-      text: r.name,
-      onDelete: () => this.remove(field, r.id),
-    }))
-  }
-
-  domainFor(field) {
-    const chosen = this.list(field).map((r) => r.id)
-    return chosen.length ? [["id", "not in", chosen]] : []
-  }
-
-  sourcesFor(field) {
-    // Each option carries its own onSelect - AutoComplete calls that in
-    // preference to a top-level onSelect prop, and it's the shape
-    // Many2XAutocomplete itself uses.
-    return [
-      {
-        options: async (request) => {
-          const q = (request || "").trim()
-          if (!q) {
-            return []
-          }
-          const pairs = await this.orm.call("res.partner", "name_search", [], {
-            name: q,
-            args: this.domainFor(field),
-            operator: "ilike",
-            limit: 8,
-          })
-          const opts = pairs.map(([id, name]) => ({
-            label: name,
-            onSelect: () => this.pick(field, { id, name }),
-          }))
-          opts.push({
-            label: _t('Create "%s"', q),
-            onSelect: () => this.addByCreate(field, q),
-          })
-          return opts
-        },
-      },
-    ]
-  }
-
-  onInput(field, { inputValue }) {
-    this.inputs[field] = inputValue
-  }
-
-  pick(field, rec) {
-    this.inputs[field] = ""
-    this.addRecords(field, [rec])
-  }
-
-  addRecords(field, records) {
-    const existing = new Set(this.list(field).map((r) => r.id))
-    const added = (records || [])
-      .filter((r) => r && r.id && !existing.has(r.id))
-      .map((r) => ({ id: r.id, name: r.name || r.display_name || _t("Contact") }))
-    if (added.length) {
-      this.state[field] = [...this.list(field), ...added]
-      this.persist()
-    }
-  }
-
-  async addByCreate(field, name) {
-    this.inputs[field] = ""
-    const clean = (name || "").trim()
-    if (!clean) {
-      return
-    }
-    const [id, displayName] = await this.orm.call("res.partner", "name_create", [clean])
-    this.addRecords(field, [{ id, name: displayName }])
-  }
-
-  remove(field, id) {
-    this.state[field] = this.list(field).filter((r) => r.id !== id)
+  setRecipients(field, ids) {
+    this.state[field] = ids || []
     this.persist()
   }
 
-  // ---- subject -----------------------------------------------------
   onSubjectInput(ev) {
     this.state.subject = ev.target.value
     this.persist()
@@ -206,7 +127,7 @@ export class EmbeddedEmailSendComponent extends Component {
   }
 
   async send() {
-    if (!this.list("to").length) {
+    if (!this.ids("to").length) {
       this.notification.add(_t("Add at least one “To” recipient."), { type: "warning" })
       return
     }
@@ -231,9 +152,9 @@ export class EmbeddedEmailSendComponent extends Component {
         documentId,
         {
           subject: this.state.subject,
-          to_ids: this.list("to").map((r) => r.id),
-          cc_ids: this.list("cc").map((r) => r.id),
-          bcc_ids: this.list("bcc").map((r) => r.id),
+          to_ids: this.ids("to"),
+          cc_ids: this.ids("cc"),
+          bcc_ids: this.ids("bcc"),
           body_html: this.bodyHtml(),
         },
       ])
