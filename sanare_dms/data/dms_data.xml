@@ -31,34 +31,4 @@
         <field name="approval_mode">any</field>
     </record>
 
-    <!-- Email templates: a plain folder for organising them. A document is
-         "an email" once its Email Subject is set (Email tab on the form);
-         the "Send Email" header button then appears. Body = the document's
-         own content. -->
-    <record id="doc_folder_email_templates" model="sanare.document">
-        <field name="name">Email Templates</field>
-        <field name="content_type">folder</field>
-        <field name="visibility">public</field>
-        <field name="visibility_inherited" eval="False"/>
-    </record>
-    <record id="doc_intro_email" model="sanare.document">
-        <field name="name">Introduction Email</field>
-        <field name="content_type">knowledge_html</field>
-        <field name="parent_id" ref="doc_folder_email_templates"/>
-        <field name="is_template" eval="True"/>
-        <field name="visibility">public</field>
-        <field name="visibility_inherited" eval="False"/>
-        <field name="email_subject">Introduction from Sanare</field>
-        <field name="content_html" type="html">
-            <div>
-                <p>Dear Sir/Madam,</p>
-                <p>It was a pleasure connecting. I wanted to introduce myself and
-                   share a little about what we do at Sanare.</p>
-                <p>I would welcome the chance to discuss how we might work together.
-                   Please let me know a time that suits you.</p>
-                <p>Kind regards,<br/>The Sanare Team</p>
-            </div>
-        </field>
-    </record>
-
 </odoo>

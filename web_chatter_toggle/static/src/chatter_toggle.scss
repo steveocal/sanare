@@ -47,7 +47,16 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
     flex: 0 0 2.75rem !important;
     max-height: 3rem !important;
     overflow: hidden !important;
+    margin-top: 0 !important;
     border: 0 !important;
     background: transparent !important;
     align-self: flex-start !important;
+}
+
+// --- Collapsed: let the form sheet reclaim the freed width ---------------
+// In the side-by-side (wide screen) layout the sheet keeps its max-width, so
+// shrinking the chatter otherwise just leaves a blank gap. Drop the cap while
+// collapsed.
+.o_form_renderer:has(#{$hidden}) :is(.o_form_sheet, .o_form_sheet_bg) {
+    max-width: none !important;
 }

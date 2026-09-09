@@ -1,8 +1,6 @@
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, HttpCase, tagged, new_test_user
 
-from odoo.addons.mail.tests.common import MailCommon
-
 
 @tagged("post_install", "-at_install")
 class TestSanareDms(TransactionCase):
@@ -462,97 +460,6 @@ class TestSanareDms(TransactionCase):
         )
         found = self.Doc.with_user(self.user).search([("name", "=", "secret")])
         self.assertFalse(found)
-
-    # -- email templates ----------------------------------------------
-    def _partner(self, name, email=False):
-        return self.env["res.partner"].create({"name": name, "email": email})
-
-    def test_is_email_flag_follows_subject(self):
-        doc = self.Doc.create({
-            "name": "D", "content_type": "knowledge_html", "content_html": "<p>x</p>",
-        })
-        self.assertFalse(doc.is_email)
-        doc.email_subject = "Hello"
-        self.assertTrue(doc.is_email)
-
-    def test_email_fields_travel_with_template_copy(self):
-        a = self._partner("A", "a@example.com")
-        tpl = self.Doc.create({
-            "name": "Tpl", "content_type": "knowledge_html", "content_html": "<p>x</p>",
-            "is_template": True, "email_subject": "Hi", "email_to_ids": [(6, 0, a.ids)],
-        })
-        copy = self.Doc.browse(self.Doc.browser_create_from_template(tpl.id))
-        self.assertEqual(copy.email_subject, "Hi")
-        self.assertEqual(copy.email_to_ids, a)
-        self.assertFalse(copy.is_template)
-
-    def test_email_body_wrapped_light_and_resolved(self):
-        target = self.Doc.create({"name": "T", "content_type": "knowledge_html",
-                                   "content_html": "<p>embedded-marker</p>"})
-        doc = self.Doc.create({
-            "name": "D", "content_type": "knowledge_html",
-            "content_html": self._embed_marker(target.id) + "<p>body-marker</p>",
-        })
-        body = doc._email_body_html()
-        self.assertIn("background:#ffffff", body)
-        self.assertIn("body-marker", body)
-        self.assertIn("embedded-marker", body)  # embed expanded server-side
-
-    def test_send_email_requires_subject_and_recipients(self):
-        doc = self.Doc.create({
-            "name": "D", "content_type": "knowledge_html", "content_html": "<p>x</p>",
-        })
-        with self.assertRaises(UserError):
-            doc.action_send_email()  # no subject
-        doc.email_subject = "Hi"
-        with self.assertRaises(UserError):
-            doc.action_send_email()  # subject but no To
-
-    def test_send_email_blocks_recipient_without_email(self):
-        good = self._partner("Good", "good@example.com")
-        bad = self._partner("No Email")
-        doc = self.Doc.create({
-            "name": "D", "content_type": "knowledge_html", "content_html": "<p>x</p>",
-            "email_subject": "Hi", "email_to_ids": [(6, 0, (good | bad).ids)],
-        })
-        before = self.env["mail.mail"].search([])
-        with self.assertRaises(UserError):
-            doc.action_send_email()
-        self.assertFalse(self.env["mail.mail"].search([]) - before)
-
-
-@tagged("post_install", "-at_install")
-class TestSanareDmsEmailSend(MailCommon):
-    def test_send_builds_primary_plus_bcc_copies(self):
-        Doc = self.env["sanare.document"]
-        P = self.env["res.partner"]
-        a = P.create({"name": "Alice", "email": "alice@example.com"})
-        b = P.create({"name": "Bob", "email": "bob@example.com"})
-        c = P.create({"name": "Cara", "email": "cara@example.com"})
-        d = P.create({"name": "Dan", "email": "dan@example.com"})
-        doc = Doc.create({
-            "name": "Intro", "content_type": "knowledge_html",
-            "content_html": "<p>Hello there</p>",
-            "email_subject": "Nice to meet you",
-            "email_to_ids": [(6, 0, (a | b).ids)],
-            "email_cc_ids": [(6, 0, c.ids)],
-            "email_bcc_ids": [(6, 0, d.ids)],
-        })
-        before = self.env["mail.mail"].search([])
-        with self.mock_mail_gateway():
-            doc.action_send_email()
-        mails = self.env["mail.mail"].search([]) - before
-        self.assertEqual(len(mails), 2)  # To+Cc on one, one blind copy for Bcc
-        primary = mails.filtered(lambda m: m.email_cc)
-        self.assertEqual(len(primary), 1)
-        self.assertIn("alice@example.com", primary.email_to)
-        self.assertIn("cara@example.com", primary.email_cc)
-        self.assertIn("background:#ffffff", primary.body_html)
-        self.assertIn("Hello there", primary.body_html)
-        bcc = mails - primary
-        self.assertIn("dan@example.com", bcc.email_to)
-        self.assertFalse(bcc.email_cc)
-        self.assertTrue(doc.message_ids.filtered(lambda m: "sent to" in (m.body or "")))
 
 
 @tagged("post_install", "-at_install")

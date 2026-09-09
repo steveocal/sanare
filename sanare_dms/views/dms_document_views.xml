@@ -83,10 +83,6 @@
                     <button name="action_reset_to_draft" type="object" string="Reset to Draft"
                             invisible="state not in ('to_approve', 'rejected', 'approved')"
                             groups="sanare_dms.group_dms_manager"/>
-                    <button name="action_send_email" type="object" string="Send Email"
-                            class="btn-primary" invisible="not is_email"
-                            confirm="Send this email now?"/>
-                    <field name="is_email" invisible="1"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,to_approve,approved"/>
                 </header>
@@ -169,25 +165,6 @@
                                     Install <b>Sanare Document Management — ONLYOFFICE</b>
                                     to edit this file in place with real-time co-editing.
                                 </div>
-                            </group>
-                        </page>
-                        <page string="Email" name="email"
-                              invisible="content_type not in ('html', 'knowledge_html')">
-                            <div class="text-muted mb-2">
-                                The document content is the email body. Set a subject and
-                                recipients, then use <b>Send Email</b> in the header.
-                            </div>
-                            <group>
-                                <field name="email_subject" placeholder="Subject line"/>
-                                <field name="email_to_ids" widget="many2many_tags_email"
-                                       context="{'force_email': True}"
-                                       options="{'no_quick_create': False}"/>
-                                <field name="email_cc_ids" widget="many2many_tags_email"
-                                       context="{'force_email': True}"
-                                       options="{'no_quick_create': False}"/>
-                                <field name="email_bcc_ids" widget="many2many_tags_email"
-                                       context="{'force_email': True}"
-                                       options="{'no_quick_create': False}"/>
                             </group>
                         </page>
                         <page string="Sharing" name="sharing">

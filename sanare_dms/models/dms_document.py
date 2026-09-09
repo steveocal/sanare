@@ -114,23 +114,6 @@ class SanareDocument(models.Model):
         string="Properties", definition="parent_id.properties_definition"
     )
 
-    # -- email --------------------------------------------------------
-    # A document becomes "an email" once it has a subject. To/Cc/Bcc are
-    # plain m2m to res.partner; the body is the document's own content.
-    # These travel with a "New from Template" copy (copy=True), unlike
-    # folder-scoped Properties. Send is one button in the form header.
-    email_subject = fields.Char(string="Email Subject", copy=True)
-    email_to_ids = fields.Many2many(
-        "res.partner", "sanare_document_email_to_rel", "doc_id", "partner_id",
-        string="To", copy=True)
-    email_cc_ids = fields.Many2many(
-        "res.partner", "sanare_document_email_cc_rel", "doc_id", "partner_id",
-        string="Cc", copy=True)
-    email_bcc_ids = fields.Many2many(
-        "res.partner", "sanare_document_email_bcc_rel", "doc_id", "partner_id",
-        string="Bcc", copy=True)
-    is_email = fields.Boolean(compute="_compute_is_email")
-
     # -- type & content --------------------------------------------------
     content_type = fields.Selection(
         CONTENT_TYPES, required=True, default="folder", string="Type"
@@ -1158,100 +1141,6 @@ class SanareDocument(models.Model):
         self.ensure_one()
         self.write({"is_published": not self.is_published})
         return self.is_published
-
-    # ==================================================================
-    # Email templates
-    # ==================================================================
-    # subject + To/Cc/Bcc are the email_* fields above; the body is this
-    # document's own content, rendered server-side by the same resolver
-    # print/website use. No placeholders - a template is boilerplate you
-    # edit after "New from Template", not a mail-merge.
-    @api.depends("email_subject")
-    def _compute_is_email(self):
-        for doc in self:
-            doc.is_email = bool(doc.email_subject)
-
-    def _email_body_html(self):
-        """Document body, embedded refs expanded (same pipeline as print /
-        website), wrapped in an explicit light ground so a mail client
-        doesn't inherit the editor's dark theme."""
-        self.ensure_one()
-        inner = Markup(self._resolve_embedded_refs(self.content_html or ""))
-        return Markup(
-            '<div style="background:#ffffff;color:#111827;'
-            'font-family:Arial,Helvetica,sans-serif;font-size:14px;'
-            'line-height:1.5;padding:16px">{}</div>'
-        ).format(inner)
-
-    def action_send_email(self):
-        """Header button on an email-template document: build one mail.mail
-        from the subject/recipient fields + the rendered body and send it.
-        To+Cc go on one message; each Bcc gets its own blind copy (mail.mail
-        has no Bcc field). Outcome goes to the chatter."""
-        self.ensure_one()
-        subject = self.email_subject
-        if not subject:
-            raise UserError(self.env._("Set an Email Subject first."))
-        to = self.email_to_ids
-        cc = self.email_cc_ids
-        bcc = self.email_bcc_ids
-        if not to:
-            raise UserError(self.env._("Add at least one “To” recipient."))
-        missing = (to | cc | bcc).filtered(lambda p: not p.email)
-        if missing:
-            raise UserError(self.env._(
-                "These contacts have no email address: %s",
-                ", ".join(missing.mapped("display_name"))))
-
-        body = self._email_body_html()
-        Mail = self.env["mail.mail"].sudo()
-        common = {
-            "subject": subject,
-            "body_html": body,
-            "email_from": self.env.user.email_formatted
-            or self.env.company.email_formatted,
-            "author_id": self.env.user.partner_id.id,
-            "auto_delete": False,
-        }
-        primary = Mail.create(dict(
-            common,
-            email_to=", ".join(to.mapped("email_formatted")),
-            email_cc=", ".join(cc.mapped("email_formatted")) or False,
-        ))
-        bcc_mails = Mail.browse()
-        for partner in bcc:
-            bcc_mails |= Mail.create(dict(common, email_to=partner.email_formatted))
-
-        mails = primary | bcc_mails
-        mails.send(raise_exception=False)
-        mails.invalidate_recordset(["state", "failure_reason"])
-
-        if any(m.state == "exception" for m in mails):
-            reason = next(
-                (m.failure_reason for m in mails if m.state == "exception" and m.failure_reason),
-                self.env._("unknown error"),
-            )
-            self.message_post(body=self.env._(
-                "Email “%(subject)s” — send failed: %(reason)s",
-                subject=subject, reason=reason))
-            raise UserError(self.env._("Send failed: %s", reason))
-
-        cc_suffix = self.env._(" (cc: %s)", ", ".join(cc.mapped("name"))) if cc else ""
-        self.message_post(body=self.env._(
-            "Email “%(subject)s” sent to %(to)s%(cc)s.",
-            subject=subject, to=", ".join(to.mapped("name")), cc=cc_suffix))
-        return {
-            "type": "ir.actions.client",
-            "tag": "display_notification",
-            "params": {
-                "type": "success",
-                "title": self.env._("Email sent"),
-                "message": self.env._(
-                    "“%(subject)s” sent to %(to)s.",
-                    subject=subject, to=", ".join(to.mapped("name"))),
-                "next": {"type": "ir.actions.act_window_close"},
-            },
-        }
 
     def action_report(self):
         """Print entry point for the custom browser (which has no generic
