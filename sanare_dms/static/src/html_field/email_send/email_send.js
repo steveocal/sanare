@@ -13,11 +13,23 @@ const RECIPIENT_ROWS = [
   { field: "bcc", label: _t("Bcc") },
 ]
 
-// useEmbeddedState is the documented way to persist a block's state back
-// into data-embedded-props. Accessed via the namespace so a missing export
-// on some build degrades instead of crashing the whole editor bundle.
-const useEmbeddedState = embedUtils.useEmbeddedState
-const getEmbeddedProps = embedUtils.getEmbeddedProps
+const DEFAULT_STATE = { subject: "", to: [], cc: [], bcc: [], lastSend: null }
+
+// The block manages its own data-embedded-props by hand rather than through
+// useEmbeddedState: that helper needs the embedding to supply a
+// getStateChangeManager, and its internals vary between Odoo builds. Reading
+// props (getEmbeddedProps) is the same call embedded_doc_ref already relies
+// on. Writing: set the attribute on the (protected) host node - the editor
+// serialises the live DOM on save, and send() force-saves first, so the
+// stored value is always current when it matters. Trade-off: editing the
+// block alone doesn't flip the form's "unsaved" dot; use Save (or Send).
+function readProps(host) {
+  try {
+    return { ...DEFAULT_STATE, ...(embedUtils.getEmbeddedProps?.(host) || {}) }
+  } catch {
+    return { ...DEFAULT_STATE }
+  }
+}
 
 export class EmbeddedEmailSendComponent extends Component {
   static template = "sanare_dms.EmbeddedEmailSend"
@@ -32,28 +44,7 @@ export class EmbeddedEmailSendComponent extends Component {
     this.action = useService("action")
 
     // {subject, to, cc, bcc, lastSend}; to/cc/bcc are arrays of {id, name}.
-    if (useEmbeddedState) {
-      this.state = useEmbeddedState(this.props.host)
-      this._persist = null
-    } else {
-      this.state = useState({
-        subject: "", to: [], cc: [], bcc: [], lastSend: null,
-        ...(getEmbeddedProps ? getEmbeddedProps(this.props.host) : {}),
-      })
-      this._persist = () => {
-        this.props.host.setAttribute(
-          "data-embedded-props",
-          JSON.stringify({
-            subject: this.state.subject,
-            to: this.state.to,
-            cc: this.state.cc,
-            bcc: this.state.bcc,
-            lastSend: this.state.lastSend,
-          })
-        )
-        this.props.host.dispatchEvent(new InputEvent("input", { bubbles: true }))
-      }
-    }
+    this.state = useState(readProps(this.props.host))
     this.ui = useState({ sending: false })
     this.inputs = useState({ to: "", cc: "", bcc: "" })
   }
@@ -66,9 +57,22 @@ export class EmbeddedEmailSendComponent extends Component {
     return this.state[field] || []
   }
 
-  changed() {
-    if (this._persist) {
-      this._persist()
+  persist() {
+    this.props.host.setAttribute(
+      "data-embedded-props",
+      JSON.stringify({
+        subject: this.state.subject,
+        to: this.state.to,
+        cc: this.state.cc,
+        bcc: this.state.bcc,
+        lastSend: this.state.lastSend,
+      })
+    )
+    // Best effort nudge so the editor notices the protected node changed.
+    try {
+      this.props.host.dispatchEvent(new InputEvent("input", { bubbles: true }))
+    } catch {
+      // InputEvent unsupported - the save path still re-reads the DOM.
     }
   }
 
@@ -87,21 +91,30 @@ export class EmbeddedEmailSendComponent extends Component {
   }
 
   sourcesFor(field) {
+    // Each option carries its own onSelect - AutoComplete calls that in
+    // preference to a top-level onSelect prop, and it's the shape
+    // Many2XAutocomplete itself uses.
     return [
       {
         options: async (request) => {
           const q = (request || "").trim()
-          let opts = []
-          if (q) {
-            const pairs = await this.orm.call("res.partner", "name_search", [], {
-              name: q,
-              args: this.domainFor(field),
-              operator: "ilike",
-              limit: 8,
-            })
-            opts = pairs.map(([id, name]) => ({ label: name, partnerId: id, partnerName: name }))
-            opts.push({ label: _t('Create "%s"', q), createName: q })
+          if (!q) {
+            return []
           }
+          const pairs = await this.orm.call("res.partner", "name_search", [], {
+            name: q,
+            args: this.domainFor(field),
+            operator: "ilike",
+            limit: 8,
+          })
+          const opts = pairs.map(([id, name]) => ({
+            label: name,
+            onSelect: () => this.pick(field, { id, name }),
+          }))
+          opts.push({
+            label: _t('Create "%s"', q),
+            onSelect: () => this.addByCreate(field, q),
+          })
           return opts
         },
       },
@@ -112,13 +125,9 @@ export class EmbeddedEmailSendComponent extends Component {
     this.inputs[field] = inputValue
   }
 
-  async onSelect(field, option) {
+  pick(field, rec) {
     this.inputs[field] = ""
-    if (option.createName) {
-      await this.addByCreate(field, option.createName)
-    } else {
-      this.addRecords(field, [{ id: option.partnerId, name: option.partnerName }])
-    }
+    this.addRecords(field, [rec])
   }
 
   addRecords(field, records) {
@@ -128,11 +137,12 @@ export class EmbeddedEmailSendComponent extends Component {
       .map((r) => ({ id: r.id, name: r.name || r.display_name || _t("Contact") }))
     if (added.length) {
       this.state[field] = [...this.list(field), ...added]
-      this.changed()
+      this.persist()
     }
   }
 
   async addByCreate(field, name) {
+    this.inputs[field] = ""
     const clean = (name || "").trim()
     if (!clean) {
       return
@@ -143,13 +153,13 @@ export class EmbeddedEmailSendComponent extends Component {
 
   remove(field, id) {
     this.state[field] = this.list(field).filter((r) => r.id !== id)
-    this.changed()
+    this.persist()
   }
 
   // ---- subject -----------------------------------------------------
   onSubjectInput(ev) {
     this.state.subject = ev.target.value
-    this.changed()
+    this.persist()
   }
 
   // ---- last-send result -----------------------------------------
@@ -177,7 +187,6 @@ export class EmbeddedEmailSendComponent extends Component {
     if (this.env.model?.root?.resId) {
       return this.env.model.root.resId
     }
-    // Fallback for when the form model isn't on this sub-env.
     const wrap = this.props.host.closest('[data-oe-model="sanare.document"]')
     return wrap ? parseInt(wrap.dataset.oeId, 10) || false : false
   }
@@ -208,8 +217,7 @@ export class EmbeddedEmailSendComponent extends Component {
 
     this.ui.sending = true
     try {
-      // Persist the block (and get a real resId) first - the server's
-      // sendable gate checks the stored content_html.
+      this.persist()
       if (this.env.model?.root) {
         await this.env.model.root.save()
       }
@@ -257,7 +265,7 @@ export class EmbeddedEmailSendComponent extends Component {
       }
 
       this.state.lastSend = { state: res.state, date: res.date, error: res.error || "" }
-      this.changed()
+      this.persist()
       this.notification.add(
         res.state === "failed" ? _t("Send failed: %s", res.error || "") : _t("Email sent."),
         { type: res.state === "failed" ? "danger" : "success" }
