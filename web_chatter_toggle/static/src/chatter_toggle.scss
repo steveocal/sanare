@@ -1,9 +1,8 @@
 // Web Chatter Toggle
 // -----------------------------------------------------------------------------
 // The toggle button carries `data-chatter-hidden` (value "1") while collapsed
-// and no attribute at all while expanded. Every rule hangs off that via :has(),
-// keyed on `.o-mail-Chatter-topbar` (stable since Odoo 16) rather than on the
-// chatter root's class, which has been renamed between versions.
+// and no attribute at all while expanded. Everything below hangs off that via
+// :has(), anchored on `.o-mail-Chatter-topbar` (stable since Odoo 16).
 
 $hidden: '.o_chatter_toggle[data-chatter-hidden]';
 
@@ -16,18 +15,11 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
     }
 }
 
-// --- Collapsed: keep only the top bar (hence the handle) visible ------------
-
-// Hide everything that follows the top bar inside the chatter (thread,
-// composer, followers, attachment box, ...).
-.o-mail-Chatter-topbar:has(> #{$hidden}) ~ * {
-    display: none !important;
-}
-
-// Collapse the top bar itself to just the handle.
+// --- Collapsed: top bar shrinks to just the handle ------------------------
 .o-mail-Chatter-topbar:has(> #{$hidden}) {
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: flex-start !important;
     gap: 0 !important;
     min-height: 0 !important;
     padding: 0.25rem !important;
@@ -38,22 +30,24 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
     }
 }
 
-// Shrink the chatter root (whatever its class) to its content width...
-:where(*):has(> .o-mail-Chatter-topbar:has(> #{$hidden})) {
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: max-content !important;
-    flex: 0 0 auto !important;
-    border-inline-start: 0 !important;
-    background: transparent !important;
+// Hide anything that sits next to the top bar (builds where the thread /
+// composer are rendered as its siblings).
+.o-mail-Chatter-topbar:has(> #{$hidden}) ~ * {
+    display: none !important;
 }
 
-// ...and the form view's chatter column that wraps it, so the sheet reclaims
-// the space on side-by-side (wide screen) layouts.
-:where(*):has(> * > .o-mail-Chatter-topbar:has(> #{$hidden})),
-.o-mail-Form-chatter:has(#{$hidden}) {
-    width: auto !important;
+// --- Collapsed: clip the chatter container down to the handle -------------
+// Structure-agnostic: a fixed-size box with overflow:hidden clips the body no
+// matter how it is nested. These class names are chatter-specific, so clamping
+// them cannot disturb the surrounding form layout.
+:is(.o-mail-Chatter, .o-mail-ChatterContainer, .o-mail-Form-chatter):has(#{$hidden}) {
+    width: 2.75rem !important;
     min-width: 0 !important;
-    max-width: max-content !important;
-    flex: 0 0 auto !important;
+    max-width: 2.75rem !important;
+    flex: 0 0 2.75rem !important;
+    max-height: 3rem !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    background: transparent !important;
+    align-self: flex-start !important;
 }
