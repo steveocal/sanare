@@ -172,14 +172,14 @@ class EosKpiValue(models.Model):
 
     @api.depends('period', 'period_type')
     def _compute_period_end(self):
+        # ``period`` is always a period start (Monday or the 1st), so the end
+        # is just the second half of the same bounds the board and cron use.
+        Kpi = self.env['eos.kpi']
         for rec in self:
-            if not rec.period:
-                rec.period_end = False
-            elif rec.period_type == 'week':
-                rec.period_end = rec.period + timedelta(days=6)
-            else:
-                next_month = rec.period.replace(day=28) + timedelta(days=4)
-                rec.period_end = next_month - timedelta(days=next_month.day)
+            rec.period_end = (
+                Kpi._period_bounds(rec.period_type, rec.period)[1]
+                if rec.period else False
+            )
 
     def _upsert(self, market, kpi, period_type, period_start, value, notes=None):
         """Create or update the one value row for (market, kpi, period_type,
