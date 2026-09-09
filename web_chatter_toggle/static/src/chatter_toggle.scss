@@ -9,6 +9,7 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
 .o_chatter_toggle {
     cursor: pointer;
     line-height: 1;
+    font-size: 0.8rem;
 
     &:hover {
         color: var(--primary, #017e84) !important;
@@ -22,7 +23,7 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
     justify-content: flex-start !important;
     gap: 0 !important;
     min-height: 0 !important;
-    padding: 0.25rem !important;
+    padding: 0 !important;
     border: 0 !important;
 
     > *:not(.o_chatter_toggle) {
@@ -41,13 +42,14 @@ $hidden: '.o_chatter_toggle[data-chatter-hidden]';
 // matter how it is nested. These class names are chatter-specific, so clamping
 // them cannot disturb the surrounding form layout.
 :is(.o-mail-Chatter, .o-mail-ChatterContainer, .o-mail-Form-chatter):has(#{$hidden}) {
-    width: 2.75rem !important;
+    width: 1.3rem !important;
     min-width: 0 !important;
-    max-width: 2.75rem !important;
-    flex: 0 0 2.75rem !important;
-    max-height: 3rem !important;
+    max-width: 1.3rem !important;
+    flex: 0 0 1.3rem !important;
+    max-height: 1.5rem !important;
     overflow: hidden !important;
     margin-top: 0 !important;
+    padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
     align-self: flex-start !important;
