@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.Chatter" t-inherit="mail.Chatter" t-inherit-mode="extension">
+        <!--
+            Append the toggle handle to the chatter top bar. `order-first`
+            keeps it on the left so it stays reachable once collapsed, and the
+            data attribute drives the collapsed styling through a :has() rule
+            (see chatter_toggle.scss) - no need to touch the root node.
+        -->
+        <xpath expr="//*[hasclass('o-mail-Chatter-topbar')]" position="inside">
+            <button type="button"
+                    class="o_chatter_toggle btn btn-link btn-sm order-first mx-1 p-0 border-0 text-muted"
+                    t-att-data-chatter-hidden="chatterToggle.hidden"
+                    t-att-title="chatterToggleTitle"
+                    t-att-aria-label="chatterToggleTitle"
+                    t-on-click="onClickToggleChatter">
+                <i class="fa fa-fw"
+                   t-att-class="chatterToggle.hidden ? 'fa-comments-o' : 'fa-angle-double-right'"/>
+            </button>
+        </xpath>
+    </t>
+
+</templates>
