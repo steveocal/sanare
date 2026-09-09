@@ -114,6 +114,13 @@ class SanareDocument(models.Model):
         string="Properties", definition="parent_id.properties_definition"
     )
 
+    # A document is "an email" purely by carrying an "email_subject" property
+    # (defined on the Email Templates folder - see data/dms_data.xml). No
+    # model field, no content_type: subject + To/Cc/Bcc are ordinary
+    # Properties, the body is the document's own content, and Send is one
+    # button in the form header.
+    is_email = fields.Boolean(compute="_compute_is_email")
+
     # -- type & content --------------------------------------------------
     content_type = fields.Selection(
         CONTENT_TYPES, required=True, default="folder", string="Type"
@@ -1141,6 +1148,118 @@ class SanareDocument(models.Model):
         self.ensure_one()
         self.write({"is_published": not self.is_published})
         return self.is_published
+
+    # ==================================================================
+    # Email templates
+    # ==================================================================
+    # subject + To/Cc/Bcc are Properties on the Email Templates folder; the
+    # body is this document's own content, rendered server-side by the same
+    # resolver print/website use. No placeholders - a template is boilerplate
+    # you edit after "New from Template", not a mail-merge.
+    EMAIL_PROP_SUBJECT = "email_subject"
+    EMAIL_PROP_TO = "email_to"
+    EMAIL_PROP_CC = "email_cc"
+    EMAIL_PROP_BCC = "email_bcc"
+
+    def _compute_is_email(self):
+        # No @api.depends on `properties` (a Properties field is an awkward
+        # dependency): non-stored, recomputed on every read, which is fine
+        # for a header-button toggle - the form re-reads it after each save.
+        for doc in self:
+            props = doc.properties or {}
+            doc.is_email = bool(props.get(doc.EMAIL_PROP_SUBJECT))
+
+    def _email_recipients(self, key):
+        """Partner recordset from a many2many Property value, tolerating both
+        the [id, name] pairs and the bare-id-list shapes Odoo can return."""
+        self.ensure_one()
+        raw = (self.properties or {}).get(key) or []
+        ids = [v[0] if isinstance(v, (list, tuple)) else v for v in raw]
+        return self.env["res.partner"].browse(ids).exists()
+
+    def _email_body_html(self):
+        """Document body, embedded refs expanded (same pipeline as print /
+        website), wrapped in an explicit light ground so a mail client
+        doesn't inherit the editor's dark theme."""
+        self.ensure_one()
+        inner = Markup(self._resolve_embedded_refs(self.content_html or ""))
+        return Markup(
+            '<div style="background:#ffffff;color:#111827;'
+            'font-family:Arial,Helvetica,sans-serif;font-size:14px;'
+            'line-height:1.5;padding:16px">{}</div>'
+        ).format(inner)
+
+    def action_send_email(self):
+        """Header button on an email-template document: build one mail.mail
+        from the subject/recipient Properties + the rendered body and send
+        it. To+Cc go on one message; each Bcc gets its own blind copy
+        (mail.mail has no Bcc field). Outcome goes to the chatter."""
+        self.ensure_one()
+        subject = (self.properties or {}).get(self.EMAIL_PROP_SUBJECT)
+        if not subject:
+            raise UserError(self.env._(
+                "Set an Email Subject in this document's Properties first."))
+        to = self._email_recipients(self.EMAIL_PROP_TO)
+        cc = self._email_recipients(self.EMAIL_PROP_CC)
+        bcc = self._email_recipients(self.EMAIL_PROP_BCC)
+        if not to:
+            raise UserError(self.env._(
+                "Add at least one “To” recipient in this document's Properties."))
+        missing = (to | cc | bcc).filtered(lambda p: not p.email)
+        if missing:
+            raise UserError(self.env._(
+                "These contacts have no email address: %s",
+                ", ".join(missing.mapped("display_name"))))
+
+        body = self._email_body_html()
+        Mail = self.env["mail.mail"].sudo()
+        common = {
+            "subject": subject,
+            "body_html": body,
+            "email_from": self.env.user.email_formatted
+            or self.env.company.email_formatted,
+            "author_id": self.env.user.partner_id.id,
+            "auto_delete": False,
+        }
+        primary = Mail.create(dict(
+            common,
+            email_to=", ".join(to.mapped("email_formatted")),
+            email_cc=", ".join(cc.mapped("email_formatted")) or False,
+        ))
+        bcc_mails = Mail.browse()
+        for partner in bcc:
+            bcc_mails |= Mail.create(dict(common, email_to=partner.email_formatted))
+
+        mails = primary | bcc_mails
+        mails.send(raise_exception=False)
+        mails.invalidate_recordset(["state", "failure_reason"])
+
+        if any(m.state == "exception" for m in mails):
+            reason = next(
+                (m.failure_reason for m in mails if m.state == "exception" and m.failure_reason),
+                self.env._("unknown error"),
+            )
+            self.message_post(body=self.env._(
+                "Email “%(subject)s” — send failed: %(reason)s",
+                subject=subject, reason=reason))
+            raise UserError(self.env._("Send failed: %s", reason))
+
+        cc_suffix = self.env._(" (cc: %s)", ", ".join(cc.mapped("name"))) if cc else ""
+        self.message_post(body=self.env._(
+            "Email “%(subject)s” sent to %(to)s%(cc)s.",
+            subject=subject, to=", ".join(to.mapped("name")), cc=cc_suffix))
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "type": "success",
+                "title": self.env._("Email sent"),
+                "message": self.env._(
+                    "“%(subject)s” sent to %(to)s.",
+                    subject=subject, to=", ".join(to.mapped("name"))),
+                "next": {"type": "ir.actions.act_window_close"},
+            },
+        }
 
     def action_report(self):
         """Print entry point for the custom browser (which has no generic

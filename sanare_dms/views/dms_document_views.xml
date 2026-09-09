@@ -83,6 +83,10 @@
                     <button name="action_reset_to_draft" type="object" string="Reset to Draft"
                             invisible="state not in ('to_approve', 'rejected', 'approved')"
                             groups="sanare_dms.group_dms_manager"/>
+                    <button name="action_send_email" type="object" string="Send Email"
+                            class="btn-primary" invisible="not is_email"
+                            confirm="Send this email now?"/>
+                    <field name="is_email" invisible="1"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,to_approve,approved"/>
                 </header>

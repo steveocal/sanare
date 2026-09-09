@@ -1,6 +1,8 @@
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests import TransactionCase, HttpCase, tagged, new_test_user
 
+from odoo.addons.mail.tests.common import MailCommon
+
 
 @tagged("post_install", "-at_install")
 class TestSanareDms(TransactionCase):
@@ -460,6 +462,116 @@ class TestSanareDms(TransactionCase):
         )
         found = self.Doc.with_user(self.user).search([("name", "=", "secret")])
         self.assertFalse(found)
+
+    # -- email templates ----------------------------------------------
+    _EMAIL_PROPS_DEF = [
+        {"name": "email_subject", "type": "char", "string": "Email Subject"},
+        {"name": "email_to", "type": "many2many", "comodel": "res.partner", "string": "To"},
+        {"name": "email_cc", "type": "many2many", "comodel": "res.partner", "string": "Cc"},
+        {"name": "email_bcc", "type": "many2many", "comodel": "res.partner", "string": "Bcc"},
+    ]
+
+    def _email_folder(self):
+        return self.Doc.create({
+            "name": "Email Tpls", "content_type": "folder",
+            "properties_definition": self._EMAIL_PROPS_DEF,
+        })
+
+    def _partner(self, name, email=False):
+        return self.env["res.partner"].create({"name": name, "email": email})
+
+    def test_is_email_flag_follows_subject_property(self):
+        folder = self._email_folder()
+        doc = self.Doc.create({
+            "name": "D", "content_type": "knowledge_html", "parent_id": folder.id,
+            "content_html": "<p>x</p>",
+        })
+        self.assertFalse(doc.is_email)
+        doc.properties = {"email_subject": "Hello"}
+        doc.invalidate_recordset(["is_email"])
+        self.assertTrue(doc.is_email)
+
+    def test_email_body_wrapped_light_and_resolved(self):
+        folder = self._email_folder()
+        target = self.Doc.create({"name": "T", "content_type": "knowledge_html",
+                                   "content_html": "<p>embedded-marker</p>"})
+        doc = self.Doc.create({
+            "name": "D", "content_type": "knowledge_html", "parent_id": folder.id,
+            "content_html": self._embed_marker(target.id) + "<p>body-marker</p>",
+        })
+        body = doc._email_body_html()
+        self.assertIn("background:#ffffff", body)
+        self.assertIn("body-marker", body)
+        self.assertIn("embedded-marker", body)  # embed expanded server-side
+
+    def test_send_email_requires_subject_and_recipients(self):
+        folder = self._email_folder()
+        doc = self.Doc.create({
+            "name": "D", "content_type": "knowledge_html", "parent_id": folder.id,
+            "content_html": "<p>x</p>",
+        })
+        with self.assertRaises(UserError):
+            doc.action_send_email()  # no subject
+        doc.properties = {"email_subject": "Hi"}
+        with self.assertRaises(UserError):
+            doc.action_send_email()  # subject but no To
+
+    def test_send_email_blocks_recipient_without_email(self):
+        folder = self._email_folder()
+        good = self._partner("Good", "good@example.com")
+        bad = self._partner("No Email")
+        doc = self.Doc.create({
+            "name": "D", "content_type": "knowledge_html", "parent_id": folder.id,
+            "content_html": "<p>x</p>",
+            "properties": {"email_subject": "Hi", "email_to": [good.id, bad.id]},
+        })
+        before = self.env["mail.mail"].search([])
+        with self.assertRaises(UserError):
+            doc.action_send_email()
+        self.assertFalse(self.env["mail.mail"].search([]) - before)
+
+
+@tagged("post_install", "-at_install")
+class TestSanareDmsEmailSend(MailCommon):
+    def test_send_builds_primary_plus_bcc_copies(self):
+        Doc = self.env["sanare.document"]
+        folder = Doc.create({
+            "name": "Email Tpls", "content_type": "folder",
+            "properties_definition": [
+                {"name": "email_subject", "type": "char", "string": "Email Subject"},
+                {"name": "email_to", "type": "many2many", "comodel": "res.partner", "string": "To"},
+                {"name": "email_cc", "type": "many2many", "comodel": "res.partner", "string": "Cc"},
+                {"name": "email_bcc", "type": "many2many", "comodel": "res.partner", "string": "Bcc"},
+            ],
+        })
+        P = self.env["res.partner"]
+        a = P.create({"name": "Alice", "email": "alice@example.com"})
+        b = P.create({"name": "Bob", "email": "bob@example.com"})
+        c = P.create({"name": "Cara", "email": "cara@example.com"})
+        d = P.create({"name": "Dan", "email": "dan@example.com"})
+        doc = Doc.create({
+            "name": "Intro", "content_type": "knowledge_html", "parent_id": folder.id,
+            "content_html": "<p>Hello there</p>",
+            "properties": {
+                "email_subject": "Nice to meet you",
+                "email_to": [a.id, b.id], "email_cc": [c.id], "email_bcc": [d.id],
+            },
+        })
+        before = self.env["mail.mail"].search([])
+        with self.mock_mail_gateway():
+            doc.action_send_email()
+        mails = self.env["mail.mail"].search([]) - before
+        self.assertEqual(len(mails), 2)  # To+Cc on one, one blind copy for Bcc
+        primary = mails.filtered(lambda m: m.email_cc)
+        self.assertEqual(len(primary), 1)
+        self.assertIn("alice@example.com", primary.email_to)
+        self.assertIn("cara@example.com", primary.email_cc)
+        self.assertIn("background:#ffffff", primary.body_html)
+        self.assertIn("Hello there", primary.body_html)
+        bcc = mails - primary
+        self.assertIn("dan@example.com", bcc.email_to)
+        self.assertFalse(bcc.email_cc)
+        self.assertTrue(doc.message_ids.filtered(lambda m: "sent to" in (m.body or "")))
 
 
 @tagged("post_install", "-at_install")
