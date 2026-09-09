@@ -7,9 +7,14 @@
             keeps it on the left so it stays reachable once collapsed, and the
             data attribute drives the collapsed styling through a :has() rule
             (see chatter_toggle.scss) - no need to touch the root node.
+
+            Guarded with t-if: `chatterToggle` only exists once the JS patch
+            (chatter_toggle.js) has been applied to the Chatter prototype. If
+            that ever fails to load, the button is simply skipped instead of
+            crashing the view.
         -->
         <xpath expr="//*[hasclass('o-mail-Chatter-topbar')]" position="inside">
-            <button type="button"
+            <button t-if="chatterToggle" type="button"
                     class="o_chatter_toggle btn btn-link btn-sm order-first mx-1 p-0 border-0 text-muted"
                     t-att-data-chatter-hidden="chatterToggle.hidden"
                     t-att-title="chatterToggleTitle"
