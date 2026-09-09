@@ -37,13 +37,18 @@
     <record id="doc_folder_email_templates" model="sanare.document">
         <field name="name">Email Templates</field>
         <field name="content_type">folder</field>
+        <field name="visibility">public</field>
+        <field name="visibility_inherited" eval="False"/>
     </record>
     <record id="doc_intro_email" model="sanare.document">
         <field name="name">Introduction Email</field>
         <field name="content_type">knowledge_html</field>
         <field name="parent_id" ref="doc_folder_email_templates"/>
         <field name="is_template" eval="True"/>
-        <field name="visibility">shared</field>
+        <!-- public visibility = readable by every internal user (see
+             rule_dms_document_user_read); "shared" would hide it from
+             everyone but the owner + DMS managers. -->
+        <field name="visibility">public</field>
         <field name="visibility_inherited" eval="False"/>
         <field name="content_html" type="html">
             <div>
