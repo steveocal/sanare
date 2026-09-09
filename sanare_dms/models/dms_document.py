@@ -114,11 +114,21 @@ class SanareDocument(models.Model):
         string="Properties", definition="parent_id.properties_definition"
     )
 
-    # A document is "an email" purely by carrying an "email_subject" property
-    # (defined on the Email Templates folder - see data/dms_data.xml). No
-    # model field, no content_type: subject + To/Cc/Bcc are ordinary
-    # Properties, the body is the document's own content, and Send is one
-    # button in the form header.
+    # -- email --------------------------------------------------------
+    # A document becomes "an email" once it has a subject. To/Cc/Bcc are
+    # plain m2m to res.partner; the body is the document's own content.
+    # These travel with a "New from Template" copy (copy=True), unlike
+    # folder-scoped Properties. Send is one button in the form header.
+    email_subject = fields.Char(string="Email Subject", copy=True)
+    email_to_ids = fields.Many2many(
+        "res.partner", "sanare_document_email_to_rel", "doc_id", "partner_id",
+        string="To", copy=True)
+    email_cc_ids = fields.Many2many(
+        "res.partner", "sanare_document_email_cc_rel", "doc_id", "partner_id",
+        string="Cc", copy=True)
+    email_bcc_ids = fields.Many2many(
+        "res.partner", "sanare_document_email_bcc_rel", "doc_id", "partner_id",
+        string="Bcc", copy=True)
     is_email = fields.Boolean(compute="_compute_is_email")
 
     # -- type & content --------------------------------------------------
@@ -1152,30 +1162,14 @@ class SanareDocument(models.Model):
     # ==================================================================
     # Email templates
     # ==================================================================
-    # subject + To/Cc/Bcc are Properties on the Email Templates folder; the
-    # body is this document's own content, rendered server-side by the same
-    # resolver print/website use. No placeholders - a template is boilerplate
-    # you edit after "New from Template", not a mail-merge.
-    EMAIL_PROP_SUBJECT = "email_subject"
-    EMAIL_PROP_TO = "email_to"
-    EMAIL_PROP_CC = "email_cc"
-    EMAIL_PROP_BCC = "email_bcc"
-
+    # subject + To/Cc/Bcc are the email_* fields above; the body is this
+    # document's own content, rendered server-side by the same resolver
+    # print/website use. No placeholders - a template is boilerplate you
+    # edit after "New from Template", not a mail-merge.
+    @api.depends("email_subject")
     def _compute_is_email(self):
-        # No @api.depends on `properties` (a Properties field is an awkward
-        # dependency): non-stored, recomputed on every read, which is fine
-        # for a header-button toggle - the form re-reads it after each save.
         for doc in self:
-            props = doc.properties or {}
-            doc.is_email = bool(props.get(doc.EMAIL_PROP_SUBJECT))
-
-    def _email_recipients(self, key):
-        """Partner recordset from a many2many Property value, tolerating both
-        the [id, name] pairs and the bare-id-list shapes Odoo can return."""
-        self.ensure_one()
-        raw = (self.properties or {}).get(key) or []
-        ids = [v[0] if isinstance(v, (list, tuple)) else v for v in raw]
-        return self.env["res.partner"].browse(ids).exists()
+            doc.is_email = bool(doc.email_subject)
 
     def _email_body_html(self):
         """Document body, embedded refs expanded (same pipeline as print /
@@ -1191,20 +1185,18 @@ class SanareDocument(models.Model):
 
     def action_send_email(self):
         """Header button on an email-template document: build one mail.mail
-        from the subject/recipient Properties + the rendered body and send
-        it. To+Cc go on one message; each Bcc gets its own blind copy
-        (mail.mail has no Bcc field). Outcome goes to the chatter."""
+        from the subject/recipient fields + the rendered body and send it.
+        To+Cc go on one message; each Bcc gets its own blind copy (mail.mail
+        has no Bcc field). Outcome goes to the chatter."""
         self.ensure_one()
-        subject = (self.properties or {}).get(self.EMAIL_PROP_SUBJECT)
+        subject = self.email_subject
         if not subject:
-            raise UserError(self.env._(
-                "Set an Email Subject in this document's Properties first."))
-        to = self._email_recipients(self.EMAIL_PROP_TO)
-        cc = self._email_recipients(self.EMAIL_PROP_CC)
-        bcc = self._email_recipients(self.EMAIL_PROP_BCC)
+            raise UserError(self.env._("Set an Email Subject first."))
+        to = self.email_to_ids
+        cc = self.email_cc_ids
+        bcc = self.email_bcc_ids
         if not to:
-            raise UserError(self.env._(
-                "Add at least one “To” recipient in this document's Properties."))
+            raise UserError(self.env._("Add at least one “To” recipient."))
         missing = (to | cc | bcc).filtered(lambda p: not p.email)
         if missing:
             raise UserError(self.env._(

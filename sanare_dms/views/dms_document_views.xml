@@ -171,6 +171,25 @@
                                 </div>
                             </group>
                         </page>
+                        <page string="Email" name="email"
+                              invisible="content_type not in ('html', 'knowledge_html')">
+                            <div class="text-muted mb-2">
+                                The document content is the email body. Set a subject and
+                                recipients, then use <b>Send Email</b> in the header.
+                            </div>
+                            <group>
+                                <field name="email_subject" placeholder="Subject line"/>
+                                <field name="email_to_ids" widget="many2many_tags_email"
+                                       context="{'force_email': True}"
+                                       options="{'no_quick_create': False}"/>
+                                <field name="email_cc_ids" widget="many2many_tags_email"
+                                       context="{'force_email': True}"
+                                       options="{'no_quick_create': False}"/>
+                                <field name="email_bcc_ids" widget="many2many_tags_email"
+                                       context="{'force_email': True}"
+                                       options="{'no_quick_create': False}"/>
+                            </group>
+                        </page>
                         <page string="Sharing" name="sharing">
                             <field name="access_ids">
                                 <list editable="bottom">

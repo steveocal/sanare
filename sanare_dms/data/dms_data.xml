@@ -31,21 +31,15 @@
         <field name="approval_mode">any</field>
     </record>
 
-    <!-- Email templates: a folder whose Properties schema is Subject +
-         To/Cc/Bcc (res.partner). Any document filed here gets those fields
-         in its Properties page; the "Send Email" header button appears once
-         a Subject is set. Body = the document's own content. -->
+    <!-- Email templates: a plain folder for organising them. A document is
+         "an email" once its Email Subject is set (Email tab on the form);
+         the "Send Email" header button then appears. Body = the document's
+         own content. -->
     <record id="doc_folder_email_templates" model="sanare.document">
         <field name="name">Email Templates</field>
         <field name="content_type">folder</field>
         <field name="visibility">public</field>
         <field name="visibility_inherited" eval="False"/>
-        <field name="properties_definition" eval="[
-            {'name': 'email_subject', 'type': 'char', 'string': 'Email Subject'},
-            {'name': 'email_to',  'type': 'many2many', 'comodel': 'res.partner', 'string': 'To'},
-            {'name': 'email_cc',  'type': 'many2many', 'comodel': 'res.partner', 'string': 'Cc'},
-            {'name': 'email_bcc', 'type': 'many2many', 'comodel': 'res.partner', 'string': 'Bcc'},
-        ]"/>
     </record>
     <record id="doc_intro_email" model="sanare.document">
         <field name="name">Introduction Email</field>
@@ -54,6 +48,7 @@
         <field name="is_template" eval="True"/>
         <field name="visibility">public</field>
         <field name="visibility_inherited" eval="False"/>
+        <field name="email_subject">Introduction from Sanare</field>
         <field name="content_html" type="html">
             <div>
                 <p>Dear Sir/Madam,</p>
