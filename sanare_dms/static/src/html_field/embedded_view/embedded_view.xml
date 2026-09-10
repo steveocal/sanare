@@ -34,6 +34,15 @@
                     </button>
                 </div>
 
+                <button type="button" class="btn btn-light btn-sm"
+                        t-att-title="snapshotLabel"
+                        t-att-disabled="state.snapping"
+                        t-on-click="() => this.snapshot()">
+                    <i class="fa"
+                       t-att-class="state.snapping ? 'fa-spinner fa-spin' : 'fa-camera'"
+                       role="img"/>
+                </button>
+
                 <button type="button" class="btn btn-sm btn-link p-0"
                         title="Open in full view" t-on-click="openInFull">
                     <i class="fa fa-external-link" role="img"/>
@@ -42,7 +51,7 @@
             <div class="card-body p-0 o_sanare_embedded_view_body"
                  t-att-style="bodyStyle"
                  t-on-mousedown="onBodyMouseDown" t-on-mouseup="onResize">
-                <div t-if="ready" class="o_sanare_view_zoom"
+                <div t-if="ready" class="o_sanare_view_zoom" t-ref="capture"
                      t-att-style="'zoom:' + state.zoom">
                     <View t-props="viewProps" t-key="state.viewType"/>
                 </div>

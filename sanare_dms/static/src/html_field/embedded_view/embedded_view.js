@@ -1,6 +1,8 @@
 /** @odoo-module **/
 
-import { Component, useSubEnv, useState, onError, onWillUnmount } from "@odoo/owl"
+import {
+  Component, useSubEnv, useState, useRef, onError, onMounted, onWillUnmount,
+} from "@odoo/owl"
 import { _t } from "@web/core/l10n/translation"
 import { useService } from "@web/core/utils/hooks"
 import * as embedUtils from "@html_editor/others/embedded_component_utils"
@@ -52,9 +54,12 @@ export class EmbeddedViewComponent extends Component {
   setup() {
     this.action = useService("action")
     this.orm = useService("orm")
+    this.notification = useService("notification")
     this.d = readProps(this.props.host)
     this._saveTimer = null
+    this._autoSnapTimer = null
     onWillUnmount(() => {
+      clearTimeout(this._autoSnapTimer)
       if (this._saveTimer) {
         clearTimeout(this._saveTimer)
         this.saveState()
@@ -65,6 +70,24 @@ export class EmbeddedViewComponent extends Component {
       height: this.d.height || null,
       zoom: this.d.zoom || 1,
       viewType: this.d.viewType,
+      // Print snapshot: a PNG of the rendered view, saved as an ir.attachment
+      // on the document. The report swaps the block for /web/image/<id>.
+      snapshotId: this.d.snapshot_id || null,
+      snapshotDate: this.d.snapshot_date || null,
+      snapping: false,
+    })
+    this.captureRef = useRef("capture")
+
+    // Auto-capture once shortly after the view settles, if there's no
+    // snapshot yet. The manual button refreshes it after that.
+    onMounted(() => {
+      if (!this.state.snapshotId) {
+        this._autoSnapTimer = setTimeout(() => {
+          if (!this.state.snapshotId && !this.state.snapping) {
+            this.snapshot({ silent: true })
+          }
+        }, 2500)
+      }
     })
 
     useSubEnv({
@@ -155,6 +178,60 @@ export class EmbeddedViewComponent extends Component {
     return Math.round(this.state.zoom * 100) + "%"
   }
 
+  get snapshotLabel() {
+    if (this.state.snapping) {
+      return _t("Capturing…")
+    }
+    return this.state.snapshotDate
+      ? _t("Snapshot: %s", this.state.snapshotDate)
+      : _t("No print snapshot")
+  }
+
+  // ---- print snapshot ----------------------------------------
+  async snapshot(opts = {}) {
+    const el = this.captureRef.el
+    const h2c = window.html2canvas
+    const documentId = this.env.model?.root?.resId
+    if (!el || !h2c || !documentId || this.state.snapping) {
+      if (!opts.silent) {
+        this.notification.add(_t("Can't snapshot this view."), { type: "warning" })
+      }
+      return
+    }
+    this.state.snapping = true
+    const prevZoom = el.style.zoom
+    el.style.zoom = "1"
+    try {
+      const canvas = await h2c(el, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+      })
+      const png = canvas.toDataURL("image/png")
+      const res = await this.orm.call("sanare.document", "save_view_block_snapshot", [
+        documentId,
+        { png, old_id: this.state.snapshotId || false },
+      ])
+      this.state.snapshotId = res.attachment_id
+      this.state.snapshotDate = res.date
+      this.persist()
+      if (!opts.silent) {
+        this.notification.add(_t("Snapshot saved for printing."), { type: "success" })
+      }
+    } catch (e) {
+      console.warn("[sanare_dms] view snapshot failed", e)
+      if (!opts.silent) {
+        this.notification.add(_t("Snapshot failed."), { type: "danger" })
+      }
+    } finally {
+      el.style.zoom = prevZoom
+      this.state.snapping = false
+    }
+  }
+
   // ---- persisted UI state --------------------------------------
   persist() {
     try {
@@ -165,6 +242,8 @@ export class EmbeddedViewComponent extends Component {
           height: this.state.height || undefined,
           zoom: this.state.zoom,
           viewType: this.state.viewType,
+          snapshot_id: this.state.snapshotId || undefined,
+          snapshot_date: this.state.snapshotDate || undefined,
         })
       )
       const editable = this.props.host.closest(".odoo-editor-editable")
@@ -191,6 +270,8 @@ export class EmbeddedViewComponent extends Component {
           zoom: this.state.zoom,
           height: this.state.height || undefined,
           viewType: this.state.viewType,
+          snapshot_id: this.state.snapshotId || undefined,
+          snapshot_date: this.state.snapshotDate || undefined,
         },
       ])
     } catch {

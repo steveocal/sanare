@@ -622,7 +622,35 @@ class SanareDocument(models.Model):
                 # its starting point.
                 is_template=False,
             )
+            # Drop any sanareView print-snapshot ids from the copied body -
+            # they point at the source document's attachments. The copy
+            # re-captures its own.
+            if vals.get("content_html"):
+                vals["content_html"] = self._strip_view_snapshot(vals["content_html"])
         return vals_list
+
+    @staticmethod
+    def _strip_view_snapshot(html):
+        if not html or VIEW_BLOCK_MARKER not in html:
+            return html
+        try:
+            root = lxml.html.fromstring("<div>%s</div>" % html)
+        except Exception:  # noqa: BLE001
+            return html
+        changed = False
+        for m in root.xpath('//div[@data-embedded="sanareView"]'):
+            try:
+                p = json.loads(m.get("data-embedded-props") or "{}")
+            except (ValueError, TypeError):
+                continue
+            if p.pop("snapshot_id", None) is not None or \
+                    p.pop("snapshot_date", None) is not None:
+                m.set("data-embedded-props", json.dumps(p))
+                changed = True
+        if not changed:
+            return html
+        return (root.text or "") + "".join(
+            lxml.html.tostring(c, encoding="unicode") for c in root)
 
     # ==================================================================
     # Workflow actions
@@ -846,15 +874,30 @@ class SanareDocument(models.Model):
         # body itself). The text the author wrote around it renders normally.
         for marker in root.xpath('//div[@data-embedded="sanareEmailSend"]'):
             marker.getparent().remove(marker)
-        # The live OWL view can't render server-side (no JS in wkhtmltopdf) -
-        # re-run the captured query and emit a static table instead. Public
-        # website renders get the note only (no data to anonymous visitors).
+        # The live OWL view can't render server-side (no JS in wkhtmltopdf).
+        # Prefer a browser-captured PNG snapshot (an ir.attachment on this
+        # document); otherwise re-run the captured query as a static table.
+        # Public website renders never get either - no data to visitors.
         for marker in root.xpath('//div[@data-embedded="sanareView"]'):
             try:
                 props = json.loads(marker.get("data-embedded-props") or "{}")
             except (ValueError, TypeError):
                 props = {}
-            html = self._render_view_block(props, public_only=public_only)
+            html = None
+            snap = props.get("snapshot_id")
+            if snap and not public_only:
+                att = self.env["ir.attachment"].browse(int(snap)).exists()
+                if (att and att.res_model == "sanare.document"
+                        and att.res_id == self.id and att.mimetype == "image/png"):
+                    html = (
+                        "<div style='margin:8px 0'>"
+                        "<p style='font-weight:bold;margin:0 0 4px'>%s</p>"
+                        "<img src='/web/image/ir.attachment/%s/datas' "
+                        "style='max-width:100%%;display:block;border:1px solid #e0e0e0'/>"
+                        "</div>"
+                    ) % (escape(props.get("title") or props.get("resModel") or ""), att.id)
+            if html is None:
+                html = self._render_view_block(props, public_only=public_only)
             repl = lxml.html.fromstring("<div>%s</div>" % html)
             marker.getparent().replace(marker, repl)
         # Markup, not a plain str: t-out/t-field auto-escape a plain string
@@ -1510,7 +1553,7 @@ class SanareDocument(models.Model):
         if not doc or VIEW_BLOCK_MARKER not in (doc.content_html or ""):
             return False
         keep = {k: v for k, v in (props or {}).items()
-                if k in ("zoom", "height", "viewType")}
+                if k in ("zoom", "height", "viewType", "snapshot_id", "snapshot_date")}
         if not keep:
             return False
         root = lxml.html.fromstring("<div>%s</div>" % doc.content_html)
@@ -1525,6 +1568,37 @@ class SanareDocument(models.Model):
             lxml.html.tostring(c, encoding="unicode") for c in root)
         doc.with_context(dms_skip_version=True).write({"content_html": new_html})
         return True
+
+    @api.model
+    def save_view_block_snapshot(self, document_id, payload):
+        """Store a browser-captured PNG of a sanareView block as an
+        ir.attachment on this document. payload: {png: 'data:image/png;
+        base64,...', old_id: <previous attachment id or false>}. Returns
+        {attachment_id, date}."""
+        doc = self.browse(int(document_id)).exists()
+        if not doc:
+            raise UserError(self.env._("This document no longer exists."))
+        data_url = (payload or {}).get("png") or ""
+        prefix = "data:image/png;base64,"
+        if not data_url.startswith(prefix):
+            raise UserError(self.env._("Unexpected snapshot format."))
+        old_id = (payload or {}).get("old_id")
+        if old_id:
+            try:
+                old = self.env["ir.attachment"].browse(int(old_id)).exists()
+                if old and old.res_model == "sanare.document" and old.res_id == doc.id:
+                    old.unlink()
+            except Exception:  # noqa: BLE001
+                pass
+        att = self.env["ir.attachment"].create({
+            "name": self.env._("%s — view snapshot.png", doc.name),
+            "datas": data_url[len(prefix):],
+            "mimetype": "image/png",
+            "res_model": "sanare.document",
+            "res_id": doc.id,
+        })
+        return {"attachment_id": att.id,
+                "date": fields.Datetime.to_string(fields.Datetime.now())}
 
     @api.model
     def browser_move(self, doc_ids, target_parent_id):

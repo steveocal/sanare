@@ -519,6 +519,50 @@ class TestSanareDms(TransactionCase):
         self.assertEqual(
             self.Doc.browse(res2["action"]["res_id"]).parent_id, doc.parent_id)
 
+    _PNG_1PX = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAA"
+                "fFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+
+    def test_save_view_block_snapshot(self):
+        doc = self.Doc.create({
+            "name": "Snap", "content_type": "knowledge_html",
+            "content_html": '<div data-embedded="sanareView" data-embedded-props="{}"></div>',
+        })
+        res = doc.save_view_block_snapshot(doc.id, {"png": self._PNG_1PX, "old_id": False})
+        att = self.env["ir.attachment"].browse(res["attachment_id"])
+        self.assertTrue(att.exists())
+        self.assertEqual((att.res_model, att.res_id), ("sanare.document", doc.id))
+        self.assertEqual(att.mimetype, "image/png")
+        # replacing unlinks the old one
+        res2 = doc.save_view_block_snapshot(
+            doc.id, {"png": self._PNG_1PX, "old_id": res["attachment_id"]})
+        self.assertFalse(att.exists())
+        self.assertNotEqual(res2["attachment_id"], res["attachment_id"])
+
+    def test_view_block_prints_snapshot(self):
+        import json
+        doc = self.Doc.create({
+            "name": "SnapDoc", "content_type": "knowledge_html", "content_html": "<p>x</p>",
+        })
+        att = self.env["ir.attachment"].create({
+            "name": "s.png", "datas": self._PNG_1PX.split(",", 1)[1],
+            "mimetype": "image/png", "res_model": "sanare.document", "res_id": doc.id,
+        })
+        props = json.dumps({
+            "resModel": "res.partner", "viewType": "graph",
+            "views": [[False, "graph"]], "domain": [], "context": {},
+            "title": "Snapped", "snapshot_id": att.id,
+        })
+        doc.content_html = (
+            "<div data-embedded=\"sanareView\" data-embedded-props='%s'></div>"
+            "<p>tail</p>" % props)
+        rendered = doc._resolve_embedded_refs(doc.content_html)
+        self.assertIn("/web/image/%s" % att.id, rendered)
+        self.assertNotIn("sanareView", rendered)
+        self.assertIn("tail", rendered)
+        # public render must not embed the snapshot
+        pub = doc._resolve_embedded_refs(doc.content_html, public_only=True)
+        self.assertNotIn("/web/image/", pub)
+
     def test_view_block_no_list_view_falls_back_to_note(self):
         marker = ('<div data-embedded="sanareView" '
                   'data-embedded-props="{&#34;resModel&#34;: &#34;crm.lead&#34;}"></div>')
