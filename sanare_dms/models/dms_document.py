@@ -992,10 +992,15 @@ class SanareDocument(models.Model):
             # A graph/pivot template renders as a chart/matrix or, if its
             # group-by config wasn't captured (older descriptor), the note -
             # never a raw record list.
+            def _vid(t):
+                return next((v[0] for v in views
+                             if isinstance(v, (list, tuple)) and v[1] == t), False)
             if vt == "graph":
-                inner = self._render_graph_block(Model, domain, props.get("graph") or {})
+                inner = self._render_graph_block(
+                    Model, domain, props.get("graph") or {}, _vid("graph"))
             elif vt == "pivot":
-                inner = self._render_pivot_block(Model, domain, props.get("pivot") or {})
+                inner = self._render_pivot_block(
+                    Model, domain, props.get("pivot") or {}, _vid("pivot"))
             elif vt == "list" or "list" in view_types:
                 list_view_id = next(
                     (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"),
@@ -1034,14 +1039,20 @@ class SanareDocument(models.Model):
         return ("<table style='border-collapse:collapse;width:100%%;font-size:12px'>"
                 "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>%s") % (head, body, more)
 
-    def _render_pivot_block(self, Model, domain, cfg):
+    def _render_pivot_block(self, Model, domain, cfg, view_id=False):
         """First row group-by x optional first col group-by, all active
         measures. Deeper nesting is flattened to the first level."""
         rows_gb = (cfg.get("rowGroupBys") or [])[:1]
         cols_gb = (cfg.get("colGroupBys") or [])[:1]
-        measures = [m for m in (cfg.get("measures") or ["__count"]) if m]
+        measures = [m for m in (cfg.get("measures") or []) if m]
         if not rows_gb and not cols_gb:
-            return ""  # no dimensions captured -> note
+            arch = self._arch_dims(Model._name, view_id, "pivot")
+            rows_gb, cols_gb = arch["row"][:1], arch["col"][:1]
+            if arch["measure"] and not measures:
+                measures = [arch["measure"]]
+        measures = measures or ["__count"]
+        if not rows_gb and not cols_gb:
+            return ""  # no dimensions -> note
         mlabels = self._view_block_measure_labels(Model._name, measures)
         groupby = rows_gb + cols_gb
         agg_fields = [m for m in measures if m != "__count"]
@@ -1094,6 +1105,33 @@ class SanareDocument(models.Model):
                 "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>") % (
                     "".join(head_cells), "".join(body_rows))
 
+    def _arch_dims(self, model, view_id, view_type):
+        """Default row / col group-bys and measure from a graph or pivot
+        view arch (<field type="row|col|measure" interval="..."/>). Used as
+        the fallback when the client capture didn't include them (a global
+        cog-menu item can't reach the graph/pivot view model)."""
+        try:
+            arch = self.env[model].get_view(view_id or False, view_type)["arch"]
+            node = lxml.etree.fromstring(arch)
+        except Exception:
+            return {"row": [], "col": [], "measure": None, "mode": None}
+        row, col, measure = [], [], None
+        for f in node.xpath(".//field"):
+            name = f.get("name")
+            if not name:
+                continue
+            interval = f.get("interval")
+            spec = "%s:%s" % (name, interval) if interval else name
+            t = f.get("type")
+            if t == "row":
+                row.append(spec)
+            elif t == "col":
+                col.append(spec)
+            elif t == "measure":
+                measure = name
+        return {"row": row, "col": col, "measure": measure,
+                "mode": node.get("type")}
+
     def _view_block_measure_labels(self, model, measures):
         out = {}
         real = [m for m in measures if m != "__count"]
@@ -1103,13 +1141,20 @@ class SanareDocument(models.Model):
                 meta.get(m, {}).get("string") or m)
         return out
 
-    def _render_graph_block(self, Model, domain, cfg):
+    def _render_graph_block(self, Model, domain, cfg, view_id=False):
         """A pure HTML/CSS horizontal bar chart - divs with inline
         width/background. No SVG / data-URI (they don't survive the report
         HTML pipeline). bar/line/pie all render as bars; pie shows shares."""
-        measure = cfg.get("measure") or "__count"
-        mode = (cfg.get("mode") or "bar").lower()
         gb = (cfg.get("groupBy") or [])[:1]
+        measure = cfg.get("measure")
+        mode = cfg.get("mode")
+        if not gb or not measure or not mode:
+            arch = self._arch_dims(Model._name, view_id, "graph")
+            gb = gb or arch["row"][:1]
+            measure = measure or arch["measure"]
+            mode = mode or arch["mode"]
+        measure = measure or "__count"
+        mode = (mode or "bar").lower()
         if not gb:
             return ""
         agg_fields = [] if measure == "__count" else [measure]
