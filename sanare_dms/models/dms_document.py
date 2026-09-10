@@ -999,23 +999,19 @@ class SanareDocument(models.Model):
 
     @api.model
     def get_template_content(self, document_id):
-        """RPC target for the "/template" editor command - unlike
-        get_embedded_content (a live reference the editor re-fetches on
-        every mount), this is a one-time read: the caller pastes the
-        returned HTML in as regular, independently-editable content, so
-        there's no ongoing link to the template afterwards. Only documents
-        actually flagged is_template are offered here, even though any
-        HTML_TYPES document's content is technically readable this way -
-        the point of the command is inserting *templates* specifically."""
+        """RPC target for the "/template" editor command - a one-time paste
+        of the template's content as regular, independently-editable HTML
+        (no ongoing link to the template). Returns the RAW content_html:
+        embedded blocks (email-send, view, doc-ref) are pasted verbatim so
+        they keep working in the new document - the editor re-hydrates them
+        on insert, same as a "New from Template" copy. Only documents
+        flagged is_template are offered."""
         doc = self.browse(int(document_id)).exists()
         if not doc:
             return {"error": "not_found"}
         if not doc.is_template or doc.content_type not in HTML_TYPES:
             return {"error": "unsupported_type"}
-        return {
-            "name": doc.name,
-            "content_html": doc._resolve_embedded_refs(doc.content_html or ""),
-        }
+        return {"name": doc.name, "content_html": doc.content_html or ""}
 
     @api.model
     def _browser_breadcrumb(self, parent_id):

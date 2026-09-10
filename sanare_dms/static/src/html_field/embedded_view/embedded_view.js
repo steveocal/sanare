@@ -53,8 +53,12 @@ export class EmbeddedViewComponent extends Component {
           ? this.d.views
           : [[false, this.d.viewType], [false, "search"]],
       domain: this.d.domain || [],
-      context: this.d.context || {},
+      // An embedded view is a read-only reference: no New / import / delete
+      // (there is no form to route "New" to in this standalone mount).
+      context: { ...(this.d.context || {}), create: false, import: false, delete: false },
       display: { controlPanel: {} },
+      // Row click opens the real record in a full form.
+      selectRecord: (resId) => this.openRecord(resId),
       noContentHelp: _t("No records match this view template."),
       // <View>/WithSearch expects globalState.searchModel to be a JSON
       // *string* (it JSON.parse()s it), not the exportState() object.
@@ -78,6 +82,20 @@ export class EmbeddedViewComponent extends Component {
 
   get ready() {
     return !this.state.failed && this.d && this.d.resModel && this.d.viewType
+  }
+
+  openRecord(resId) {
+    if (!resId) {
+      return
+    }
+    this.action.doAction({
+      type: "ir.actions.act_window",
+      res_model: this.d.resModel,
+      res_id: resId,
+      views: [[false, "form"]],
+      target: "current",
+      context: this.d.context || {},
+    })
   }
 
   openInFull() {
