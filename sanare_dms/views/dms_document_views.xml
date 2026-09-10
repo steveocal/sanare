@@ -137,6 +137,9 @@
                                    help="Publish the approved revision to the public website."/>
                             <field name="display_in_print" invisible="not parent_id"
                                    help="When the parent folder is printed, its full descendant tree is pulled into one combined document. Turn this off to skip this document (and everything under it) from that rollup."/>
+                            <field name="article_item" invisible="not parent_id"
+                                   widget="boolean_toggle"
+                                   help="Keep this document out of the navigation tree - it stays a child of its parent and shows only in the parent's detail pane."/>
                             <field name="report_layout"
                                    help="Report chrome used when this document is printed as the top-level document - a recursed child's own value is ignored."/>
                             <field name="can_publish" invisible="1"/>

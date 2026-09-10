@@ -1,14 +1,13 @@
-/* This deployment runs the backend in dark mode (ica_web_responsive) and the
-   client-action container does not paint a themed surface behind it, so the
-   custom panes need an explicit dark background. */
+/* Theme-aware: the client-action container doesn't paint a themed surface
+   behind these custom panes, so paint them from Odoo's own theme tokens
+   (they resolve to the right values in both light and dark). */
 
-$dms-bg:    #212529;
-$dms-panel: #2b3035;
-$dms-text:  #dee2e6;
-$dms-line:  rgba(255, 255, 255, .12);
-$dms-soft:  rgba(255, 255, 255, .06);
-$dms-hover: rgba(255, 255, 255, .10);
-$dms-sel:   rgba(255, 255, 255, .16);
+$dms-bg:    var(--o-view-background-color, #ffffff);
+$dms-panel: var(--o-gray-100, #f8f9fa);
+$dms-text:  var(--o-main-text-color, #374151);
+$dms-line:  var(--o-border-color, #dee2e6);
+$dms-hover: rgba(128, 128, 128, 0.12);
+$dms-sel:   rgba(128, 128, 128, 0.22);
 
 .o_dms_browser {
     background: $dms-bg;
@@ -70,6 +69,13 @@ $dms-sel:   rgba(255, 255, 255, .16);
     .o_dms_list {
         min-width: 0;
         background: $dms-bg;
+    }
+
+    .o_dms_detail_body {
+        max-width: 900px;
+
+        img { max-width: 100%; }
+        table { border-collapse: collapse; }
     }
 
     .o_dms_table {

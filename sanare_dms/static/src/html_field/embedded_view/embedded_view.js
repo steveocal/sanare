@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useSubEnv, useState, onError } from "@odoo/owl"
+import { Component, useSubEnv, useState, onError, onWillUnmount } from "@odoo/owl"
 import { _t } from "@web/core/l10n/translation"
 import { useService } from "@web/core/utils/hooks"
 import * as embedUtils from "@html_editor/others/embedded_component_utils"
@@ -51,7 +51,15 @@ export class EmbeddedViewComponent extends Component {
 
   setup() {
     this.action = useService("action")
+    this.orm = useService("orm")
     this.d = readProps(this.props.host)
+    this._saveTimer = null
+    onWillUnmount(() => {
+      if (this._saveTimer) {
+        clearTimeout(this._saveTimer)
+        this.saveState()
+      }
+    })
     this.state = useState({
       failed: false,
       height: this.d.height || null,
@@ -163,6 +171,30 @@ export class EmbeddedViewComponent extends Component {
       ;(editable || this.props.host).dispatchEvent(new Event("input", { bubbles: true }))
     } catch {
       // The save path re-reads the DOM anyway.
+    }
+    // Also persist server-side (debounced) so zoom / size / view stick
+    // even without a manual form save.
+    clearTimeout(this._saveTimer)
+    this._saveTimer = setTimeout(() => this.saveState(), 800)
+  }
+
+  async saveState() {
+    this._saveTimer = null
+    const documentId = this.env.model?.root?.resId
+    if (!documentId) {
+      return
+    }
+    try {
+      await this.orm.call("sanare.document", "save_view_block_state", [
+        documentId,
+        {
+          zoom: this.state.zoom,
+          height: this.state.height || undefined,
+          viewType: this.state.viewType,
+        },
+      ])
+    } catch {
+      // setAttribute already kept the DOM current for a form save.
     }
   }
 

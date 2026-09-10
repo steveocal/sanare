@@ -38,6 +38,7 @@ CONTAINER_TYPES = {"folder", "html", "markdown"}
 # type, no form change: subject + To/Cc/Bcc + Send all live in the body,
 # rendered by the EmbeddedEmailSend OWL component.
 EMAIL_BLOCK_MARKER = "sanareEmailSend"
+VIEW_BLOCK_MARKER = "sanareView"
 
 VISIBILITY = [
     ("private", "Private"),
@@ -108,6 +109,13 @@ class SanareDocument(models.Model):
              "the New from Template picker / \"/template\" editor command. "
              "A flag, not a move - the document stays in its own folder and "
              "is still organized/found there exactly as before.",
+    )
+    article_item = fields.Boolean(
+        string="Article Item", default=False, copy=True,
+        help="An item is a child document that belongs to its parent but is "
+             "kept out of the navigation tree - it only shows in the parent's "
+             "detail pane (its \"items\" list). Same document in every other "
+             "respect.",
     )
 
     # -- custom properties ------------------------------------------------
@@ -924,12 +932,15 @@ class SanareDocument(models.Model):
         Contrast with browser_contents, which returns the same set with
         richer columns for the flat detail table. A container (folder, html
         or markdown - see CONTAINER_TYPES) can have has_children True;
-        Office Documents are always leaves."""
+        Office Documents are always leaves. Article items (article_item=True)
+        are omitted - they only live in their parent's detail pane."""
         recs = self.search(
-            [("parent_id", "=", parent_id or False)], order="is_folder desc, sequence, name"
+            [("parent_id", "=", parent_id or False), ("article_item", "=", False)],
+            order="is_folder desc, sequence, name",
         )
         data = self._read_group(
-            [("parent_id", "in", recs.filtered("can_have_children").ids)],
+            [("parent_id", "in", recs.filtered("can_have_children").ids),
+             ("article_item", "=", False)],
             ["parent_id"], ["__count"],
         )
         counts = {parent.id: count for parent, count in data}
@@ -1083,10 +1094,60 @@ class SanareDocument(models.Model):
                     "is_published": r.is_published,
                     "can_publish": r.can_publish,
                     "is_template": r.is_template,
+                    "article_item": r.article_item,
                 }
                 for r in recs
             ],
         }
+
+    @api.model
+    def browser_detail(self, document_id):
+        """The selected document's own content for the browser's detail
+        pane: rendered HTML for html/knowledge/markdown, a flag for
+        everything else. Folders have no detail - the pane shows their
+        contents list instead."""
+        doc = self.browse(int(document_id)).exists()
+        if not doc or doc.is_folder:
+            return False
+        if doc.content_type in HTML_TYPES:
+            body = doc._resolve_embedded_refs(doc.content_html or "")
+        elif doc.content_type == "markdown":
+            body = doc.content_markdown_html or ""
+        else:
+            body = False
+        return {
+            "id": doc.id,
+            "name": doc.name,
+            "content_type": doc.content_type,
+            "content_html": body,
+            "updated": fields.Datetime.to_string(doc.write_date),
+        }
+
+    @api.model
+    def save_view_block_state(self, document_id, props):
+        """Persist the zoom / height / viewType a user set on a
+        data-embedded="sanareView" block, without a full form save -
+        updates the marker's data-embedded-props in place. No version
+        snapshot (dms_skip_version)."""
+        doc = self.browse(int(document_id)).exists()
+        if not doc or VIEW_BLOCK_MARKER not in (doc.content_html or ""):
+            return False
+        keep = {k: v for k, v in (props or {}).items()
+                if k in ("zoom", "height", "viewType")}
+        if not keep:
+            return False
+        root = lxml.html.fromstring("<div>%s</div>" % doc.content_html)
+        for marker in root.xpath('//div[@data-embedded="sanareView"]'):
+            try:
+                cur = json.loads(marker.get("data-embedded-props") or "{}")
+            except (ValueError, TypeError):
+                cur = {}
+            cur.update(keep)
+            marker.set("data-embedded-props", json.dumps(cur))
+        new_html = (root.text or "") + "".join(
+            lxml.html.tostring(c, encoding="unicode") for c in root)
+        doc.with_context(dms_skip_version=True).write({"content_html": new_html})
+        return True
 
     @api.model
     def browser_move(self, doc_ids, target_parent_id):

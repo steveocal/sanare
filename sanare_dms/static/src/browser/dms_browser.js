@@ -9,6 +9,7 @@ import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_d
 import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
 import {
     Component, useState, useChildSubEnv, useEffect, useRef, onMounted, useExternalListener,
+    markup,
 } from "@odoo/owl";
 
 const MODEL = "sanare.document";
@@ -61,6 +62,10 @@ export class DmsBrowser extends Component {
 
         this.state = useState({
             tree: [],
+            // detail pane: the selected non-folder document's rendered
+            // content, or null when a folder is selected (pane shows the
+            // contents list instead).
+            detail: null,
             selectedId: false, // false === the "Documents" root
             // "folder" (normal tree browsing, right pane shows state.records
             // for state.selectedId) or "templates" (right pane shows the
@@ -103,7 +108,7 @@ export class DmsBrowser extends Component {
                 state: this.state,
                 iconFor: (node) => this.iconFor(node),
                 toggle: (n) => this.toggleNode(n),
-                select: (id) => this.selectFolder(id),
+                select: (id) => this.select(id),
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
                 openTemplatePicker: (parentId) => this.openTemplatePicker(parentId),
@@ -215,8 +220,32 @@ export class DmsBrowser extends Component {
     }
 
     selectFolder(folderId) {
+        this.select(folderId || false);
+    }
+
+    // Tree selection: any node - folder or leaf document. loadContents gives
+    // the breadcrumb (+ children list for a container); loadDetail gives the
+    // document body for a leaf, or null for a folder.
+    select(id) {
         this.state.viewMode = "folder";
-        this.loadContents(folderId || false);
+        this.loadContents(id || false);
+        this.loadDetail(id || false);
+    }
+
+    async loadDetail(id) {
+        if (!id) {
+            this.state.detail = null;
+            return;
+        }
+        try {
+            const d = await this.orm.call(MODEL, "browser_detail", [id]);
+            if (d && d.content_html) {
+                d.content_html = markup(d.content_html);
+            }
+            this.state.detail = d || null;
+        } catch {
+            this.state.detail = null;
+        }
     }
 
     // ---- templates section -------------------------------------------

@@ -108,9 +108,18 @@
                          class="text-muted small px-2 py-1">No folders yet</div>
                 </div>
 
-                <!-- list pane -->
+                <!-- detail / list pane -->
                 <div class="o_dms_list flex-grow-1 overflow-auto" t-if="state.viewMode === 'folder'">
-                    <table class="table table-sm table-hover mb-0 o_dms_table">
+                    <div class="o_dms_detail p-3" t-if="state.detail">
+                        <h4 class="mb-3" t-esc="state.detail.name"/>
+                        <div t-if="state.detail.content_html" class="o_dms_detail_body"
+                             t-out="state.detail.content_html"/>
+                        <div t-else="" class="text-muted fst-italic">
+                            No preview for this document type.
+                            <a href="#" t-on-click.prevent="() => this.openDocument(state.detail.id)">Open it</a>.
+                        </div>
+                    </div>
+                    <table class="table table-sm table-hover mb-0 o_dms_table" t-else="">
                         <thead class="o_dms_thead">
                             <tr>
                                 <th style="width: 45%">Name</th>
@@ -274,7 +283,7 @@
              t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
              t-att-class="{ 'o_dms_selected': isSelected, 'o_dms_drop_target': isDragOver }"
              draggable="true"
-             t-on-click="() => props.node.can_have_children ? env.dms.select(props.node.id) : null"
+             t-on-click="() => env.dms.select(props.node.id)"
              t-on-dblclick="() => props.node.is_folder ? null : env.dms.open(props.node.id)"
              t-on-dragstart="(ev) => env.dms.dragStart(props.node, ev)"
              t-on-dragover="(ev) => props.node.can_have_children ? env.dms.dragOver(props.node.id, ev) : null"
