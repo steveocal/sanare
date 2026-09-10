@@ -3,6 +3,12 @@
 
     .card-header {
         background-color: var(--o-gray-100, #f8f9fa);
+
+        .btn-group .btn {
+            --bs-btn-padding-y: 0.1rem;
+            --bs-btn-padding-x: 0.4rem;
+            line-height: 1.2;
+        }
     }
 
     .o_sanare_embedded_view_body {
@@ -11,7 +17,12 @@
         max-height: 85vh;
         overflow: auto;
         resize: vertical;       // drag grip, bottom-right corner
+    }
 
+    // Magnification: `zoom` reflows properly (unlike transform: scale) and is
+    // supported by Chromium and Firefox 126+. On older browsers it is simply
+    // ignored - the view renders at 100%.
+    .o_sanare_view_zoom {
         // The embedded View brings its own control panel / renderer; keep it
         // from trying to be full-viewport height inside the card.
         .o_view_controller {

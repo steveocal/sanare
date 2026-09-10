@@ -14,10 +14,36 @@ function readProps(host) {
   }
 }
 
-// Mounts a real Odoo <View> (list/kanban/pivot/graph/...) with its search
-// bar inside the document body, driven by the descriptor the "Save as View
-// Template" cog action captured. onError() guards the mount so a <View>
-// failure degrades to a fallback link instead of crashing the editor.
+const VIEW_ICONS = {
+  list: "fa-list-ul",
+  kanban: "fa-th-large",
+  pivot: "fa-table",
+  graph: "fa-bar-chart",
+  calendar: "fa-calendar",
+  map: "fa-map-o",
+  activity: "fa-clock-o",
+  cohort: "fa-line-chart",
+  gantt: "fa-tasks",
+  hierarchy: "fa-sitemap",
+}
+const VIEW_LABELS = {
+  list: _t("List"),
+  kanban: _t("Kanban"),
+  pivot: _t("Pivot"),
+  graph: _t("Graph"),
+  calendar: _t("Calendar"),
+  map: _t("Map"),
+  activity: _t("Activity"),
+  cohort: _t("Cohort"),
+  gantt: _t("Gantt"),
+  hierarchy: _t("Hierarchy"),
+}
+
+// Mounts a real Odoo <View> with its search bar inside the document body,
+// from the descriptor the "Save as View Template" cog action captured.
+// onError() guards the mount so a failure degrades to a fallback link
+// instead of crashing the editor. Persisted UI state (height, zoom, the
+// picked view type) rides in data-embedded-props next to the descriptor.
 export class EmbeddedViewComponent extends Component {
   static template = "sanare_dms.EmbeddedView"
   static components = { View }
@@ -26,10 +52,13 @@ export class EmbeddedViewComponent extends Component {
   setup() {
     this.action = useService("action")
     this.d = readProps(this.props.host)
-    this.state = useState({ failed: false, height: this.d.height || null })
+    this.state = useState({
+      failed: false,
+      height: this.d.height || null,
+      zoom: this.d.zoom || 1,
+      viewType: this.d.viewType,
+    })
 
-    // <View> reads env.config (view switcher, breadcrumbs). Give it a
-    // minimal standalone config so it can mount outside an action window.
     useSubEnv({
       config: {
         actionType: "ir.actions.act_window",
@@ -45,35 +74,18 @@ export class EmbeddedViewComponent extends Component {
       },
     })
 
-    this.viewProps = {
-      type: this.d.viewType,
-      resModel: this.d.resModel,
-      views:
-        this.d.views && this.d.views.length
-          ? this.d.views
-          : [[false, this.d.viewType], [false, "search"]],
-      domain: this.d.domain || [],
-      context: this.d.context || {},
-      display: { controlPanel: {} },
-      // The standalone mount has no action to fall back on, so wire New and
-      // row-click to open a full form ourselves; delete/multi-edit work
-      // in-place in the list and need nothing.
-      selectRecord: (resId) => this.openRecord(resId),
-      createRecord: () => this.openRecord(false),
-      noContentHelp: _t("No records match this view template."),
-      // <View>/WithSearch expects globalState.searchModel to be a JSON
-      // *string* (it JSON.parse()s it), not the exportState() object.
-      ...(this.d.searchState
-        ? {
-            globalState: {
-              searchModel:
-                typeof this.d.searchState === "string"
-                  ? this.d.searchState
-                  : JSON.stringify(this.d.searchState),
-            },
-          }
-        : {}),
-    }
+    // Stable identities so <View> doesn't see "changed" callbacks each render.
+    this._selectRecord = (resId) => this.openRecord(resId)
+    this._createRecord = () => this.openRecord(false)
+    this._searchModelStr = this.d.searchState
+      ? typeof this.d.searchState === "string"
+        ? this.d.searchState
+        : JSON.stringify(this.d.searchState)
+      : null
+    this._views =
+      this.d.views && this.d.views.length
+        ? this.d.views
+        : [[false, this.d.viewType], [false, "search"]]
 
     onError((error) => {
       console.warn("[sanare_dms] embedded view failed to mount", error)
@@ -82,33 +94,114 @@ export class EmbeddedViewComponent extends Component {
   }
 
   get ready() {
-    return !this.state.failed && this.d && this.d.resModel && this.d.viewType
+    return !this.state.failed && this.d && this.d.resModel && this.state.viewType
+  }
+
+  get viewProps() {
+    // Cache per view type: only `type` ever changes, and t-key already
+    // remounts <View> on that. Returning a stable object keeps zoom/resize
+    // renders from re-rendering the whole view.
+    if (!this._vp || this._vpType !== this.state.viewType) {
+      this._vpType = this.state.viewType
+      this._vp = {
+        type: this.state.viewType,
+        resModel: this.d.resModel,
+        views: this._views,
+        domain: this.d.domain || [],
+        context: this.d.context || {},
+        display: { controlPanel: {} },
+        selectRecord: this._selectRecord,
+        createRecord: this._createRecord,
+        noContentHelp: _t("No records match this view template."),
+        ...(this._searchModelStr
+          ? { globalState: { searchModel: this._searchModelStr } }
+          : {}),
+      }
+    }
+    return this._vp
+  }
+
+  get switchableTypes() {
+    const types = []
+    for (const entry of this.d.views || []) {
+      const t = entry && entry[1]
+      if (t && t !== "search" && t !== "form" && !types.includes(t)) {
+        types.push(t)
+      }
+    }
+    if (!types.includes(this.state.viewType)) {
+      types.unshift(this.state.viewType)
+    }
+    return types.map((t) => ({
+      type: t,
+      label: VIEW_LABELS[t] || t,
+      icon: VIEW_ICONS[t] || "fa-table",
+    }))
   }
 
   get bodyStyle() {
     return this.state.height ? `height:${this.state.height}px` : ""
   }
 
-  // The body has `resize: vertical` (a drag grip). Persist the height the
-  // user dragged to into data-embedded-props so it survives reopen / a
-  // "New from Template" copy.
-  onResize(ev) {
-    const h = Math.round(ev.currentTarget.getBoundingClientRect().height)
-    if (h && h !== this.state.height) {
-      this.state.height = h
-      try {
-        this.props.host.setAttribute(
-          "data-embedded-props",
-          JSON.stringify({ ...this.d, height: h })
-        )
-        const editable = this.props.host.closest(".odoo-editor-editable")
-        ;(editable || this.props.host).dispatchEvent(new Event("input", { bubbles: true }))
-      } catch {
-        // The save path re-reads the DOM anyway.
-      }
+  get zoomPct() {
+    return Math.round(this.state.zoom * 100) + "%"
+  }
+
+  // ---- persisted UI state --------------------------------------
+  persist() {
+    try {
+      this.props.host.setAttribute(
+        "data-embedded-props",
+        JSON.stringify({
+          ...this.d,
+          height: this.state.height || undefined,
+          zoom: this.state.zoom,
+          viewType: this.state.viewType,
+        })
+      )
+      const editable = this.props.host.closest(".odoo-editor-editable")
+      ;(editable || this.props.host).dispatchEvent(new Event("input", { bubbles: true }))
+    } catch {
+      // The save path re-reads the DOM anyway.
     }
   }
 
+  setViewType(t) {
+    if (t && t !== this.state.viewType) {
+      this.state.viewType = t
+      this.persist()
+    }
+  }
+
+  setZoom(z) {
+    const clamped = Math.min(2, Math.max(0.5, Math.round(z * 10) / 10))
+    if (clamped !== this.state.zoom) {
+      this.state.zoom = clamped
+      this.persist()
+    }
+  }
+
+  zoomBy(delta) {
+    this.setZoom(this.state.zoom + delta)
+  }
+
+  // The body has `resize: vertical` (a drag grip). Only persist when the
+  // height actually changed between mousedown and mouseup - a plain click
+  // on a row/filter must not pin the height or dirty the document.
+  onBodyMouseDown(ev) {
+    this._h0 = Math.round(ev.currentTarget.getBoundingClientRect().height)
+  }
+
+  onResize(ev) {
+    const h = Math.round(ev.currentTarget.getBoundingClientRect().height)
+    if (this._h0 && Math.abs(h - this._h0) > 1 && h !== this.state.height) {
+      this.state.height = h
+      this.persist()
+    }
+    this._h0 = null
+  }
+
+  // ---- navigation ---------------------------------------------
   openRecord(resId) {
     const action = {
       type: "ir.actions.act_window",
@@ -131,7 +224,7 @@ export class EmbeddedViewComponent extends Component {
       views:
         this.d.views && this.d.views.length
           ? this.d.views
-          : [[false, this.d.viewType], [false, "search"]],
+          : [[false, this.state.viewType], [false, "search"]],
       domain: this.d.domain || [],
       context: this.d.context || {},
       target: "current",
