@@ -110,14 +110,9 @@
 
                 <!-- detail / list pane -->
                 <div class="o_dms_list flex-grow-1 overflow-auto" t-if="state.viewMode === 'folder'">
-                    <div class="o_dms_detail p-3" t-if="state.detail">
-                        <h4 class="mb-3" t-esc="state.detail.name"/>
-                        <div t-if="state.detail.content_html" class="o_dms_detail_body"
-                             t-out="state.detail.content_html"/>
-                        <div t-else="" class="text-muted fst-italic">
-                            No preview for this document type.
-                            <a href="#" t-on-click.prevent="() => this.openDocument(state.detail.id)">Open it</a>.
-                        </div>
+                    <div class="o_dms_doc_form h-100" t-if="state.detail">
+                        <DmsDocForm resId="state.detail.id" t-key="state.detail.id"
+                                    onSaved="() => this.refresh()"/>
                     </div>
                     <table class="table table-sm table-hover mb-0 o_dms_table" t-else="">
                         <thead class="o_dms_thead">
@@ -326,6 +321,13 @@
                 <DmsTreeNode node="child" depth="props.depth + 1"/>
             </t>
         </t>
+    </t>
+
+    <t t-name="sanare_dms.DmsDocForm">
+        <View t-if="!state.failed" t-props="viewProps"/>
+        <div t-else="" class="text-muted fst-italic p-3">
+            This document can't be shown here.
+        </div>
     </t>
 
 </templates>

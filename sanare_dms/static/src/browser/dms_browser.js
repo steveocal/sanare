@@ -7,9 +7,10 @@ import { Dropdown } from "@web/core/dropdown/dropdown";
 import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
+import { View } from "@web/views/view";
 import {
-    Component, useState, useChildSubEnv, useEffect, useRef, onMounted, useExternalListener,
-    markup,
+    Component, useState, useChildSubEnv, useSubEnv, useEffect, useRef, onMounted,
+    useExternalListener, onError,
 } from "@odoo/owl";
 
 const MODEL = "sanare.document";
@@ -44,11 +45,57 @@ export class DmsTreeNode extends Component {
 DmsTreeNode.components = { DmsTreeNode, Dropdown, DropdownItem };
 
 /* ------------------------------------------------------------------ *
+ *  Inline document editor for the detail pane
+ *  Mounts the real sanare.document form view (so the sanare_html editor,
+ *  its embedded blocks - email / view / doc-ref - and every field render
+ *  and edit exactly as on the standalone form) inside a minimal
+ *  standalone action config. onError degrades a mount failure to a link.
+ * ------------------------------------------------------------------ */
+export class DmsDocForm extends Component {
+    static template = "sanare_dms.DmsDocForm";
+    static components = { View };
+    static props = { resId: Number, onSaved: { type: Function, optional: true } };
+
+    setup() {
+        this.state = useState({ failed: false });
+        useSubEnv({
+            config: {
+                actionType: "ir.actions.act_window",
+                actionId: false,
+                views: [[false, "form"]],
+                viewType: "form",
+                breadcrumbs: [],
+                noBreadcrumbs: true,
+                getDisplayName: () => "",
+                setDisplayName: () => {},
+                historyBack: () => {},
+                historyForward: () => {},
+            },
+        });
+        onError((error) => {
+            console.warn("[sanare_dms] inline form failed to mount", error);
+            this.state.failed = true;
+        });
+    }
+
+    get viewProps() {
+        return {
+            type: "form",
+            resModel: "sanare.document",
+            resId: this.props.resId,
+            display: { controlPanel: {} },
+            onSave: () => this.props.onSaved?.(),
+            onDiscard: () => this.props.onSaved?.(),
+        };
+    }
+}
+
+/* ------------------------------------------------------------------ *
  *  Main client action
  * ------------------------------------------------------------------ */
 export class DmsBrowser extends Component {
     static template = "sanare_dms.DmsBrowser";
-    static components = { DmsTreeNode, Dropdown, DropdownItem };
+    static components = { DmsTreeNode, DmsDocForm, Dropdown, DropdownItem };
     static props = ["*"];
 
     setup() {
@@ -239,10 +286,8 @@ export class DmsBrowser extends Component {
         }
         try {
             const d = await this.orm.call(MODEL, "browser_detail", [id]);
-            if (d && d.content_html) {
-                d.content_html = markup(d.content_html);
-            }
-            this.state.detail = d || null;
+            // A folder has no detail form - the pane keeps showing its list.
+            this.state.detail = d && !d.is_folder ? d : null;
         } catch {
             this.state.detail = null;
         }

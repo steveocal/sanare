@@ -71,11 +71,16 @@ $dms-sel:   rgba(128, 128, 128, 0.22);
         background: $dms-bg;
     }
 
-    .o_dms_detail_body {
-        max-width: 900px;
-
-        img { max-width: 100%; }
-        table { border-collapse: collapse; }
+    /* Inline sanare.document form in the detail pane: let it flow inside the
+       scrolling pane instead of claiming the full viewport height. */
+    .o_dms_doc_form {
+        .o_form_view,
+        .o_form_renderer,
+        .o_content {
+            height: auto;
+            min-height: 0;
+        }
+        .o_form_sheet_bg { background: transparent; }
     }
 
     .o_dms_table {

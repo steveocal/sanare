@@ -1102,26 +1102,13 @@ class SanareDocument(models.Model):
 
     @api.model
     def browser_detail(self, document_id):
-        """The selected document's own content for the browser's detail
-        pane: rendered HTML for html/knowledge/markdown, a flag for
-        everything else. Folders have no detail - the pane shows their
-        contents list instead."""
+        """Lightweight probe for the browser's detail pane. A non-folder
+        document gets the inline form editor (mounted client-side); a
+        folder has no detail and the pane keeps showing its contents list."""
         doc = self.browse(int(document_id)).exists()
-        if not doc or doc.is_folder:
+        if not doc:
             return False
-        if doc.content_type in HTML_TYPES:
-            body = doc._resolve_embedded_refs(doc.content_html or "")
-        elif doc.content_type == "markdown":
-            body = doc.content_markdown_html or ""
-        else:
-            body = False
-        return {
-            "id": doc.id,
-            "name": doc.name,
-            "content_type": doc.content_type,
-            "content_html": body,
-            "updated": fields.Datetime.to_string(doc.write_date),
-        }
+        return {"id": doc.id, "name": doc.name, "is_folder": doc.is_folder}
 
     @api.model
     def save_view_block_state(self, document_id, props):
