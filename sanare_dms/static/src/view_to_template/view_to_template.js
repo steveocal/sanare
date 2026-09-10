@@ -60,6 +60,26 @@ export class SanareViewToTemplate extends Component {
         cfg.displayName ||
         sm.resModel,
     }
+
+    // Pivot / graph don't put their config in the search model - grab it
+    // from the active view controller's model so print can rebuild the
+    // matrix / chart server-side.
+    const md = this.env.model && this.env.model.metaData
+    if (md && cfg.viewType === "pivot") {
+      descriptor.pivot = {
+        rowGroupBys: (md.rowGroupBys || md.fullRowGroupBys || []).map(String),
+        colGroupBys: (md.colGroupBys || md.fullColGroupBys || []).map(String),
+        measures: (md.activeMeasures || md.measures || ["__count"]).map(String),
+      }
+    }
+    if (md && cfg.viewType === "graph") {
+      descriptor.graph = {
+        mode: md.mode || "bar",
+        measure: md.measure || "__count",
+        groupBy: (md.groupBy || []).map(String),
+        stacked: !!md.stacked,
+      }
+    }
     try {
       const res = await this.orm.call("sanare.document", "create_view_template", [
         descriptor,

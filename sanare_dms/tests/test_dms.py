@@ -556,6 +556,39 @@ class TestSanareDms(TransactionCase):
         self.assertNotIn("ZZ Table Test Co", pub)
         self.assertIn("Embedded view", pub)
 
+    def _view_block_doc(self, descriptor):
+        import json
+        return self.Doc.create({
+            "name": "VB", "content_type": "knowledge_html",
+            "content_html": (
+                "<div data-embedded=\"sanareView\" data-embedded-props='%s'></div>"
+                % json.dumps(descriptor)),
+        })
+
+    def test_view_block_renders_graph_svg(self):
+        P = self.env["res.partner"]
+        P.create({"name": "GA", "is_company": True})
+        P.create({"name": "GB", "is_company": False})
+        doc = self._view_block_doc({
+            "resModel": "res.partner", "viewType": "graph",
+            "views": [[False, "graph"]], "domain": [], "context": {}, "title": "By type",
+            "graph": {"mode": "bar", "measure": "__count", "groupBy": ["is_company"]},
+        })
+        rendered = doc._resolve_embedded_refs(doc.content_html)
+        self.assertNotIn("sanareView", rendered)
+        self.assertIn("data:image/svg+xml;base64", rendered)
+
+    def test_view_block_renders_pivot_matrix(self):
+        doc = self._view_block_doc({
+            "resModel": "res.partner", "viewType": "pivot",
+            "views": [[False, "pivot"]], "domain": [], "context": {}, "title": "P",
+            "pivot": {"rowGroupBys": ["is_company"], "colGroupBys": [], "measures": ["__count"]},
+        })
+        rendered = doc._resolve_embedded_refs(doc.content_html)
+        self.assertNotIn("sanareView", rendered)
+        self.assertIn("<table", rendered)
+        self.assertIn("Total", rendered)
+
 
 @tagged("post_install", "-at_install")
 class TestSanareDmsEmailSend(MailCommon):

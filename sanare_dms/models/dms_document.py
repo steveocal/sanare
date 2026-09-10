@@ -930,41 +930,97 @@ class SanareDocument(models.Model):
                 return str(value)
         return str(value)
 
+    @staticmethod
+    def _grp_label(value):
+        if isinstance(value, (list, tuple)) and len(value) > 1:
+            return str(value[1])
+        if value in (False, None):
+            return "—"
+        return str(value)
+
+    @staticmethod
+    def _num(value):
+        try:
+            f = float(value or 0)
+        except (TypeError, ValueError):
+            return str(value or "")
+        return "{:,.0f}".format(f) if f == int(f) else "{:,.2f}".format(f)
+
+    def _read_group_rows(self, Model, domain, fields, groupby):
+        """read_group across Odoo versions -> list of plain dicts keyed by
+        the groupby specs and the raw field names."""
+        if hasattr(Model, "read_group"):
+            try:
+                return Model.read_group(domain, fields, groupby, lazy=False)
+            except (AttributeError, TypeError):
+                pass
+        # Odoo 18/19: formatted_read_group(domain, groupby, aggregates)
+        aggs = ["__count"] + ["%s:sum" % f for f in fields if f != "__count"]
+        raw = Model.formatted_read_group(domain, groupby, aggs)
+        out = []
+        for g in raw:
+            row = dict(g)
+            for f in fields:
+                if f != "__count" and "%s:sum" % f in row:
+                    row[f] = row.pop("%s:sum" % f)
+            out.append(row)
+        return out
+
+    _VIEW_BLOCK_WRAP = (
+        "<div class='o_dms_view_block' style='margin:8px 0'>"
+        "<p style='font-weight:bold;margin:0 0 4px'>%s</p>%s</div>"
+    )
+
     def _render_view_block(self, props, public_only=False):
-        """Re-run a captured view descriptor as a static HTML table for
-        print/download. Falls back to a plain note when it can't (public
-        website render, no list view, no access, unknown model)."""
+        """Re-run a captured view descriptor as static HTML for print /
+        download: a table for a list, a matrix for a pivot, an inline SVG
+        for a graph. Falls back to a plain note when it can't (public
+        website render, no supported view, no access, unknown model)."""
         model = (props or {}).get("resModel") or ""
         if public_only or not model or model not in self.env:
             return self._view_block_note(model)
         views = props.get("views") or []
         view_types = [v[1] for v in views if isinstance(v, (list, tuple)) and len(v) > 1]
-        if props.get("viewType") != "list" and "list" not in view_types:
-            return self._view_block_note(model)
-        list_view_id = next(
-            (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"), False)
-        domain = props.get("domain") or []
+        vt = props.get("viewType")
         context = {k: v for k, v in (props.get("context") or {}).items()
                    if not k.startswith("default_") and k not in (
                        "active_id", "active_ids", "active_model", "params")}
+        domain = props.get("domain") or []
+        title = escape(props.get("title") or model)
         try:
             Model = self.env[model].with_context(**context)
-            names, meta, order = self._view_block_fields(model, list_view_id)
-            if not names:
+            if vt == "graph" and props.get("graph"):
+                inner = self._render_graph_block(Model, domain, props["graph"])
+            elif vt == "pivot" and props.get("pivot"):
+                inner = self._render_pivot_block(Model, domain, props["pivot"])
+            elif vt == "list" or "list" in view_types:
+                list_view_id = next(
+                    (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"),
+                    False)
+                inner = self._render_list_block(Model, model, domain, list_view_id)
+            else:
                 return self._view_block_note(model)
-            total = Model.search_count(domain)
-            rows = Model.search_read(
-                domain, names, limit=self._VIEW_BLOCK_ROW_LIMIT, order=order or None)
-        except Exception:  # access error, bad domain, gone model, ...
+        except Exception:  # noqa: BLE001 - any failure degrades to the note
             return self._view_block_note(model)
+        if not inner:
+            return self._view_block_note(model)
+        return self._VIEW_BLOCK_WRAP % (title, inner)
 
+    def _render_list_block(self, Model, model, domain, list_view_id):
+        names, meta, order = self._view_block_fields(model, list_view_id)
+        if not names:
+            return ""
+        total = Model.search_count(domain)
+        rows = Model.search_read(
+            domain, names, limit=self._VIEW_BLOCK_ROW_LIMIT, order=order or None)
         cell = "border:1px solid #d0d0d0;padding:3px 7px;text-align:left;vertical-align:top"
         head = "".join(
             "<th style='%s;background:#f3f3f3;font-weight:bold'>%s</th>"
             % (cell, escape(meta.get(n, {}).get("string") or n)) for n in names)
         body = "".join(
             "<tr>%s</tr>" % "".join(
-                "<td style='%s'>%s</td>" % (cell, escape(self._view_block_cell(r.get(n), meta.get(n, {}))))
+                "<td style='%s'>%s</td>"
+                % (cell, escape(self._view_block_cell(r.get(n), meta.get(n, {}))))
                 for n in names)
             for r in rows)
         more = ""
@@ -972,12 +1028,163 @@ class SanareDocument(models.Model):
             more = ("<p style='color:#666;font-size:11px;margin:3px 0 0'>%s</p>"
                     % escape(self.env._("Showing %(shown)s of %(total)s records.",
                                         shown=len(rows), total=total)))
-        return (
-            "<div class='o_dms_view_block' style='margin:8px 0'>"
-            "<p style='font-weight:bold;margin:0 0 4px'>%s</p>"
-            "<table style='border-collapse:collapse;width:100%%;font-size:12px'>"
-            "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>%s</div>"
-        ) % (escape(props.get("title") or model), head, body, more)
+        return ("<table style='border-collapse:collapse;width:100%%;font-size:12px'>"
+                "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>%s") % (head, body, more)
+
+    def _render_pivot_block(self, Model, domain, cfg):
+        """First row group-by x optional first col group-by, all active
+        measures. Deeper nesting is flattened to the first level."""
+        rows_gb = (cfg.get("rowGroupBys") or [])[:1]
+        cols_gb = (cfg.get("colGroupBys") or [])[:1]
+        measures = [m for m in (cfg.get("measures") or ["__count"]) if m]
+        if not rows_gb and not measures:
+            return ""
+        mlabels = self._view_block_measure_labels(Model._name, measures)
+        groupby = rows_gb + cols_gb
+        agg_fields = [m for m in measures if m != "__count"]
+        groups = self._read_group_rows(Model, domain, agg_fields, groupby) if groupby \
+            else [{}]
+        cell = "border:1px solid #d0d0d0;padding:3px 7px;text-align:right"
+        rk = rows_gb[0] if rows_gb else None
+        ck = cols_gb[0] if cols_gb else None
+
+        def mval(g, m):
+            return g.get("__count", 0) if m == "__count" else (g.get(m) or 0)
+
+        col_keys = []
+        matrix = {}
+        row_order = []
+        for g in groups:
+            rl = self._grp_label(g.get(rk)) if rk else self.env._("Total")
+            cl = self._grp_label(g.get(ck)) if ck else ""
+            if rl not in matrix:
+                matrix[rl] = {}
+                row_order.append(rl)
+            if cl not in col_keys:
+                col_keys.append(cl)
+            matrix[rl][cl] = {m: mval(g, m) for m in measures}
+
+        head_cells = ["<th style='%s;text-align:left;background:#f3f3f3'>%s</th>"
+                      % (cell, escape(self._grp_label(rk) if rk else ""))]
+        for cl in col_keys:
+            for m in measures:
+                lbl = (escape(cl) + " · " if cl else "") + escape(mlabels[m])
+                head_cells.append("<th style='%s;background:#f3f3f3'>%s</th>" % (cell, lbl))
+        body_rows = []
+        totals = {(cl, m): 0.0 for cl in col_keys for m in measures}
+        for rl in row_order:
+            tds = ["<td style='%s;text-align:left'>%s</td>" % (cell, escape(rl))]
+            for cl in col_keys:
+                for m in measures:
+                    v = matrix[rl].get(cl, {}).get(m, 0) or 0
+                    totals[(cl, m)] += float(v or 0)
+                    tds.append("<td style='%s'>%s</td>" % (cell, escape(self._num(v))))
+            body_rows.append("<tr>%s</tr>" % "".join(tds))
+        tot_tds = ["<td style='%s;text-align:left;font-weight:bold'>%s</td>"
+                   % (cell, escape(self.env._("Total")))]
+        for cl in col_keys:
+            for m in measures:
+                tot_tds.append("<td style='%s;font-weight:bold'>%s</td>"
+                               % (cell, escape(self._num(totals[(cl, m)]))))
+        body_rows.append("<tr>%s</tr>" % "".join(tot_tds))
+        return ("<table style='border-collapse:collapse;width:100%%;font-size:12px'>"
+                "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>") % (
+                    "".join(head_cells), "".join(body_rows))
+
+    def _view_block_measure_labels(self, model, measures):
+        out = {}
+        real = [m for m in measures if m != "__count"]
+        meta = self.env[model].fields_get(real, ["string"]) if real else {}
+        for m in measures:
+            out[m] = self.env._("Count") if m == "__count" else (
+                meta.get(m, {}).get("string") or m)
+        return out
+
+    def _render_graph_block(self, Model, domain, cfg):
+        mode = (cfg.get("mode") or "bar").lower()
+        measure = cfg.get("measure") or "__count"
+        gb = (cfg.get("groupBy") or [])[:1]
+        if not gb:
+            return ""
+        agg_fields = [] if measure == "__count" else [measure]
+        groups = self._read_group_rows(Model, domain, agg_fields, gb)
+        pairs = []
+        for g in groups:
+            label = self._grp_label(g.get(gb[0]))
+            val = g.get("__count", 0) if measure == "__count" else (g.get(measure) or 0)
+            try:
+                pairs.append((label, float(val or 0)))
+            except (TypeError, ValueError):
+                continue
+        pairs = pairs[:30]
+        if not pairs:
+            return ""
+        svg = self._svg_pie(pairs) if mode == "pie" else self._svg_bars(
+            pairs, line=(mode == "line"))
+        # Ship the SVG as a base64 <img> - it survives the HTML round-trip in
+        # _resolve_embedded_refs intact and wkhtmltopdf renders it.
+        import base64
+        b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+        return "<img src='data:image/svg+xml;base64,%s' style='max-width:100%%'/>" % b64
+
+    # -- inline SVG (wkhtmltopdf renders inline <svg> fine) -------------
+    def _svg_bars(self, pairs, line=False):
+        W, H, pad = 640, 260, 34
+        maxv = max((v for _, v in pairs), default=0) or 1
+        n = len(pairs)
+        step = (W - 2 * pad) / max(n, 1)
+        parts = ["<svg xmlns='http://www.w3.org/2000/svg' width='%d' height='%d' "
+                 "font-family='sans-serif'>" % (W, H),
+                 "<line x1='%d' y1='%d' x2='%d' y2='%d' stroke='#999'/>"
+                 % (pad, H - pad, W - pad, H - pad)]
+        pts = []
+        for i, (label, v) in enumerate(pairs):
+            bh = (H - 2 * pad) * (v / maxv)
+            cx = pad + i * step + step / 2
+            y = H - pad - bh
+            if line:
+                pts.append("%.1f,%.1f" % (cx, y))
+                parts.append("<circle cx='%.1f' cy='%.1f' r='2.5' fill='#3465a4'/>" % (cx, y))
+            else:
+                parts.append("<rect x='%.1f' y='%.1f' width='%.1f' height='%.1f' fill='#3465a4'/>"
+                             % (pad + i * step + 3, y, max(step - 6, 1), bh))
+            parts.append("<text x='%.1f' y='%d' font-size='9' text-anchor='middle'>%s</text>"
+                         % (cx, H - pad + 12, escape(label[:14])))
+            parts.append("<text x='%.1f' y='%.1f' font-size='9' text-anchor='middle' "
+                         "fill='#555'>%s</text>" % (cx, y - 3, escape(self._num(v))))
+        if line and len(pts) > 1:
+            parts.insert(2, "<polyline points='%s' fill='none' stroke='#3465a4' "
+                            "stroke-width='1.5'/>" % " ".join(pts))
+        parts.append("</svg>")
+        return "".join(parts)
+
+    def _svg_pie(self, pairs):
+        import math
+        W = H = 240
+        cx = cy = 120
+        r = 96
+        total = sum(v for _, v in pairs) or 1
+        colors = ["#3465a4", "#73a946", "#c17d11", "#a40000", "#75507b",
+                  "#06989a", "#ce5c00", "#4e9a06", "#204a87", "#5c3566"]
+        parts = ["<svg xmlns='http://www.w3.org/2000/svg' width='%d' height='%d' "
+                 "font-family='sans-serif'>" % (W + 180, H)]
+        ang = -math.pi / 2
+        for i, (label, v) in enumerate(pairs):
+            frac = (v or 0) / total
+            a2 = ang + frac * 2 * math.pi
+            x1, y1 = cx + r * math.cos(ang), cy + r * math.sin(ang)
+            x2, y2 = cx + r * math.cos(a2), cy + r * math.sin(a2)
+            large = 1 if frac > 0.5 else 0
+            parts.append("<path d='M%d,%d L%.1f,%.1f A%d,%d 0 %d 1 %.1f,%.1f Z' fill='%s'/>"
+                         % (cx, cy, x1, y1, r, r, large, x2, y2, colors[i % len(colors)]))
+            parts.append("<rect x='%d' y='%d' width='10' height='10' fill='%s'/>"
+                         % (W + 8, 16 + i * 16, colors[i % len(colors)]))
+            parts.append("<text x='%d' y='%d' font-size='10'>%s (%s)</text>"
+                         % (W + 22, 25 + i * 16, escape(label[:18]),
+                            escape("%.0f%%" % (frac * 100))))
+            ang = a2
+        parts.append("</svg>")
+        return "".join(parts)
 
     @api.constrains("parent_id")
     def _check_parent_recursion(self):
