@@ -947,23 +947,38 @@ class SanareDocument(models.Model):
         return "{:,.0f}".format(f) if f == int(f) else "{:,.2f}".format(f)
 
     def _read_group_rows(self, Model, domain, fields, groupby):
-        """read_group across Odoo versions -> list of plain dicts keyed by
-        the groupby specs and the raw field names."""
+        """Aggregate across Odoo API generations -> list of plain dicts
+        keyed by the groupby specs and the raw field names. Tries
+        formatted_read_group, then read_group, then the private
+        _read_group (tuples) which is always present."""
+        aggs = ["__count"] + ["%s:sum" % f for f in fields if f != "__count"]
+
+        def _rename(g):
+            d = dict(g)
+            for f in fields:
+                if f != "__count" and "%s:sum" % f in d:
+                    d[f] = d.pop("%s:sum" % f)
+            return d
+
+        if hasattr(Model, "formatted_read_group"):
+            try:
+                return [_rename(g) for g in Model.formatted_read_group(domain, groupby, aggs)]
+            except Exception:
+                pass
         if hasattr(Model, "read_group"):
             try:
                 return Model.read_group(domain, fields, groupby, lazy=False)
-            except (AttributeError, TypeError):
+            except Exception:
                 pass
-        # Odoo 18/19: formatted_read_group(domain, groupby, aggregates)
-        aggs = ["__count"] + ["%s:sum" % f for f in fields if f != "__count"]
-        raw = Model.formatted_read_group(domain, groupby, aggs)
         out = []
-        for g in raw:
-            row = dict(g)
-            for f in fields:
-                if f != "__count" and "%s:sum" % f in row:
-                    row[f] = row.pop("%s:sum" % f)
-            out.append(row)
+        for tup in Model._read_group(domain, groupby, aggs):
+            d = {}
+            for i, gb in enumerate(groupby):
+                d[gb] = tup[i]
+            for j, ag in enumerate(aggs):
+                key = "__count" if ag == "__count" else ag.split(":")[0]
+                d[key] = tup[len(groupby) + j]
+            out.append(d)
         return out
 
     _VIEW_BLOCK_WRAP = (
@@ -995,19 +1010,23 @@ class SanareDocument(models.Model):
             def _vid(t):
                 return next((v[0] for v in views
                              if isinstance(v, (list, tuple)) and v[1] == t), False)
+            inner = ""
             if vt == "graph":
                 inner = self._render_graph_block(
                     Model, domain, props.get("graph") or {}, _vid("graph"))
             elif vt == "pivot":
                 inner = self._render_pivot_block(
                     Model, domain, props.get("pivot") or {}, _vid("pivot"))
-            elif vt == "list" or "list" in view_types:
-                list_view_id = next(
-                    (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"),
-                    False)
-                inner = self._render_list_block(Model, model, domain, list_view_id)
-            else:
-                return self._view_block_note(model)
+            # If the chart/matrix couldn't be built, or it's a list template,
+            # render the records table so *something* prints.
+            if not inner and (vt == "list" or "list" in view_types):
+                caption = ""
+                if vt in ("graph", "pivot"):
+                    caption = ("<p style='color:#888;font-size:11px;margin:0 0 3px'>%s</p>"
+                               % escape(self.env._(
+                                   "Chart data unavailable - showing records.")))
+                inner = caption + (self._render_list_block(
+                    Model, model, domain, _vid("list")) or "")
         except Exception:  # noqa: BLE001 - any failure degrades to the note
             return self._view_block_note(model)
         if not inner:
@@ -1050,6 +1069,10 @@ class SanareDocument(models.Model):
             rows_gb, cols_gb = arch["row"][:1], arch["col"][:1]
             if arch["measure"] and not measures:
                 measures = [arch["measure"]]
+        if not rows_gb and not cols_gb:
+            guess = self._first_groupable_field(Model)
+            if guess:
+                rows_gb = [guess]
         measures = measures or ["__count"]
         if not rows_gb and not cols_gb:
             return ""  # no dimensions -> note
@@ -1135,6 +1158,30 @@ class SanareDocument(models.Model):
         return {"row": row, "col": col, "measure": measure,
                 "mode": node.get("type")}
 
+    def _first_groupable_field(self, Model):
+        """Last-resort axis for a graph/pivot whose group-by was never
+        captured and isn't in the arch: a primary date (by month), else
+        state, else the first stored many2one / selection."""
+        dates, m2o, sel = [], [], []
+        for name, f in Model._fields.items():
+            if name == "id" or not getattr(f, "store", False):
+                continue
+            if f.type in ("date", "datetime"):
+                dates.append(name)
+            elif f.type == "many2one":
+                m2o.append(name)
+            elif f.type == "selection":
+                sel.append(name)
+        for pref in ("date_order", "date", "date_deadline", "invoice_date",
+                     "date_start", "create_date"):
+            if pref in dates:
+                return pref + ":month"
+        if dates:
+            return dates[0] + ":month"
+        if "state" in sel:
+            return "state"
+        return (m2o[0] if m2o else (sel[0] if sel else None))
+
     def _view_block_measure_labels(self, model, measures):
         out = {}
         real = [m for m in measures if m != "__count"]
@@ -1156,6 +1203,10 @@ class SanareDocument(models.Model):
             gb = gb or arch["row"][:1]
             measure = measure or arch["measure"]
             mode = mode or arch["mode"]
+        if not gb:
+            guess = self._first_groupable_field(Model)
+            if guess:
+                gb = [guess]
         measure = measure or "__count"
         mode = (mode or "bar").lower()
         if not gb:
