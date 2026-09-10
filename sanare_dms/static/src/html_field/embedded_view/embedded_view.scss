@@ -6,8 +6,11 @@
     }
 
     .o_sanare_embedded_view_body {
-        max-height: 32rem;
+        height: 32rem;          // default; replaced inline once the user drags
+        min-height: 8rem;
+        max-height: 85vh;
         overflow: auto;
+        resize: vertical;       // drag grip, bottom-right corner
 
         // The embedded View brings its own control panel / renderer; keep it
         // from trying to be full-viewport height inside the card.

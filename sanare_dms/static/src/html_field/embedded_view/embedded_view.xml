@@ -14,7 +14,8 @@
                     <i class="fa fa-external-link" role="img"/>
                 </button>
             </div>
-            <div class="card-body p-0 o_sanare_embedded_view_body">
+            <div class="card-body p-0 o_sanare_embedded_view_body"
+                 t-att-style="bodyStyle" t-on-mouseup="onResize">
                 <View t-if="ready" t-props="viewProps"/>
                 <div t-else="" class="text-muted fst-italic p-3">
                     This embedded view can't be shown here.

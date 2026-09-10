@@ -26,7 +26,7 @@ export class EmbeddedViewComponent extends Component {
   setup() {
     this.action = useService("action")
     this.d = readProps(this.props.host)
-    this.state = useState({ failed: false })
+    this.state = useState({ failed: false, height: this.d.height || null })
 
     // <View> reads env.config (view switcher, breadcrumbs). Give it a
     // minimal standalone config so it can mount outside an action window.
@@ -83,6 +83,30 @@ export class EmbeddedViewComponent extends Component {
 
   get ready() {
     return !this.state.failed && this.d && this.d.resModel && this.d.viewType
+  }
+
+  get bodyStyle() {
+    return this.state.height ? `height:${this.state.height}px` : ""
+  }
+
+  // The body has `resize: vertical` (a drag grip). Persist the height the
+  // user dragged to into data-embedded-props so it survives reopen / a
+  // "New from Template" copy.
+  onResize(ev) {
+    const h = Math.round(ev.currentTarget.getBoundingClientRect().height)
+    if (h && h !== this.state.height) {
+      this.state.height = h
+      try {
+        this.props.host.setAttribute(
+          "data-embedded-props",
+          JSON.stringify({ ...this.d, height: h })
+        )
+        const editable = this.props.host.closest(".odoo-editor-editable")
+        ;(editable || this.props.host).dispatchEvent(new Event("input", { bubbles: true }))
+      } catch {
+        // The save path re-reads the DOM anyway.
+      }
+    }
   }
 
   openRecord(resId) {
