@@ -1123,12 +1123,15 @@ class SanareDocument(models.Model):
             interval = f.get("interval")
             spec = "%s:%s" % (name, interval) if interval else name
             t = f.get("type")
-            if t == "row":
-                row.append(spec)
+            if t == "measure":
+                measure = name
             elif t == "col":
                 col.append(spec)
-            elif t == "measure":
-                measure = name
+            elif t == "row":
+                row.append(spec)
+            elif view_type == "graph" and not t:
+                # In a graph arch a <field> with no type is a row dimension.
+                row.append(spec)
         return {"row": row, "col": col, "measure": measure,
                 "mode": node.get("type")}
 
