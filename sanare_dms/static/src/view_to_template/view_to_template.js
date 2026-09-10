@@ -61,23 +61,32 @@ export class SanareViewToTemplate extends Component {
         sm.resModel,
     }
 
-    // Pivot / graph don't put their config in the search model - grab it
-    // from the active view controller's model so print can rebuild the
-    // matrix / chart server-side.
-    const md = this.env.model && this.env.model.metaData
-    if (md && cfg.viewType === "pivot") {
-      descriptor.pivot = {
-        rowGroupBys: (md.rowGroupBys || md.fullRowGroupBys || []).map(String),
-        colGroupBys: (md.colGroupBys || md.fullColGroupBys || []).map(String),
-        measures: (md.activeMeasures || md.measures || ["__count"]).map(String),
+    // Pivot / graph config for server-side print. The reliable axis source
+    // is the search model's own groupBy (the graph X-axis and pivot rows
+    // both live there); mode / measure come from the view model's metaData
+    // when it's reachable, else the action context, else a default. Always
+    // write the key when the view type calls for it so print never falls
+    // back to the raw list.
+    const md = (this.env.model && this.env.model.metaData) || {}
+    const ctx = (cfg && cfg.context) || {}
+    const smGb = (sm.groupBy || []).map(String)
+    if (cfg.viewType === "graph") {
+      const mdGb = (md.groupBy || []).map(String)
+      descriptor.graph = {
+        mode: md.mode || ctx.graph_mode || "bar",
+        measure: md.measure || ctx.graph_measure || "__count",
+        groupBy: mdGb.length ? mdGb : smGb,
+        stacked: !!md.stacked,
       }
     }
-    if (md && cfg.viewType === "graph") {
-      descriptor.graph = {
-        mode: md.mode || "bar",
-        measure: md.measure || "__count",
-        groupBy: (md.groupBy || []).map(String),
-        stacked: !!md.stacked,
+    if (cfg.viewType === "pivot") {
+      const mdRows = (md.rowGroupBys || md.fullRowGroupBys || []).map(String)
+      const mdCols = (md.colGroupBys || md.fullColGroupBys || []).map(String)
+      const mdMeas = (md.activeMeasures || md.measures || []).map(String)
+      descriptor.pivot = {
+        rowGroupBys: mdRows.length ? mdRows : smGb,
+        colGroupBys: mdCols,
+        measures: mdMeas.length ? mdMeas : ["__count"],
       }
     }
     try {

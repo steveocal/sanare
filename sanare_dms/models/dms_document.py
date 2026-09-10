@@ -989,10 +989,13 @@ class SanareDocument(models.Model):
         title = escape(props.get("title") or model)
         try:
             Model = self.env[model].with_context(**context)
-            if vt == "graph" and props.get("graph"):
-                inner = self._render_graph_block(Model, domain, props["graph"])
-            elif vt == "pivot" and props.get("pivot"):
-                inner = self._render_pivot_block(Model, domain, props["pivot"])
+            # A graph/pivot template renders as a chart/matrix or, if its
+            # group-by config wasn't captured (older descriptor), the note -
+            # never a raw record list.
+            if vt == "graph":
+                inner = self._render_graph_block(Model, domain, props.get("graph") or {})
+            elif vt == "pivot":
+                inner = self._render_pivot_block(Model, domain, props.get("pivot") or {})
             elif vt == "list" or "list" in view_types:
                 list_view_id = next(
                     (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"),
@@ -1037,8 +1040,8 @@ class SanareDocument(models.Model):
         rows_gb = (cfg.get("rowGroupBys") or [])[:1]
         cols_gb = (cfg.get("colGroupBys") or [])[:1]
         measures = [m for m in (cfg.get("measures") or ["__count"]) if m]
-        if not rows_gb and not measures:
-            return ""
+        if not rows_gb and not cols_gb:
+            return ""  # no dimensions captured -> note
         mlabels = self._view_block_measure_labels(Model._name, measures)
         groupby = rows_gb + cols_gb
         agg_fields = [m for m in measures if m != "__count"]
