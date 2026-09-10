@@ -1101,8 +1101,11 @@ class SanareDocument(models.Model):
         return out
 
     def _render_graph_block(self, Model, domain, cfg):
-        mode = (cfg.get("mode") or "bar").lower()
+        """A pure HTML/CSS horizontal bar chart - divs with inline
+        width/background. No SVG / data-URI (they don't survive the report
+        HTML pipeline). bar/line/pie all render as bars; pie shows shares."""
         measure = cfg.get("measure") or "__count"
+        mode = (cfg.get("mode") or "bar").lower()
         gb = (cfg.get("groupBy") or [])[:1]
         if not gb:
             return ""
@@ -1119,72 +1122,24 @@ class SanareDocument(models.Model):
         pairs = pairs[:30]
         if not pairs:
             return ""
-        svg = self._svg_pie(pairs) if mode == "pie" else self._svg_bars(
-            pairs, line=(mode == "line"))
-        # Ship the SVG as a base64 <img> - it survives the HTML round-trip in
-        # _resolve_embedded_refs intact and wkhtmltopdf renders it.
-        import base64
-        b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
-        return "<img src='data:image/svg+xml;base64,%s' style='max-width:100%%'/>" % b64
-
-    # -- inline SVG (wkhtmltopdf renders inline <svg> fine) -------------
-    def _svg_bars(self, pairs, line=False):
-        W, H, pad = 640, 260, 34
-        maxv = max((v for _, v in pairs), default=0) or 1
-        n = len(pairs)
-        step = (W - 2 * pad) / max(n, 1)
-        parts = ["<svg xmlns='http://www.w3.org/2000/svg' width='%d' height='%d' "
-                 "font-family='sans-serif'>" % (W, H),
-                 "<line x1='%d' y1='%d' x2='%d' y2='%d' stroke='#999'/>"
-                 % (pad, H - pad, W - pad, H - pad)]
-        pts = []
-        for i, (label, v) in enumerate(pairs):
-            bh = (H - 2 * pad) * (v / maxv)
-            cx = pad + i * step + step / 2
-            y = H - pad - bh
-            if line:
-                pts.append("%.1f,%.1f" % (cx, y))
-                parts.append("<circle cx='%.1f' cy='%.1f' r='2.5' fill='#3465a4'/>" % (cx, y))
-            else:
-                parts.append("<rect x='%.1f' y='%.1f' width='%.1f' height='%.1f' fill='#3465a4'/>"
-                             % (pad + i * step + 3, y, max(step - 6, 1), bh))
-            parts.append("<text x='%.1f' y='%d' font-size='9' text-anchor='middle'>%s</text>"
-                         % (cx, H - pad + 12, escape(label[:14])))
-            parts.append("<text x='%.1f' y='%.1f' font-size='9' text-anchor='middle' "
-                         "fill='#555'>%s</text>" % (cx, y - 3, escape(self._num(v))))
-        if line and len(pts) > 1:
-            parts.insert(2, "<polyline points='%s' fill='none' stroke='#3465a4' "
-                            "stroke-width='1.5'/>" % " ".join(pts))
-        parts.append("</svg>")
-        return "".join(parts)
-
-    def _svg_pie(self, pairs):
-        import math
-        W = H = 240
-        cx = cy = 120
-        r = 96
         total = sum(v for _, v in pairs) or 1
-        colors = ["#3465a4", "#73a946", "#c17d11", "#a40000", "#75507b",
-                  "#06989a", "#ce5c00", "#4e9a06", "#204a87", "#5c3566"]
-        parts = ["<svg xmlns='http://www.w3.org/2000/svg' width='%d' height='%d' "
-                 "font-family='sans-serif'>" % (W + 180, H)]
-        ang = -math.pi / 2
-        for i, (label, v) in enumerate(pairs):
-            frac = (v or 0) / total
-            a2 = ang + frac * 2 * math.pi
-            x1, y1 = cx + r * math.cos(ang), cy + r * math.sin(ang)
-            x2, y2 = cx + r * math.cos(a2), cy + r * math.sin(a2)
-            large = 1 if frac > 0.5 else 0
-            parts.append("<path d='M%d,%d L%.1f,%.1f A%d,%d 0 %d 1 %.1f,%.1f Z' fill='%s'/>"
-                         % (cx, cy, x1, y1, r, r, large, x2, y2, colors[i % len(colors)]))
-            parts.append("<rect x='%d' y='%d' width='10' height='10' fill='%s'/>"
-                         % (W + 8, 16 + i * 16, colors[i % len(colors)]))
-            parts.append("<text x='%d' y='%d' font-size='10'>%s (%s)</text>"
-                         % (W + 22, 25 + i * 16, escape(label[:18]),
-                            escape("%.0f%%" % (frac * 100))))
-            ang = a2
-        parts.append("</svg>")
-        return "".join(parts)
+        maxv = max((v for _, v in pairs), default=0) or 1
+        rows = []
+        for label, v in pairs:
+            pct_of_max = 100.0 * v / maxv
+            disp = (escape("%.0f%%" % (100.0 * v / total)) if mode == "pie"
+                    else escape(self._num(v)))
+            rows.append(
+                "<tr>"
+                "<td style='padding:1px 6px;font-size:11px;white-space:nowrap;"
+                "text-align:right;width:1%%'>%s</td>"
+                "<td style='padding:1px 6px;width:70%%'>"
+                "<span style='display:inline-block;height:11px;background:#3465a4;"
+                "width:%.1f%%'></span></td>"
+                "<td style='padding:1px 6px;font-size:11px;white-space:nowrap'>%s</td>"
+                "</tr>" % (escape(label[:32]), max(pct_of_max, 0.5), disp))
+        return ("<table style='border-collapse:collapse;width:100%%;"
+                "table-layout:fixed'><tbody>%s</tbody></table>") % "".join(rows)
 
     @api.constrains("parent_id")
     def _check_parent_recursion(self):

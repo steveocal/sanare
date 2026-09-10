@@ -565,7 +565,7 @@ class TestSanareDms(TransactionCase):
                 % json.dumps(descriptor)),
         })
 
-    def test_view_block_renders_graph_svg(self):
+    def test_view_block_renders_graph_bars(self):
         P = self.env["res.partner"]
         P.create({"name": "GA", "is_company": True})
         P.create({"name": "GB", "is_company": False})
@@ -576,7 +576,8 @@ class TestSanareDms(TransactionCase):
         })
         rendered = doc._resolve_embedded_refs(doc.content_html)
         self.assertNotIn("sanareView", rendered)
-        self.assertIn("data:image/svg+xml;base64", rendered)
+        self.assertNotIn("base64", rendered)
+        self.assertIn("background:#3465a4", rendered)
 
     def test_view_block_renders_pivot_matrix(self):
         doc = self._view_block_doc({
