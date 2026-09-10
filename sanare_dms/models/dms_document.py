@@ -932,10 +932,15 @@ class SanareDocument(models.Model):
 
     @staticmethod
     def _grp_label(value):
+        import datetime
         if isinstance(value, (list, tuple)) and len(value) > 1:
             return str(value[1])
         if value in (False, None):
             return "—"
+        if isinstance(value, datetime.datetime):
+            return value.strftime("%b %Y")
+        if isinstance(value, datetime.date):
+            return value.strftime("%b %Y")
         return str(value)
 
     @staticmethod
@@ -1226,22 +1231,30 @@ class SanareDocument(models.Model):
             return ""
         total = sum(v for _, v in pairs) or 1
         maxv = max((v for _, v in pairs), default=0) or 1
+        axis_name = gb[0].split(":")[0]
+        axis_label = (Model.fields_get([axis_name], ["string"])
+                      .get(axis_name, {}).get("string") or axis_name)
+        meas_label = (self.env._("Count") if measure == "__count"
+                      else self._view_block_measure_labels(Model._name, [measure])[measure])
         rows = []
         for label, v in pairs:
-            pct_of_max = 100.0 * v / maxv
+            pct = max(100.0 * v / maxv, 0.6)
             disp = (escape("%.0f%%" % (100.0 * v / total)) if mode == "pie"
                     else escape(self._num(v)))
             rows.append(
                 "<tr>"
-                "<td style='padding:1px 6px;font-size:11px;white-space:nowrap;"
-                "text-align:right;width:1%%'>%s</td>"
-                "<td style='padding:1px 6px;width:70%%'>"
-                "<span style='display:inline-block;height:11px;background:#3465a4;"
-                "width:%.1f%%'></span></td>"
-                "<td style='padding:1px 6px;font-size:11px;white-space:nowrap'>%s</td>"
-                "</tr>" % (escape(label[:32]), max(pct_of_max, 0.5), disp))
-        return ("<table style='border-collapse:collapse;width:100%%;"
-                "table-layout:fixed'><tbody>%s</tbody></table>") % "".join(rows)
+                "<td style='padding:2px 10px 2px 0;font-size:11px;white-space:nowrap;"
+                "overflow:hidden;text-overflow:ellipsis;max-width:200px'>%s</td>"
+                "<td style='padding:2px 0;width:100%%;white-space:nowrap'>"
+                "<span style='display:inline-block;height:13px;background:#3465a4;"
+                "vertical-align:middle;width:%.1f%%'></span>"
+                "<span style='font-size:11px;margin-left:6px'>%s</span></td>"
+                "</tr>" % (escape(label[:60]), pct, disp))
+        return (
+            "<p style='font-size:11px;color:#666;margin:0 0 4px'>%s</p>"
+            "<table style='border-collapse:collapse;width:100%%'><tbody>%s</tbody></table>"
+        ) % (escape(self.env._("%(measure)s by %(axis)s",
+                               measure=meas_label, axis=axis_label)), "".join(rows))
 
     @api.constrains("parent_id")
     def _check_parent_recursion(self):

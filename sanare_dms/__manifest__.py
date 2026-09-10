@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.9.14",
+    "version": "19.0.1.9.15",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
