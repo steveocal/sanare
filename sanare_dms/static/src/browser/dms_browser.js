@@ -106,6 +106,7 @@ export class DmsBrowser extends Component {
                 select: (id) => this.selectFolder(id),
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
+                openTemplatePicker: (parentId) => this.openTemplatePicker(parentId),
                 newTypesFor: (contentType) => this.newTypesFor(contentType),
                 deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself

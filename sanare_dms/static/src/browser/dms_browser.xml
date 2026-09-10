@@ -200,6 +200,10 @@
                                                         <t t-esc="nt[1]"/>
                                                     </DropdownItem>
                                                 </t>
+                                                <div class="dropdown-divider"/>
+                                                <DropdownItem onSelected="() => this.openTemplatePicker(rec.id)">
+                                                    <i class="fa fa-magic me-1"/>From Template…
+                                                </DropdownItem>
                                             </t>
                                         </Dropdown>
                                     </span>
@@ -296,6 +300,10 @@
                                 <t t-esc="nt[1]"/>
                             </DropdownItem>
                         </t>
+                        <div class="dropdown-divider"/>
+                        <DropdownItem onSelected="() => env.dms.openTemplatePicker(props.node.id)">
+                            <i class="fa fa-magic me-1"/>From Template…
+                        </DropdownItem>
                     </t>
                 </Dropdown>
                 <i class="fa fa-trash-o ms-2" title="Delete"
