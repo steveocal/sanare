@@ -1,12 +1,13 @@
 import json
 import re
 
+import lxml.etree
 import lxml.html
 from markupsafe import Markup, escape
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import html_sanitize
+from odoo.tools import format_date, format_datetime, html_sanitize
 
 CONTENT_TYPES = [
     ("folder", "Folder"),
@@ -845,18 +846,17 @@ class SanareDocument(models.Model):
         # body itself). The text the author wrote around it renders normally.
         for marker in root.xpath('//div[@data-embedded="sanareEmailSend"]'):
             marker.getparent().remove(marker)
-        # An embedded live view only renders in the browser - replace the
-        # marker with a plain note for print/download/website.
+        # The live OWL view can't render server-side (no JS in wkhtmltopdf) -
+        # re-run the captured query and emit a static table instead. Public
+        # website renders get the note only (no data to anonymous visitors).
         for marker in root.xpath('//div[@data-embedded="sanareView"]'):
-            model = ""
             try:
-                model = json.loads(marker.get("data-embedded-props") or "{}").get("resModel", "")
+                props = json.loads(marker.get("data-embedded-props") or "{}")
             except (ValueError, TypeError):
-                pass
-            note = lxml.html.fromstring(
-                "<p><em>%s</em></p>" % escape(self.env._("[Embedded view: %s]", model or "?"))
-            )
-            marker.getparent().replace(marker, note)
+                props = {}
+            html = self._render_view_block(props, public_only=public_only)
+            repl = lxml.html.fromstring("<div>%s</div>" % html)
+            marker.getparent().replace(marker, repl)
         # Markup, not a plain str: t-out/t-field auto-escape a plain string
         # (same as doc.content_html would render as literal "&lt;p&gt;..."
         # text instead of real HTML if this weren't marked safe) - lxml's
@@ -865,6 +865,119 @@ class SanareDocument(models.Model):
         return Markup((root.text or "") + "".join(
             lxml.html.tostring(child, encoding="unicode") for child in root
         ))
+
+    # ------------------------------------------------------------------
+    # Server-side render of a "sanareView" block (print / download)
+    # ------------------------------------------------------------------
+    _VIEW_BLOCK_ROW_LIMIT = 200
+
+    @api.model
+    def _view_block_note(self, model):
+        return "<p><em>%s</em></p>" % escape(
+            self.env._("[Embedded view: %s]", model or "?"))
+
+    @api.model
+    def _view_block_fields(self, model, view_id):
+        """Visible column field names + their {name: label} from the target
+        model's list view arch. Literal invisible/column_invisible columns
+        and non-stored/relational-heavy fields are skipped."""
+        arch = self.env[model].get_view(view_id or False, "list")["arch"]
+        node = lxml.etree.fromstring(arch)
+        names, order = [], node.get("default_order") or ""
+        for f in node.xpath(".//field"):
+            name = f.get("name")
+            if (not name or name in names
+                    or f.get("column_invisible") in ("1", "True", "true")
+                    or f.get("invisible") in ("1", "True", "true")):
+                continue
+            names.append(name)
+        meta = self.env[model].fields_get(
+            names, ["string", "type", "selection", "currency_field"])
+        # Drop x2many columns - a count is rarely what a printout wants.
+        names = [n for n in names
+                 if meta.get(n, {}).get("type") not in ("one2many", "many2many")]
+        return names, meta, order
+
+    def _view_block_cell(self, value, info):
+        ftype = info.get("type")
+        if value in (False, None, ""):
+            return ""
+        if ftype == "many2one":
+            return value[1] if isinstance(value, (list, tuple)) and len(value) > 1 else ""
+        if ftype == "selection":
+            return dict(info.get("selection") or []).get(value, value)
+        if ftype == "boolean":
+            return "✓" if value else ""
+        if ftype == "date":
+            try:
+                return format_date(self.env, value)
+            except Exception:
+                return str(value)
+        if ftype == "datetime":
+            try:
+                return format_datetime(self.env, value)
+            except Exception:
+                return str(value)
+        if ftype in ("float", "monetary"):
+            try:
+                return "{:,.2f}".format(value)
+            except Exception:
+                return str(value)
+        if ftype == "integer":
+            try:
+                return "{:,}".format(value)
+            except Exception:
+                return str(value)
+        return str(value)
+
+    def _render_view_block(self, props, public_only=False):
+        """Re-run a captured view descriptor as a static HTML table for
+        print/download. Falls back to a plain note when it can't (public
+        website render, no list view, no access, unknown model)."""
+        model = (props or {}).get("resModel") or ""
+        if public_only or not model or model not in self.env:
+            return self._view_block_note(model)
+        views = props.get("views") or []
+        view_types = [v[1] for v in views if isinstance(v, (list, tuple)) and len(v) > 1]
+        if props.get("viewType") != "list" and "list" not in view_types:
+            return self._view_block_note(model)
+        list_view_id = next(
+            (v[0] for v in views if isinstance(v, (list, tuple)) and v[1] == "list"), False)
+        domain = props.get("domain") or []
+        context = {k: v for k, v in (props.get("context") or {}).items()
+                   if not k.startswith("default_") and k not in (
+                       "active_id", "active_ids", "active_model", "params")}
+        try:
+            Model = self.env[model].with_context(**context)
+            names, meta, order = self._view_block_fields(model, list_view_id)
+            if not names:
+                return self._view_block_note(model)
+            total = Model.search_count(domain)
+            rows = Model.search_read(
+                domain, names, limit=self._VIEW_BLOCK_ROW_LIMIT, order=order or None)
+        except Exception:  # access error, bad domain, gone model, ...
+            return self._view_block_note(model)
+
+        cell = "border:1px solid #d0d0d0;padding:3px 7px;text-align:left;vertical-align:top"
+        head = "".join(
+            "<th style='%s;background:#f3f3f3;font-weight:bold'>%s</th>"
+            % (cell, escape(meta.get(n, {}).get("string") or n)) for n in names)
+        body = "".join(
+            "<tr>%s</tr>" % "".join(
+                "<td style='%s'>%s</td>" % (cell, escape(self._view_block_cell(r.get(n), meta.get(n, {}))))
+                for n in names)
+            for r in rows)
+        more = ""
+        if total > len(rows):
+            more = ("<p style='color:#666;font-size:11px;margin:3px 0 0'>%s</p>"
+                    % escape(self.env._("Showing %(shown)s of %(total)s records.",
+                                        shown=len(rows), total=total)))
+        return (
+            "<div class='o_dms_view_block' style='margin:8px 0'>"
+            "<p style='font-weight:bold;margin:0 0 4px'>%s</p>"
+            "<table style='border-collapse:collapse;width:100%%;font-size:12px'>"
+            "<thead><tr>%s</tr></thead><tbody>%s</tbody></table>%s</div>"
+        ) % (escape(props.get("title") or model), head, body, more)
 
     @api.constrains("parent_id")
     def _check_parent_recursion(self):

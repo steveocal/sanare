@@ -519,7 +519,7 @@ class TestSanareDms(TransactionCase):
         self.assertEqual(
             self.Doc.browse(res2["action"]["res_id"]).parent_id, doc.parent_id)
 
-    def test_view_block_stripped_on_server_render(self):
+    def test_view_block_no_list_view_falls_back_to_note(self):
         marker = ('<div data-embedded="sanareView" '
                   'data-embedded-props="{&#34;resModel&#34;: &#34;crm.lead&#34;}"></div>')
         doc = self.Doc.create({
@@ -530,6 +530,31 @@ class TestSanareDms(TransactionCase):
         self.assertNotIn("sanareView", rendered)
         self.assertIn("Embedded view", rendered)
         self.assertIn("around-marker", rendered)
+
+    def test_view_block_renders_list_table(self):
+        import json
+        self.env["res.partner"].create({"name": "ZZ Table Test Co", "email": "zz@x.com"})
+        props = json.dumps({
+            "resModel": "res.partner", "viewType": "list",
+            "views": [[False, "list"], [False, "search"]],
+            "domain": [["name", "=", "ZZ Table Test Co"]],
+            "context": {}, "title": "Partners",
+        })
+        doc = self.Doc.create({
+            "name": "VT", "content_type": "knowledge_html",
+            "content_html": (
+                "<div data-embedded=\"sanareView\" data-embedded-props='%s'></div>"
+                "<p>after-block</p>" % props),
+        })
+        rendered = doc._resolve_embedded_refs(doc.content_html)
+        self.assertNotIn("sanareView", rendered)
+        self.assertIn("<table", rendered)
+        self.assertIn("ZZ Table Test Co", rendered)
+        self.assertIn("after-block", rendered)
+        # public website render must not leak record data
+        pub = doc._resolve_embedded_refs(doc.content_html, public_only=True)
+        self.assertNotIn("ZZ Table Test Co", pub)
+        self.assertIn("Embedded view", pub)
 
 
 @tagged("post_install", "-at_install")
