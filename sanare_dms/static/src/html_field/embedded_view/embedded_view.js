@@ -56,7 +56,18 @@ export class EmbeddedViewComponent extends Component {
       context: this.d.context || {},
       display: { controlPanel: {} },
       noContentHelp: _t("No records match this view template."),
-      ...(this.d.searchState ? { globalState: { searchModel: this.d.searchState } } : {}),
+      // <View>/WithSearch expects globalState.searchModel to be a JSON
+      // *string* (it JSON.parse()s it), not the exportState() object.
+      ...(this.d.searchState
+        ? {
+            globalState: {
+              searchModel:
+                typeof this.d.searchState === "string"
+                  ? this.d.searchState
+                  : JSON.stringify(this.d.searchState),
+            },
+          }
+        : {}),
     }
 
     onError((error) => {
