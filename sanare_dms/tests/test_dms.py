@@ -634,6 +634,95 @@ class TestSanareDms(TransactionCase):
         self.assertIn("<table", rendered)
         self.assertIn("Total", rendered)
 
+    # -- linked_parent_ids (multiple hierarchies) --------------------------
+
+    def test_link_add_and_remove_via_browser_rpc(self):
+        folder_a = self.Doc.create({"name": "A", "content_type": "folder"})
+        folder_b = self.Doc.create({"name": "B", "content_type": "folder"})
+        leaf = self.Doc.create(
+            {"name": "Leaf", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder_a.id}
+        )
+        self.Doc.browser_link_add([leaf.id], folder_b.id)
+        self.assertEqual(leaf.linked_parent_ids, folder_b)
+        self.assertEqual(leaf.parent_id, folder_a, "real parent untouched by a link")
+        self.assertIn(leaf, folder_b.linked_here_ids)
+
+        contents_a = self.Doc.browser_contents(folder_a.id)
+        row_a = next(r for r in contents_a["records"] if r["id"] == leaf.id)
+        self.assertFalse(row_a["is_link"])
+        self.assertEqual(row_a["link_count"], 1)
+
+        contents_b = self.Doc.browser_contents(folder_b.id)
+        row_b = next(r for r in contents_b["records"] if r["id"] == leaf.id)
+        self.assertTrue(row_b["is_link"])
+        self.assertEqual(row_b["real_parent_name"], "A")
+
+        leaf.browser_link_remove(folder_b.id)
+        self.assertFalse(leaf.linked_parent_ids)
+        contents_b = self.Doc.browser_contents(folder_b.id)
+        self.assertNotIn(leaf.id, [r["id"] for r in contents_b["records"]])
+
+    def test_link_rejects_document_with_children(self):
+        folder_a = self.Doc.create({"name": "A2", "content_type": "folder"})
+        folder_b = self.Doc.create({"name": "B2", "content_type": "folder"})
+        page = self.Doc.create(
+            {"name": "Page", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder_a.id}
+        )
+        self.Doc.create(
+            {"name": "Sub", "content_type": "html", "content_html": "<p>y</p>",
+             "parent_id": page.id}
+        )
+        with self.assertRaises(ValidationError):
+            page.linked_parent_ids = [folder_b.id]
+
+    def test_link_target_must_be_a_container(self):
+        folder = self.Doc.create({"name": "A3", "content_type": "folder"})
+        office = self.Doc.create({"name": "Office3", "content_type": "onlyoffice"})
+        leaf = self.Doc.create(
+            {"name": "Leaf3", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder.id}
+        )
+        with self.assertRaises(ValidationError):
+            leaf.linked_parent_ids = [office.id]
+
+    def test_link_blocks_self_and_real_parent_duplicate(self):
+        folder = self.Doc.create({"name": "A4", "content_type": "folder"})
+        leaf = self.Doc.create(
+            {"name": "Leaf4", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder.id}
+        )
+        with self.assertRaises(ValidationError):
+            leaf.linked_parent_ids = [leaf.id]
+        with self.assertRaises(ValidationError):
+            leaf.linked_parent_ids = [folder.id]
+
+    def test_linked_document_cannot_gain_a_real_child(self):
+        folder_a = self.Doc.create({"name": "A5", "content_type": "folder"})
+        folder_b = self.Doc.create({"name": "B5", "content_type": "folder"})
+        leaf = self.Doc.create(
+            {"name": "Leaf5", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder_a.id}
+        )
+        leaf.linked_parent_ids = [folder_b.id]
+        with self.assertRaises(ValidationError):
+            self.Doc.create(
+                {"name": "Child5", "content_type": "html", "content_html": "<p>y</p>",
+                 "parent_id": leaf.id}
+            )
+
+    def test_copy_resets_linked_parent_ids(self):
+        folder_a = self.Doc.create({"name": "A6", "content_type": "folder"})
+        folder_b = self.Doc.create({"name": "B6", "content_type": "folder"})
+        leaf = self.Doc.create(
+            {"name": "Leaf6", "content_type": "html", "content_html": "<p>x</p>",
+             "parent_id": folder_a.id, "linked_parent_ids": [folder_b.id]}
+        )
+        copy = leaf.copy()
+        self.assertFalse(copy.linked_parent_ids)
+        self.assertTrue(leaf.linked_parent_ids, "the original is untouched by copying it")
+
 
 @tagged("post_install", "-at_install")
 class TestSanareDmsEmailSend(MailCommon):

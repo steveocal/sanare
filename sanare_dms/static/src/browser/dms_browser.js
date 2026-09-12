@@ -134,6 +134,7 @@ export class DmsBrowser extends Component {
             loadingTree: true,
             loadingList: true,
             dragOverId: null,
+            dragOverIsLink: false,
             creatingFolder: false,
             newFolderName: "",
             clipboard: { ids: [], names: [] },
@@ -159,6 +160,9 @@ export class DmsBrowser extends Component {
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
                 openTemplatePicker: (parentId) => this.openTemplatePicker(parentId),
+                openLinkPicker: (rec, ev) => this.openLinkPicker(rec, ev),
+                goToRealLocation: (rec, ev) => this.goToRealLocation(rec, ev),
+                removeLink: (rec, ev) => this.removeLink(rec, ev),
                 newTypesFor: (contentType) => this.newTypesFor(contentType),
                 deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself
@@ -367,17 +371,27 @@ export class DmsBrowser extends Component {
 
     onFolderDragOver(folderId, ev) {
         ev.preventDefault();
-        ev.dataTransfer.dropEffect = "move";
+        // Ctrl/Cmd held while dragging = link instead of move - dropEffect
+        // and the drop-target style (dashed teal vs. solid purple, see
+        // o_dms_drop_target_link) both reflect it live as the modifier key
+        // is pressed/released mid-drag, so the outcome is never a surprise
+        // at drop time.
+        const isLink = ev.ctrlKey || ev.metaKey;
+        ev.dataTransfer.dropEffect = isLink ? "link" : "move";
         this.state.dragOverId = folderId === false ? "root" : folderId;
+        this.state.dragOverIsLink = isLink;
     }
 
     onFolderDragLeave() {
         this.state.dragOverId = null;
+        this.state.dragOverIsLink = false;
     }
 
     async onFolderDrop(folderId, ev) {
         ev.preventDefault();
+        const isLink = ev.ctrlKey || ev.metaKey;
         this.state.dragOverId = null;
+        this.state.dragOverIsLink = false;
         const target = folderId || false;
         const ids = this.dragIds.filter((id) => id !== target);
         this.dragIds = [];
@@ -385,12 +399,19 @@ export class DmsBrowser extends Component {
             return;
         }
         try {
-            await this.orm.call(MODEL, "browser_move", [ids, target]);
+            if (isLink) {
+                if (!target) {
+                    throw { data: { message: _t("Choose a folder to link into.") } };
+                }
+                await this.orm.call(MODEL, "browser_link_add", [ids, target]);
+            } else {
+                await this.orm.call(MODEL, "browser_move", [ids, target]);
+            }
         } catch (err) {
             const msg =
                 (err && err.data && err.data.message) ||
                 (err && err.message) ||
-                _t("The move was rejected.");
+                (isLink ? _t("The link was rejected.") : _t("The move was rejected."));
             this.notification.add(msg, { type: "danger" });
         }
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
@@ -565,19 +586,105 @@ export class DmsBrowser extends Component {
         });
     }
 
+    // ---- cross-listing (multiple hierarchies) --------------------------
+    // "Add to another folder..." row action - the explicit, always-visible
+    // counterpart to Ctrl/Cmd+drag (onFolderDrop above). Both call the same
+    // browser_link_add RPC.
+    openLinkPicker(rec, ev) {
+        ev?.stopPropagation();
+        this.dialog.add(SelectCreateDialog, {
+            resModel: MODEL,
+            title: _t("Add “%s” to Another Folder", rec.name),
+            domain: [["can_have_children", "=", true], ["id", "!=", rec.id]],
+            multiSelect: false,
+            noCreate: true,
+            onSelected: async (resIds) => {
+                if (!resIds?.length) {
+                    return;
+                }
+                try {
+                    await this.orm.call(MODEL, "browser_link_add", [[rec.id], resIds[0]]);
+                } catch (err) {
+                    const msg =
+                        (err && err.data && err.data.message) ||
+                        (err && err.message) ||
+                        _t("Could not add this document to that folder.");
+                    this.notification.add(msg, { type: "danger" });
+                    return;
+                }
+                this.notification.add(_t("Added to another folder."), { type: "info" });
+                await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+            },
+        });
+    }
+
+    // Jump to where a linked row's real parent_id lives - the tree/table
+    // only ever show one thing at a time, so "go see the real one" is its
+    // own action rather than something the current row can show inline.
+    goToRealLocation(rec, ev) {
+        ev?.stopPropagation();
+        this.selectFolder(rec.real_parent_id || false);
+    }
+
+    // Removes just this one placement (browser_link_remove) - the document
+    // itself, and every other folder it's filed in, are untouched. No
+    // confirmation dialog: unlike Delete this is trivially reversible
+    // (Add to another folder... puts it right back).
+    async removeLink(rec, ev) {
+        ev?.stopPropagation();
+        try {
+            await this.orm.call(MODEL, "browser_link_remove", [
+                [rec.id], this.state.selectedId || false,
+            ]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not remove this link.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
     // ---- delete -------------------------------------------------------
+    deleteBody(rec) {
+        const hasRealChildren = rec.can_have_children && (rec.child_count || rec.has_children);
+        const linkedCount = rec.linked_child_count || 0;
+        if (hasRealChildren && linkedCount) {
+            return _t(
+                "Delete “%(name)s” and everything inside it? %(linked)s linked " +
+                    "document(s) filed in here will just be removed from this " +
+                    "folder - they still exist at their real location. " +
+                    "Everything else cannot be undone.",
+                { name: rec.name, linked: linkedCount }
+            );
+        }
+        if (linkedCount) {
+            return _t(
+                "Delete “%(name)s”? %(linked)s linked document(s) filed in here " +
+                    "will just be removed from this folder - they still exist at " +
+                    "their real location.",
+                { name: rec.name, linked: linkedCount }
+            );
+        }
+        return hasRealChildren
+            ? _t("Delete “%s” and everything inside it? This cannot be undone.", rec.name)
+            : _t("Delete “%s”? This cannot be undone.", rec.name);
+    }
+
     deleteRecord(rec, ev) {
         ev.stopPropagation();
         this.dialog.add(ConfirmationDialog, {
             // Called for both flat-pane rows (which carry child_count) and
             // tree nodes (which carry has_children instead) - check either.
+            // linked_child_count is separate from both: those documents
+            // are only cross-listed here (see linked_parent_ids) and must
+            // never be reported as "will be deleted" - deleting this
+            // folder only drops their placement here, their real copy and
+            // any other folder they're filed in are untouched.
             title: _t("Delete"),
-            body: rec.can_have_children && (rec.child_count || rec.has_children)
-                ? _t(
-                    "Delete “%s” and everything inside it? This cannot be undone.",
-                    rec.name
-                )
-                : _t("Delete “%s”? This cannot be undone.", rec.name),
+            body: this.deleteBody(rec),
             confirmLabel: _t("Delete"),
             confirmClass: "btn-danger",
             confirm: async () => {

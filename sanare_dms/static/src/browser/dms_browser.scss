@@ -8,6 +8,11 @@ $dms-text:  var(--o-main-text-color, #374151);
 $dms-line:  var(--o-border-color, #dee2e6);
 $dms-hover: rgba(128, 128, 128, 0.12);
 $dms-sel:   rgba(128, 128, 128, 0.22);
+// Cross-listing (linked_parent_ids) accent - deliberately distinct from
+// the brand purple used for "selected"/"move" everywhere else, so a link
+// can never visually read as a move or a selection.
+$dms-link:  #0f766e;
+$dms-link-soft: rgba(15, 118, 110, 0.12);
 
 .o_dms_browser {
     background: $dms-bg;
@@ -49,6 +54,16 @@ $dms-sel:   rgba(128, 128, 128, 0.22);
             outline-offset: -2px;
             background: $dms-sel;
         }
+        // Ctrl/Cmd+drag drop target - deliberately a different outline
+        // style (dotted, not dashed) on top of the color change, so the
+        // two outcomes read as different even without relying on color
+        // alone.
+        &.o_dms_drop_target_link {
+            outline: 3px dotted $dms-link;
+            outline-offset: -2px;
+            background: $dms-link-soft;
+        }
+        &.o_dms_row_link { opacity: .85; }
 
         .o_dms_caret {
             width: 18px;
@@ -64,6 +79,37 @@ $dms-sel:   rgba(128, 128, 128, 0.22);
                 &:hover { opacity: 1; color: var(--o-brand-primary, #9c6f96); }
             }
         }
+    }
+
+    // Shared between the tree pane and the contents table: an icon with a
+    // small corner mark showing "this row is a link, not the real
+    // location", and the pill shown on the *real* row naming how many
+    // other places it's also filed.
+    .o_dms_icon_wrap {
+        position: relative;
+        display: inline-flex;
+        .o_dms_link_badge {
+            position: absolute;
+            right: -5px;
+            bottom: -5px;
+            font-size: 8px;
+            width: 11px;
+            height: 11px;
+            line-height: 11px;
+            text-align: center;
+            border-radius: 50%;
+            background: $dms-link;
+            color: #fff;
+        }
+    }
+    .o_dms_link_pill {
+        background: $dms-link-soft;
+        color: $dms-link;
+        font-weight: 600;
+        i { margin-right: 3px; font-size: 10px; }
+    }
+    .o_dms_link_sub {
+        i { margin-right: 3px; }
     }
 
     .o_dms_list {
@@ -106,6 +152,16 @@ $dms-sel:   rgba(128, 128, 128, 0.22);
                 background: $dms-sel;
                 box-shadow: inset 0 0 0 2px var(--o-brand-primary, #714b67);
             }
+            // Dashed, not the solid inset move-target box-shadow above -
+            // same "different outline style, not just color" rule as the
+            // tree pane, so a link-drop can't be mistaken for a move mid-drag.
+            &.o_dms_drop_target_link > td {
+                background: $dms-link-soft;
+                box-shadow: inset 0 0 0 2px $dms-link;
+                outline: 2px dashed $dms-link;
+                outline-offset: -4px;
+            }
+            &.o_dms_row_link > td { opacity: .85; }
         }
 
         .o_dms_actions {

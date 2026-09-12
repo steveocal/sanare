@@ -119,6 +119,10 @@
                                    readonly="version_number > 0"/>
                             <field name="parent_id"
                                    options="{'no_quick_create': True}"/>
+                            <field name="linked_parent_ids" widget="many2many_tags"
+                                   domain="[('can_have_children', '=', True)]"
+                                   options="{'no_create': True}"
+                                   help="Other folders this document is also filed under. Purely for browsing - visibility, approval and print behaviour still come only from Parent."/>
                             <field name="category_id"/>
                             <field name="tag_ids" widget="many2many_tags"
                                    options="{'color_field': 'color', 'no_quick_create': True}"/>

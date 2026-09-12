@@ -5,7 +5,7 @@ import lxml.etree
 import lxml.html
 from markupsafe import Markup, escape
 
-from odoo import api, fields, models
+from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import format_date, format_datetime, html_sanitize
 
@@ -85,6 +85,27 @@ class SanareDocument(models.Model):
     # designed. Explicit copy=True here is what actually makes pasting a
     # folder bring its subtree along.
     child_count = fields.Integer(compute="_compute_child_count")
+    # -- cross-listing (multiple hierarchies) ------------------------------
+    # Non-authoritative: unlike parent_id, this never drives
+    # effective_visibility/allowed_user_ids/approval-rule resolution or
+    # parent_path - it's purely "also shows up here" for browsing. Kept
+    # cycle-safe by construction (see _check_link_constraints): a document
+    # can only be linked while it has zero real children, and can never
+    # gain a real child while linked, so a link edge always runs from a
+    # guaranteed leaf to a container and can never combine with parent_id
+    # into a cycle.
+    linked_parent_ids = fields.Many2many(
+        "sanare.document", relation="sanare_document_link_rel",
+        column1="document_id", column2="folder_id", string="Also Filed In",
+        help="Other folders this document is also filed under, in addition "
+             "to its real Parent. Purely for browsing - visibility, "
+             "approval and print behaviour still come only from Parent.",
+    )
+    linked_here_ids = fields.Many2many(
+        "sanare.document", relation="sanare_document_link_rel",
+        column1="folder_id", column2="document_id", string="Linked Documents",
+        help="Documents cross-listed into this folder from elsewhere.",
+    )
     complete_name = fields.Char(
         compute="_compute_complete_name", recursive=True, store=True, string="Path"
     )
@@ -621,6 +642,10 @@ class SanareDocument(models.Model):
                 # or from browser_create_from_template picking a template as
                 # its starting point.
                 is_template=False,
+                # A copy is a new, independent document - it starts out
+                # filed nowhere but its own (copied) real parent, same as
+                # a brand new document would.
+                linked_parent_ids=[],
             )
             # Drop any sanareView print-snapshot ids from the copied body -
             # they point at the source document's attachments. The copy
@@ -1354,6 +1379,64 @@ class SanareDocument(models.Model):
                         "a folder, not inside another document."
                     )
                 )
+            if doc.parent_id and doc.parent_id.linked_parent_ids:
+                # Mirrors the check above: gaining a new real child would
+                # make doc.parent_id a container with both real children and
+                # a link edge pointing at it, the exact combination
+                # _check_link_constraints forbids from the other side. Fires
+                # reliably for the same reason as the checks above - doc
+                # (the new child) is always in the written recordset when
+                # its own parent_id changes.
+                raise ValidationError(
+                    self.env._(
+                        "%(folder)s is filed in another folder - remove that "
+                        "link before adding items to it.",
+                        folder=doc.parent_id.display_name,
+                    )
+                )
+
+    @api.constrains("linked_parent_ids", "child_ids")
+    def _check_link_constraints(self):
+        """See _check_container_integrity's own docstring for why both
+        directions of a relationship need their own check here: this one
+        covers "an already-linked document gains a real child" and "a
+        document with real children gets linked" (both fire directly on
+        self); the reverse direction - "a container that's already linked
+        elsewhere gains a new real child" - is checked from the new child's
+        side in _check_container_integrity, since child_ids won't retrigger
+        this constrains just because some other record's parent_id changed
+        to point here."""
+        for doc in self:
+            if doc.linked_parent_ids and doc.child_ids:
+                raise ValidationError(
+                    self.env._(
+                        "A document with its own contents can't also be "
+                        "filed in another folder - only leaf documents can "
+                        "be filed in more than one place."
+                    )
+                )
+            if doc.id in doc.linked_parent_ids.ids:
+                raise ValidationError(
+                    self.env._("A document cannot be filed under itself.")
+                )
+            if doc.parent_id and doc.parent_id in doc.linked_parent_ids:
+                raise ValidationError(
+                    self.env._(
+                        "%(folder)s is already this document's real Parent.",
+                        folder=doc.parent_id.display_name,
+                    )
+                )
+            not_containers = doc.linked_parent_ids.filtered(
+                lambda f: not f.can_have_children
+            )
+            if not_containers:
+                raise ValidationError(
+                    self.env._(
+                        "%(names)s cannot contain other documents, so this "
+                        "document can't be filed there.",
+                        names=", ".join(not_containers.mapped("display_name")),
+                    )
+                )
 
     # ==================================================================
     # Tree browser  (client action "sanare_dms.browser")
@@ -1366,7 +1449,12 @@ class SanareDocument(models.Model):
         richer columns for the flat detail table. A container (folder, html
         or markdown - see CONTAINER_TYPES) can have has_children True;
         Office Documents are always leaves. Article items (article_item=True)
-        are omitted - they only live in their parent's detail pane."""
+        are omitted - they only live in their parent's detail pane.
+
+        Also unions in documents cross-listed here via linked_parent_ids
+        (see that field's docstring) - a link is always to a leaf (enforced
+        by _check_link_constraints), so it never has real children of its
+        own and has_children is always False for it."""
         recs = self.search(
             [("parent_id", "=", parent_id or False), ("article_item", "=", False)],
             order="is_folder desc, sequence, name",
@@ -1377,7 +1465,7 @@ class SanareDocument(models.Model):
             ["parent_id"], ["__count"],
         )
         counts = {parent.id: count for parent, count in data}
-        return [
+        result = [
             {
                 "id": r.id,
                 "name": r.name,
@@ -1385,9 +1473,31 @@ class SanareDocument(models.Model):
                 "can_have_children": r.can_have_children,
                 "content_type": r.content_type,
                 "has_children": bool(counts.get(r.id)) if r.can_have_children else False,
+                "is_link": False,
+                "link_count": len(r.linked_parent_ids),
+                "linked_child_count": len(r.linked_here_ids) if r.can_have_children else 0,
             }
             for r in recs
         ]
+        container = self.browse(parent_id) if parent_id else self.browse()
+        if container:
+            linked = container.linked_here_ids.filtered(lambda d: not d.article_item)
+            result += [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "is_folder": d.is_folder,
+                    "can_have_children": False,
+                    "content_type": d.content_type,
+                    "has_children": False,
+                    "is_link": True,
+                    "link_count": len(d.linked_parent_ids),
+                    "real_parent_name": d.parent_id.display_name,
+                    "real_parent_id": d.parent_id.id,
+                }
+                for d in linked.sorted("name")
+            ]
+        return result
 
     @api.model
     def browser_templates(self):
@@ -1505,32 +1615,70 @@ class SanareDocument(models.Model):
         container = self.browse(parent_id) if parent_id else self.browse()
         ctypes = dict(CONTENT_TYPES)
         states = dict(self._fields["state"].selection)
+        records = [
+            {
+                "id": r.id,
+                "name": r.name,
+                "is_folder": r.is_folder,
+                "can_have_children": r.can_have_children,
+                "content_type": r.content_type,
+                "content_type_label": ctypes.get(r.content_type),
+                "state": r.state,
+                "state_label": states.get(r.state),
+                "owner": r.owner_id.display_name,
+                "visibility": r.effective_visibility,
+                "child_count": r.child_count if r.can_have_children else 0,
+                # How many linked (non-real) documents point into this row -
+                # only meaningful for a container, used to split the delete
+                # confirmation's "will be deleted" vs. "will just be
+                # unlinked" counts.
+                "linked_child_count": len(r.linked_here_ids) if r.can_have_children else 0,
+                "updated": fields.Datetime.to_string(r.write_date),
+                "sequence": r.sequence,
+                "display_in_print": r.display_in_print,
+                "is_published": r.is_published,
+                "can_publish": r.can_publish,
+                "is_template": r.is_template,
+                "article_item": r.article_item,
+                "is_link": False,
+                "link_count": len(r.linked_parent_ids),
+            }
+            for r in recs
+        ]
+        if container:
+            linked = container.linked_here_ids.filtered(lambda d: not d.article_item)
+            records += [
+                {
+                    "id": d.id,
+                    "name": d.name,
+                    "is_folder": d.is_folder,
+                    "can_have_children": False,
+                    "content_type": d.content_type,
+                    "content_type_label": ctypes.get(d.content_type),
+                    "state": d.state,
+                    "state_label": states.get(d.state),
+                    "owner": d.owner_id.display_name,
+                    "visibility": d.effective_visibility,
+                    "child_count": 0,
+                    "linked_child_count": 0,
+                    "updated": fields.Datetime.to_string(d.write_date),
+                    "sequence": d.sequence,
+                    "display_in_print": d.display_in_print,
+                    "is_published": d.is_published,
+                    "can_publish": d.can_publish,
+                    "is_template": d.is_template,
+                    "article_item": False,
+                    "is_link": True,
+                    "link_count": len(d.linked_parent_ids),
+                    "real_parent_name": d.parent_id.display_name,
+                    "real_parent_id": d.parent_id.id,
+                }
+                for d in linked.sorted("name")
+            ]
         return {
             "breadcrumb": self._browser_breadcrumb(parent_id),
             "container_content_type": container.content_type if container else False,
-            "records": [
-                {
-                    "id": r.id,
-                    "name": r.name,
-                    "is_folder": r.is_folder,
-                    "can_have_children": r.can_have_children,
-                    "content_type": r.content_type,
-                    "content_type_label": ctypes.get(r.content_type),
-                    "state": r.state,
-                    "state_label": states.get(r.state),
-                    "owner": r.owner_id.display_name,
-                    "visibility": r.effective_visibility,
-                    "child_count": r.child_count if r.can_have_children else 0,
-                    "updated": fields.Datetime.to_string(r.write_date),
-                    "sequence": r.sequence,
-                    "display_in_print": r.display_in_print,
-                    "is_published": r.is_published,
-                    "can_publish": r.can_publish,
-                    "is_template": r.is_template,
-                    "article_item": r.article_item,
-                }
-                for r in recs
-            ],
+            "records": records,
         }
 
     @api.model
@@ -1622,6 +1770,30 @@ class SanareDocument(models.Model):
             if target in docs:
                 raise UserError(self.env._("You cannot move a folder into itself."))
         docs.write({"parent_id": target.id if target else False})
+        return True
+
+    @api.model
+    def browser_link_add(self, doc_ids, target_parent_id):
+        """Cross-list doc(s) into target_parent_id without touching their
+        real parent_id - the drop handler calls this instead of
+        browser_move when the drag ends with Ctrl/Cmd held, and the
+        "Add to another folder..." row action calls it directly.
+        _check_link_constraints does the actual validation (leaf-only,
+        container target, no self/duplicate-of-parent) - ValidationError
+        is itself a UserError subclass, so it already surfaces as a plain
+        error toast, same as browser_move's own checks."""
+        docs = self.browse(doc_ids).exists()
+        target = self.browse(target_parent_id).exists()
+        if not docs or not target:
+            return False
+        docs.write({"linked_parent_ids": [Command.link(target.id)]})
+        return True
+
+    def browser_link_remove(self, folder_id):
+        """Remove one cross-listed placement - the folder itself stays
+        exactly where it was everywhere else it's filed (real parent and
+        any other links untouched)."""
+        self.write({"linked_parent_ids": [Command.unlink(int(folder_id))]})
         return True
 
     @api.model
