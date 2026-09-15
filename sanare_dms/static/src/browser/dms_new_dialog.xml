@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sanare_dms.DmsNewDocumentDialog">
+        <Dialog title="'New Document'" size="'lg'" contentClass="'o_dms_new_dialog_content'">
+            <div class="o_dms_new_dialog d-flex">
+                <!-- destination folder tree - containers only -->
+                <div class="o_dms_new_tree border-end overflow-auto">
+                    <div class="o_dms_tree_row o_dms_root d-flex align-items-center px-2 py-1 rounded"
+                         t-att-class="{ 'o_dms_selected': state.selectedFolderId === false }"
+                         t-on-click="() => this.selectFolder(false)">
+                        <i class="fa fa-database me-2 text-primary"/>
+                        <span class="fw-bold">Documents</span>
+                    </div>
+                    <t t-foreach="containerTree" t-as="node" t-key="node.id">
+                        <DmsPickerTreeNode node="node" depth="0"
+                            selectedId="state.selectedFolderId"
+                            onSelect="(id) => this.selectFolder(id)"
+                            onToggle="props.toggleNode"/>
+                    </t>
+                    <div t-if="!containerTree.length" class="text-muted small px-2 py-1">
+                        No folders yet
+                    </div>
+                </div>
+
+                <!-- type picker / odoo-view config -->
+                <div class="o_dms_new_content flex-grow-1 overflow-auto p-3">
+                    <div class="text-muted small mb-3">
+                        Creating in: <strong t-esc="selectedFolderName"/>
+                    </div>
+
+                    <t t-if="state.step === 'tiles'">
+                        <div class="o_dms_new_section_title">Pages</div>
+                        <div class="o_dms_new_grid mb-3">
+                            <div class="o_dms_new_tile" t-on-click="() => this.pick('folder')">
+                                <i class="fa fa-folder text-warning"/>
+                                <span>Folder</span>
+                            </div>
+                            <div class="o_dms_new_tile" t-on-click="() => this.pick('knowledge_html')">
+                                <i class="fa fa-book"/>
+                                <span>Knowledge</span>
+                            </div>
+                            <div class="o_dms_new_tile" t-on-click="() => this.pick('markdown')">
+                                <i class="fa fa-file-text-o"/>
+                                <span>Markdown</span>
+                            </div>
+                            <div class="o_dms_new_tile" t-on-click="() => this.pickTemplate()">
+                                <i class="fa fa-magic"/>
+                                <span>From Template…</span>
+                            </div>
+                        </div>
+
+                        <t t-if="officeAllowed">
+                            <div class="o_dms_new_section_title">Office</div>
+                            <div class="o_dms_new_grid mb-3">
+                                <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('docx')">
+                                    <i class="fa fa-file-word-o"/>
+                                    <span>Word Document</span>
+                                </div>
+                                <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('xlsx')">
+                                    <i class="fa fa-file-excel-o"/>
+                                    <span>Spreadsheet</span>
+                                </div>
+                                <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('pptx')">
+                                    <i class="fa fa-file-powerpoint-o"/>
+                                    <span>Presentation</span>
+                                </div>
+                            </div>
+
+                            <div class="o_dms_new_section_title">Files</div>
+                            <div class="o_dms_new_grid mb-3">
+                                <div class="o_dms_new_tile" t-on-click="() => this.startUpload('*/*')">
+                                    <i class="fa fa-upload"/>
+                                    <span>Upload a File</span>
+                                </div>
+                                <div class="o_dms_new_tile" t-on-click="() => this.startUpload('application/pdf,.pdf')">
+                                    <i class="fa fa-file-pdf-o"/>
+                                    <span>PDF Form</span>
+                                </div>
+                            </div>
+                        </t>
+                        <div t-else="" class="text-muted small fst-italic mb-3">
+                            Office files, uploads and PDF forms can only be created directly
+                            inside a folder - pick a folder on the left to enable these.
+                        </div>
+
+                        <div class="o_dms_new_section_title">Advanced</div>
+                        <div class="o_dms_new_grid">
+                            <div class="o_dms_new_tile" t-on-click="() => this.openOdooViewStep()">
+                                <i class="fa fa-bar-chart"/>
+                                <span>Odoo View</span>
+                            </div>
+                        </div>
+                    </t>
+
+                    <t t-else="">
+                        <button class="btn btn-sm btn-link px-0 mb-3" t-on-click="() => this.backToTiles()">
+                            <i class="fa fa-arrow-left me-1"/>Back
+                        </button>
+
+                        <label class="form-label small text-muted">Model</label>
+                        <input type="text" class="form-control form-control-sm mb-1"
+                               placeholder="Search a model…"
+                               t-att-value="state.modelQuery"
+                               t-on-input="(ev) => this.onModelInput(ev)"/>
+                        <div t-if="state.modelResults.length" class="list-group o_dms_new_model_results mb-3">
+                            <a t-foreach="state.modelResults" t-as="m" t-key="m.id" href="#"
+                               class="list-group-item list-group-item-action py-1"
+                               t-on-click.prevent="() => this.chooseModel(m)">
+                                <span t-esc="m.name"/>
+                                <span class="text-muted small" t-esc="'(' + m.model + ')'"/>
+                            </a>
+                        </div>
+
+                        <t t-if="state.selectedModel">
+                            <label class="form-label small text-muted d-block">View Type</label>
+                            <div class="o_dms_new_grid o_dms_new_grid_compact">
+                                <div t-foreach="viewTypeChoices" t-as="vt" t-key="vt[0]"
+                                     class="o_dms_new_tile" t-on-click="() => this.pickOdooView(vt[0])">
+                                    <i class="fa" t-att-class="vt[2]"/>
+                                    <span t-esc="vt[1]"/>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </div>
+
+            <input type="file" class="d-none" t-ref="fileInput" t-on-change="(ev) => this.onFileChosen(ev)"/>
+
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="() => this.props.close()">Cancel</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <!-- recursive, selection-only tree node used by the New Document
+         picker above - see DmsPickerTreeNode's own comment (dms_new_dialog.js)
+         for why this doesn't just reuse DmsTreeNode. -->
+    <t t-name="sanare_dms.DmsPickerTreeNode">
+        <div class="o_dms_tree_row d-flex align-items-center px-1 py-1 rounded"
+             t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
+             t-att-class="{ 'o_dms_selected': props.selectedId === props.node.id }"
+             t-on-click="() => props.onSelect(props.node.id)">
+            <span class="o_dms_caret" t-on-click.stop="() => props.onToggle(props.node)">
+                <i t-if="props.node.has_children" class="fa"
+                   t-att-class="props.node.expanded ? 'fa-minus-square-o' : 'fa-plus-square-o'"/>
+                <i t-else="" class="fa fa-fw"/>
+            </span>
+            <i class="fa fa-folder text-warning me-2"/>
+            <span class="text-truncate flex-grow-1" t-esc="props.node.name"/>
+            <i t-if="props.node.loading" class="fa fa-spinner fa-spin ms-2 small"/>
+        </div>
+        <t t-if="props.node.expanded and childContainers.length">
+            <t t-foreach="childContainers" t-as="child" t-key="child.id">
+                <DmsPickerTreeNode node="child" depth="props.depth + 1"
+                    selectedId="props.selectedId" onSelect="props.onSelect" onToggle="props.onToggle"/>
+            </t>
+        </t>
+    </t>
+
+</templates>

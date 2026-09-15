@@ -15,6 +15,7 @@ CONTENT_TYPES = [
     ("html", "Web Page (HTML)"),
     ("markdown", "Markdown"),
     ("knowledge_html", "Knowledge Page (HTML)"),
+    ("odoo_view", "Odoo View"),
 ]
 
 # Types that store their content in content_html and share its versioning/
@@ -40,6 +41,16 @@ CONTAINER_TYPES = {"folder", "html", "markdown"}
 # rendered by the EmbeddedEmailSend OWL component.
 EMAIL_BLOCK_MARKER = "sanareEmailSend"
 VIEW_BLOCK_MARKER = "sanareView"
+
+# "odoo_view" is the standalone sibling of the sanareView marker above: the
+# marker embeds a live view as one block inside an otherwise normal HTML
+# page (narrative text plus one or more views); this content type is a
+# document whose *entire* content is one captured view - including a
+# single-record dashboard form (view_mode "form"), which the marker's own
+# capture action deliberately excludes since a form has no search state
+# worth saving. Same descriptor shape either way: {resModel, viewType,
+# views, domain, context, searchState, resId, title, graph, pivot} - see
+# static/src/view_to_template/view_to_template.js.
 
 VISIBILITY = [
     ("private", "Private"),
@@ -166,6 +177,22 @@ class SanareDocument(models.Model):
     content_markdown_html = fields.Html(
         compute="_compute_content_markdown_html", sanitize=False, string="Rendered Markdown"
     )
+
+    # A single JSON blob rather than separate res_model/domain/context/...
+    # columns - it's exactly the descriptor shape the capture action already
+    # builds client-side (see the comment above VIEW_BLOCK_MARKER), so
+    # nothing needs translating between "the view someone captured" and
+    # "what's stored". Structured, not string-embedded-in-HTML like the
+    # sanareView marker - immune to content_html's sanitizer, and a
+    # meaningful version diff (see _snapshot_version) instead of an opaque
+    # HTML blob.
+    view_descriptor = fields.Json(string="View Descriptor")
+    view_snapshot_id = fields.Many2one(
+        "ir.attachment", string="View Snapshot", copy=False,
+        help="Browser-captured PNG of the live view, used when printing or "
+             "downloading since the view itself can't render server-side.",
+    )
+    view_snapshot_date = fields.Datetime(string="Snapshot Date", copy=False)
 
     attachment_id = fields.Many2one("ir.attachment", string="Office File", copy=False)
     file_content = fields.Binary(
@@ -420,6 +447,8 @@ class SanareDocument(models.Model):
             raise UserError(self.env._("Add Markdown content before submitting for approval."))
         if self.content_type == "onlyoffice" and not self.attachment_id:
             raise UserError(self.env._("Create or upload the office file before submitting."))
+        if self.content_type == "odoo_view" and not (self.view_descriptor or {}).get("resModel"):
+            raise UserError(self.env._("This Odoo View has no captured view yet."))
 
     def _snapshot_version(self, changelog=False, trigger="manual", author=None):
         Version = self.env["sanare.document.version"].sudo()
@@ -452,6 +481,11 @@ class SanareDocument(models.Model):
                     snap_source = doc.attachment_id
                     vals["checksum"] = doc.attachment_id.checksum
                     vals["file_size"] = doc.attachment_id.file_size
+            elif doc.content_type == "odoo_view":
+                changed = not (
+                    latest and (latest.view_descriptor or {}) == (doc.view_descriptor or {})
+                )
+                vals["view_descriptor"] = doc.view_descriptor
             if not changed:
                 continue
             vals["version_number"] = doc.version_number + 1
@@ -615,11 +649,15 @@ class SanareDocument(models.Model):
                     raise UserError(
                         self.env._("The content type cannot be changed once a document has content.")
                     )
-        touching_content = bool({"content_html", "content_markdown"} & set(vals))
+        touching_content = bool(
+            {"content_html", "content_markdown", "view_descriptor"} & set(vals)
+        )
         res = super().write(vals)
         if touching_content and not self.env.context.get("dms_skip_version"):
             for doc in self:
-                if doc.content_type in HTML_TYPES or doc.content_type == "markdown":
+                if doc.content_type in HTML_TYPES or doc.content_type in (
+                    "markdown", "odoo_view",
+                ):
                     doc._snapshot_version(
                         changelog=self.env._("Content edited"), trigger="edit"
                     )
@@ -637,6 +675,12 @@ class SanareDocument(models.Model):
                 approval_request_id=False,
                 is_published=False,
                 attachment_id=False,
+                # A copy re-captures its own print snapshot rather than
+                # pointing at the source document's attachment - same
+                # reasoning as _strip_view_snapshot below, for the
+                # standalone odoo_view fields instead of the HTML marker.
+                view_snapshot_id=False,
+                view_snapshot_date=False,
                 # A copy is a real working document, not another template -
                 # true whether the copy came from the regular Paste feature
                 # or from browser_create_from_template picking a template as
@@ -1105,6 +1149,24 @@ class SanareDocument(models.Model):
         if not inner:
             return self._view_block_note(model)
         return self._VIEW_BLOCK_WRAP % (title, inner)
+
+    def _odoo_view_print_html(self):
+        """report_document_body's odoo_view branch: the browser-captured
+        PNG snapshot if there is one (the only option that also covers
+        dashboard/form captures, which _render_view_block can't render),
+        else the same server-side list/pivot/graph re-run print already
+        uses for a sanareView block."""
+        self.ensure_one()
+        if self.view_snapshot_id:
+            html = (
+                "<div style='margin:8px 0'>"
+                "<img src='/web/image/ir.attachment/%s/datas' "
+                "style='max-width:100%%;display:block;border:1px solid #e0e0e0'/>"
+                "</div>"
+            ) % self.view_snapshot_id.id
+        else:
+            html = self._render_view_block(self.view_descriptor or {})
+        return Markup(html)
 
     def _render_list_block(self, Model, model, domain, list_view_id):
         names, meta, order = self._view_block_fields(model, list_view_id)
@@ -1749,6 +1811,37 @@ class SanareDocument(models.Model):
                 "date": fields.Datetime.to_string(fields.Datetime.now())}
 
     @api.model
+    def save_view_snapshot(self, document_id, payload):
+        """Standalone-document counterpart of save_view_block_snapshot -
+        writes straight to view_snapshot_id/view_snapshot_date instead of
+        threading the attachment id through a content_html marker, since an
+        odoo_view document has no HTML body to carry it in. payload:
+        {png: 'data:image/png;base64,...'}. Returns {attachment_id, date}."""
+        doc = self.browse(int(document_id)).exists()
+        if not doc:
+            raise UserError(self.env._("This document no longer exists."))
+        data_url = (payload or {}).get("png") or ""
+        prefix = "data:image/png;base64,"
+        if not data_url.startswith(prefix):
+            raise UserError(self.env._("Unexpected snapshot format."))
+        old = doc.view_snapshot_id
+        att = self.env["ir.attachment"].create({
+            "name": self.env._("%s — view snapshot.png", doc.name),
+            "datas": data_url[len(prefix):],
+            "mimetype": "image/png",
+            "res_model": "sanare.document",
+            "res_id": doc.id,
+        })
+        now = fields.Datetime.now()
+        doc.with_context(dms_skip_version=True).write({
+            "view_snapshot_id": att.id,
+            "view_snapshot_date": now,
+        })
+        if old:
+            old.unlink()
+        return {"attachment_id": att.id, "date": fields.Datetime.to_string(now)}
+
+    @api.model
     def browser_move(self, doc_ids, target_parent_id):
         docs = self.browse(doc_ids).exists()
         if not docs:
@@ -2001,6 +2094,58 @@ class SanareDocument(models.Model):
             }
         }
 
+    @api.model
+    def create_view_document(self, descriptor):
+        """RPC for the "Save as Odoo View Document" cog-menu action -
+        the standalone sibling of create_view_template above. Same
+        descriptor shape, plus `resId` when it's a single-record dashboard
+        form (viewType "form"), which create_view_template's own action
+        deliberately excludes. Creates an odoo_view document under the
+        "View Templates" folder and returns an action opening it."""
+        if not descriptor or not descriptor.get("resModel"):
+            raise UserError(self.env._("Nothing to capture from this view."))
+        title = descriptor.get("title") or descriptor["resModel"]
+        folder = self._view_templates_folder()
+        doc = self.create({
+            "name": title,
+            "content_type": "odoo_view",
+            "parent_id": folder.id,
+            "visibility": "public",
+            "visibility_inherited": False,
+            "view_descriptor": descriptor,
+        })
+        return {
+            "action": {
+                "type": "ir.actions.act_window",
+                "res_model": "sanare.document",
+                "res_id": doc.id,
+                "views": [[False, "form"]],
+                "target": "current",
+            }
+        }
+
+    def action_open_view(self):
+        """Jump straight to the live view/dashboard this document points
+        at - the server-side equivalent of the field widget's own "open in
+        full" button, exposed as a stat button for when the widget itself
+        isn't on screen."""
+        self.ensure_one()
+        d = self.view_descriptor or {}
+        if not d.get("resModel"):
+            raise UserError(self.env._("This Odoo View has no captured view yet."))
+        action = {
+            "type": "ir.actions.act_window",
+            "name": d.get("title") or self.name,
+            "res_model": d["resModel"],
+            "views": d.get("views") or [[False, d.get("viewType") or "list"]],
+            "domain": d.get("domain") or [],
+            "context": d.get("context") or {},
+            "target": "current",
+        }
+        if d.get("resId"):
+            action["res_id"] = d["resId"]
+        return action
+
     def action_report(self):
         """Print entry point for the custom browser (which has no generic
         framework print menu of its own) - mirrors the action_print pattern
@@ -2090,7 +2235,7 @@ class SanareDocument(models.Model):
             data = "\n\n---\n\n".join(parts).encode()
             filename = "%s.md" % self.name
         else:
-            raise UserError(self.env._("Folders can't be downloaded directly."))
+            raise UserError(self.env._("This document type can't be downloaded directly."))
         return request.make_response(
             data,
             headers=[

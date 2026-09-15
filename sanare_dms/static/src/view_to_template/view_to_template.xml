@@ -7,4 +7,10 @@
         </DropdownItem>
     </t>
 
+    <t t-name="sanare_dms.ViewToDocumentItem">
+        <DropdownItem class="'o_menu_item'" onSelected="() => this.save()">
+            Save as Odoo View Document
+        </DropdownItem>
+    </t>
+
 </templates>

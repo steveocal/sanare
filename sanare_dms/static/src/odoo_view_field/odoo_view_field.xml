@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Full-pane live view for an odoo_view document - see
+         html_field/embedded_view/embedded_view.xml for the same rendering
+         adapted to a small in-page card instead of the whole main pane. -->
+    <t t-name="sanare_dms.OdooViewField">
+        <div class="o_sanare_odoo_view_field">
+            <div class="o_sanare_odoo_view_toolbar d-flex align-items-center gap-1 py-1 border-bottom">
+                <i class="fa fa-dashboard text-muted" role="img"/>
+                <span class="fw-bold text-truncate flex-grow-1" t-esc="descriptor.title || descriptor.resModel"/>
+
+                <div class="btn-group btn-group-sm" t-if="switchableTypes.length &gt; 1">
+                    <button t-foreach="switchableTypes" t-as="v" t-key="v.type"
+                            type="button" class="btn btn-light"
+                            t-att-class="{ active: v.type === state.viewType }"
+                            t-att-title="v.label"
+                            t-on-click="() => this.setViewType(v.type)">
+                        <i class="fa" t-att-class="v.icon" role="img"/>
+                    </button>
+                </div>
+
+                <button type="button" class="btn btn-light btn-sm"
+                        t-att-title="snapshotLabel"
+                        t-att-disabled="state.snapping"
+                        t-on-click="() => this.snapshot()">
+                    <i class="fa"
+                       t-att-class="state.snapping ? 'fa-spinner fa-spin' : 'fa-camera'"
+                       role="img"/>
+                </button>
+
+                <button type="button" class="btn btn-sm btn-link p-0"
+                        title="Open in full view" t-on-click="openInFull">
+                    <i class="fa fa-external-link" role="img"/>
+                </button>
+            </div>
+            <div class="o_sanare_odoo_view_body">
+                <div t-if="ready" class="h-100" t-ref="capture">
+                    <View t-props="viewProps" t-key="state.viewType"/>
+                </div>
+                <div t-else="" class="text-muted fst-italic p-3">
+                    This Odoo View has no captured view yet.
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

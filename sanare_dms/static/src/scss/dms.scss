@@ -3,6 +3,123 @@
     .o_form_sheet {
         max-width: 100%;
     }
+
+    /* Split screen: article full height on the left, a tabbed
+       Fields/Sharing/Versions/Approval/Properties panel on the right that
+       can be dragged narrower/wider or hidden entirely. Behaviour lives in
+       article_layout.js (plain DOM + localStorage, not an OWL widget) so it
+       works the same whether this form is standalone or embedded inline in
+       the DmsBrowser detail pane. */
+    /* Lives in <header> now, right after the statusbar buttons - the
+       closest the form arch can put an editable field to "New" (which
+       itself is rendered by the control panel, outside the arch
+       entirely). */
+    .o_dms_article_name {
+        flex: 0 1 340px;
+        min-width: 120px;
+        // The header row is `justify-content: space-between` across
+        // [buttons, this field, statusbar] - without this, that spaces the
+        // three evenly and strands this field in the dead centre of the
+        // page instead of next to the buttons on the left.
+        margin-left: 12px;
+        margin-right: auto;
+        align-self: center;
+        input {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 2px 6px;
+        }
+    }
+
+    /* A definite (not just min-) height is what lets the article editor
+       below actually fill it - see the .odoo-editor-editable override
+       further down. dms_browser.scss resets this back to auto for the
+       embedded-in-DmsBrowser case, where there's no fixed viewport chrome
+       to size against and the pane is meant to flow/scroll with the rest
+       of the detail pane instead. */
+    .o_dms_article_layout {
+        align-items: stretch;
+        gap: 0;
+        height: calc(100vh - 210px);
+        min-height: 400px;
+    }
+
+    .o_dms_article_main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        > .o_field_widget { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    }
+
+    /* html_editor's HtmlField hardcodes editable.style.height from the
+       arch's options="{'height': ...}" (see editor.js) - an inline style,
+       so only an !important stylesheet rule can override it. Without
+       this, the editor stays pinned at that fixed pixel height no matter
+       how much room .o_dms_article_main actually has. */
+    .odoo-editor-editable {
+        height: 100% !important;
+        overflow-y: auto;
+    }
+
+    /* The chain down from .o_field_widget to the editable is h-100'd all
+       the way EXCEPT the Wysiwyg component's own root (confirmed by
+       inspecting the live DOM: every wrapper above and below it carries
+       Bootstrap's h-100, this one alone doesn't) - a plain block element
+       with no explicit height defaults to its content's height, breaking
+       the 100% chain right there regardless of how tall its own parent
+       actually is. */
+    .o_dms_article_main .o-wysiwyg {
+        height: 100% !important;
+    }
+
+    .o_dms_article_resize {
+        flex: 0 0 6px;
+        cursor: col-resize;
+        background: transparent;
+        position: relative;
+        &:hover, &:active {
+            background: var(--o-brand-primary, #714b67);
+            opacity: .3;
+        }
+    }
+
+    .o_dms_article_edge_toggle {
+        display: none;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        cursor: pointer;
+        color: var(--o-main-text-color, #6b7280);
+        border-left: 1px solid var(--o-border-color, #dee2e6);
+        &:hover { color: var(--o-brand-primary, #714b67); }
+    }
+
+    .o_dms_article_side {
+        flex: 0 0 auto;
+        width: 380px;
+        min-width: 240px;
+        max-width: 720px;
+        border-left: 1px solid var(--o-border-color, #dee2e6);
+        padding-left: 12px;
+        position: relative;
+    }
+
+    .o_dms_article_side_toggle {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        cursor: pointer;
+        color: var(--o-main-text-color, #6b7280);
+        z-index: 1;
+        &:hover { color: var(--o-brand-primary, #714b67); }
+    }
+
+    .o_dms_article_layout.o_dms_side_collapsed {
+        .o_dms_article_side, .o_dms_article_resize { display: none; }
+        .o_dms_article_edge_toggle { display: flex; }
+    }
 }
 
 /* keep the folder kanban tidy */

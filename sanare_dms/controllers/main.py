@@ -72,6 +72,9 @@ class SanareDmsWebsite(http.Controller):
         elif document.content_type == "markdown":
             src = document.approved_version_id.content_markdown or document.content_markdown
             body = document._render_markdown(src)
+        # odoo_view stays None here (no data to visitors - see
+        # _render_view_block's public_only guard) and falls to the
+        # dedicated "not available publicly" message in the template.
         return request.render(
             "sanare_dms.documents_page",
             {"document": document, "body": body},

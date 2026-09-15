@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management",
-    "version": "19.0.1.11.0",
+    "version": "19.0.1.15.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -10,8 +10,10 @@
     "description": "A hierarchical document store where every node is a "
     "sanare.document - a folder or a document of one content type: Office "
     "(edited in place with ONLYOFFICE, via sanare_dms_onlyoffice), HTML "
-    "(Odoo web editor, code view included) or Markdown (Odoo ACE editor with "
-    "live preview). Owner plus Private / Shared / Public visibility with "
+    "(Odoo web editor, code view included), Markdown (Odoo ACE editor with "
+    "live preview), or an Odoo View (a live list/kanban/pivot/graph/calendar "
+    "view, or a single-record dashboard, captured from anywhere in Odoo via "
+    "a cog-menu action). Owner plus Private / Shared / Public visibility with "
     "inheritance, per-document version history with restore, a configurable "
     "multi-step approval workflow, hierarchical categories, tags, and "
     "publishing approved documents to the public website.",
@@ -36,12 +38,15 @@
     "assets": {
         "web.assets_backend": [
             "sanare_dms/static/src/scss/dms.scss",
+            "sanare_dms/static/src/article_layout/article_layout.js",
             "sanare_dms/static/src/markdown_field/markdown_field.scss",
             "sanare_dms/static/src/markdown_field/markdown_field.js",
             "sanare_dms/static/src/markdown_field/markdown_field.xml",
             "sanare_dms/static/src/browser/dms_browser.scss",
             "sanare_dms/static/src/browser/dms_browser.js",
             "sanare_dms/static/src/browser/dms_browser.xml",
+            "sanare_dms/static/src/browser/dms_new_dialog.xml",
+            "sanare_dms/static/src/browser/dms_new_dialog.js",
             "sanare_dms/static/src/html_field/section_heading_plugin.js",
             "sanare_dms/static/src/html_field/page_break_plugin.js",
             "sanare_dms/static/src/html_field/template_insert_plugin.js",
@@ -59,6 +64,9 @@
             "sanare_dms/static/src/html_field/embedded_view/embedded_view_plugin.js",
             "sanare_dms/static/src/view_to_template/view_to_template.js",
             "sanare_dms/static/src/view_to_template/view_to_template.xml",
+            "sanare_dms/static/src/odoo_view_field/odoo_view_field.scss",
+            "sanare_dms/static/src/odoo_view_field/odoo_view_field.xml",
+            "sanare_dms/static/src/odoo_view_field/odoo_view_field.js",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.scss",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_blocks.js",
             "sanare_dms/static/src/html_field/snippet_panel/snippet_panel.xml",

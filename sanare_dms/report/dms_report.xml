@@ -131,6 +131,7 @@
                (<span t-out="doc.file_size"/> bytes).</p>
             <p>Open in ONLYOFFICE to view the full contents.</p>
         </div>
+        <div t-elif="doc.content_type == 'odoo_view'" t-out="doc._odoo_view_print_html()"/>
         <div t-else="">
             <p t-if="not doc.child_ids.filtered(lambda c: c.display_in_print)">
                 This is an empty folder.

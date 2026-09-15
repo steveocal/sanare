@@ -8,8 +8,9 @@ import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
 import { View } from "@web/views/view";
+import { DmsNewDocumentDialog } from "./dms_new_dialog";
 import {
-    Component, useState, useChildSubEnv, useSubEnv, useEffect, useRef, onMounted,
+    Component, useState, useChildSubEnv, useSubEnv, onMounted,
     useExternalListener, onError,
 } from "@odoo/owl";
 
@@ -135,20 +136,8 @@ export class DmsBrowser extends Component {
             loadingList: true,
             dragOverId: null,
             dragOverIsLink: false,
-            creatingFolder: false,
-            newFolderName: "",
             clipboard: { ids: [], names: [] },
         });
-
-        this.newFolderInput = useRef("newFolderInput");
-        useEffect(
-            (el) => {
-                if (el) {
-                    el.focus();
-                }
-            },
-            () => [this.newFolderInput.el]
-        );
 
         // shared with the recursive DmsTreeNode instances via sub-env
         useChildSubEnv({
@@ -160,9 +149,7 @@ export class DmsBrowser extends Component {
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
                 openTemplatePicker: (parentId) => this.openTemplatePicker(parentId),
-                openLinkPicker: (rec, ev) => this.openLinkPicker(rec, ev),
                 goToRealLocation: (rec, ev) => this.goToRealLocation(rec, ev),
-                removeLink: (rec, ev) => this.removeLink(rec, ev),
                 newTypesFor: (contentType) => this.newTypesFor(contentType),
                 deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself
@@ -327,17 +314,47 @@ export class DmsBrowser extends Component {
         }
     }
 
+    // ---- selection (checkbox column + central Actions menu) -----------
+    toggleRowSelection(rec, ev) {
+        ev.stopPropagation();
+        const sel = new Set(this.state.selection);
+        sel.has(rec.id) ? sel.delete(rec.id) : sel.add(rec.id);
+        this.state.selection = sel;
+    }
+
+    toggleSelectAll(ev) {
+        ev.stopPropagation();
+        this.state.selection = this.allSelected
+            ? new Set()
+            : new Set(this.state.records.map((r) => r.id));
+    }
+
+    get allSelected() {
+        return this.state.records.length > 0 &&
+            this.state.records.every((r) => this.state.selection.has(r.id));
+    }
+
+    get selectedRecords() {
+        return this.state.records.filter((r) => this.state.selection.has(r.id));
+    }
+
+    get singleSelected() {
+        const recs = this.selectedRecords;
+        return recs.length === 1 ? recs[0] : null;
+    }
+
+    get anySelectedAreLinks() {
+        return this.selectedRecords.some((r) => r.is_link);
+    }
+
+    get allSelectedAreLinks() {
+        const recs = this.selectedRecords;
+        return recs.length > 0 && recs.every((r) => r.is_link);
+    }
+
     refresh() {
         this.refreshTree();
         this.loadContents(this.state.selectedId);
-    }
-
-    onNewFolderKeydown(ev) {
-        if (ev.key === "Enter") {
-            this.confirmNewFolder();
-        } else if (ev.key === "Escape") {
-            this.cancelNewFolder();
-        }
     }
 
     onRowDblClick(rec) {
@@ -476,36 +493,80 @@ export class DmsBrowser extends Component {
     }
 
     // ---- create ---------------------------------------------------
-    startNewFolder() {
-        this.state.creatingFolder = true;
-        this.state.newFolderName = "";
+    // Toolbar "New": opens the tree+tiles picker (DmsNewDocumentDialog) -
+    // pick a destination folder on the left, a document type in the middle.
+    openNewDocumentDialog() {
+        this.dialog.add(DmsNewDocumentDialog, {
+            initialParentId: this.state.selectedId || false,
+            tree: this.state.tree,
+            toggleNode: (n) => this.toggleNode(n),
+            onCreate: (type, parentId, extraDefaults) =>
+                this.newDocument(type, parentId, extraDefaults),
+            onTemplate: (parentId) => this.openTemplatePicker(parentId),
+            onUpload: (parentId, file) => this.uploadNewDocument(parentId, file),
+        });
     }
 
-    cancelNewFolder() {
-        this.state.creatingFolder = false;
-    }
-
-    async confirmNewFolder() {
-        const name = this.state.newFolderName.trim();
-        this.state.creatingFolder = false;
-        if (!name) {
+    // "Upload a File" / "PDF Form" in the New picker - the file is already
+    // on the client, so this skips the usual create-then-open-the-form
+    // dance and attaches it immediately: create a blank Office Document,
+    // then write file_content (its _inverse_file_content creates the
+    // attachment and snapshots a version, same as uploading through the
+    // form's own file widget would).
+    async uploadNewDocument(parentId, file) {
+        const targetParentId = parentId || false;
+        let base64;
+        try {
+            base64 = await this._fileToBase64(file);
+        } catch {
+            this.notification.add(_t("Could not read this file."), { type: "danger" });
             return;
         }
-        await this.orm.call(MODEL, "browser_create_folder", [
-            name,
-            this.state.selectedId || false,
-        ]);
-        if (this.state.selectedId) {
-            this.expandedIds.add(this.state.selectedId);
+        const name = file.name.replace(/\.[^./]+$/, "") || file.name;
+        let newId;
+        try {
+            const ids = await this.orm.create(MODEL, [{
+                name,
+                parent_id: targetParentId,
+                content_type: "onlyoffice",
+                visibility_inherited: Boolean(targetParentId),
+            }]);
+            newId = ids[0];
+            await this.orm.write(MODEL, [newId], {
+                file_content: base64,
+                file_name: file.name,
+            });
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not upload this file.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        if (targetParentId) {
+            this.expandedIds.add(targetParentId);
         }
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+        this.openDocument(newId);
+    }
+
+    _fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result || "").split(",")[1] || "");
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
     }
 
     // Office Documents can only be created directly inside a folder, never
     // nested inside an HTML/Markdown page - mirrors the model's
     // _check_onlyoffice_containment constraint. "Folder" itself is never
-    // offered here since these dropdowns are all "add a *document*" menus;
-    // new folders are created via the toolbar's dedicated button.
+    // offered here since these dropdowns are all "add a *document*" menus -
+    // still used by the tree pane's per-folder "+" and by "New from
+    // Template", both of which need a specific type/template up front,
+    // unlike the toolbar's own generic "New".
     newTypesFor(parentContentType) {
         return NEW_TYPES.filter((nt) => {
             if (nt[0] === "folder") {
@@ -520,9 +581,13 @@ export class DmsBrowser extends Component {
 
     // parentId lets a tree row's own "+" target that folder directly,
     // regardless of which folder is currently open in the flat pane -
-    // defaults to the currently selected folder (the toolbar's own "New
-    // Document" button calls this with no parentId).
-    newDocument(type, parentId) {
+    // defaults to the currently selected folder (the toolbar's own "New"
+    // picker always passes one explicitly). extraDefaults carries type-
+    // specific context the New picker collects up front - default_office_kind
+    // for a Word/Excel/Presentation tile, default_view_descriptor for a
+    // configured Odoo View - so the form opens already set up instead of
+    // asking again.
+    newDocument(type, parentId, extraDefaults) {
         const targetParentId = parentId !== undefined ? parentId : (this.state.selectedId || false);
         this.action.doAction(
             {
@@ -534,6 +599,7 @@ export class DmsBrowser extends Component {
                     default_parent_id: targetParentId,
                     default_content_type: type,
                     default_visibility_inherited: Boolean(targetParentId),
+                    ...(extraDefaults || {}),
                 },
             },
             {
@@ -587,15 +653,16 @@ export class DmsBrowser extends Component {
     }
 
     // ---- cross-listing (multiple hierarchies) --------------------------
-    // "Add to another folder..." row action - the explicit, always-visible
+    // "Add to Another Folder..." Actions-menu item - the explicit
     // counterpart to Ctrl/Cmd+drag (onFolderDrop above). Both call the same
-    // browser_link_add RPC.
-    openLinkPicker(rec, ev) {
-        ev?.stopPropagation();
+    // browser_link_add RPC, here across the whole current selection at once.
+    bulkAddLink() {
+        const ids = [...this.state.selection];
+        const label = this.singleSelected ? this.singleSelected.name : _t("%s items", ids.length);
         this.dialog.add(SelectCreateDialog, {
             resModel: MODEL,
-            title: _t("Add “%s” to Another Folder", rec.name),
-            domain: [["can_have_children", "=", true], ["id", "!=", rec.id]],
+            title: _t("Add “%s” to Another Folder", label),
+            domain: [["can_have_children", "=", true], ...(ids.length === 1 ? [["id", "!=", ids[0]]] : [])],
             multiSelect: false,
             noCreate: true,
             onSelected: async (resIds) => {
@@ -603,12 +670,12 @@ export class DmsBrowser extends Component {
                     return;
                 }
                 try {
-                    await this.orm.call(MODEL, "browser_link_add", [[rec.id], resIds[0]]);
+                    await this.orm.call(MODEL, "browser_link_add", [ids, resIds[0]]);
                 } catch (err) {
                     const msg =
                         (err && err.data && err.data.message) ||
                         (err && err.message) ||
-                        _t("Could not add this document to that folder.");
+                        _t("Could not add this to that folder.");
                     this.notification.add(msg, { type: "danger" });
                     return;
                 }
@@ -626,16 +693,14 @@ export class DmsBrowser extends Component {
         this.selectFolder(rec.real_parent_id || false);
     }
 
-    // Removes just this one placement (browser_link_remove) - the document
-    // itself, and every other folder it's filed in, are untouched. No
-    // confirmation dialog: unlike Delete this is trivially reversible
-    // (Add to another folder... puts it right back).
-    async removeLink(rec, ev) {
-        ev?.stopPropagation();
+    // Removes every selected placement (browser_link_remove) - the
+    // documents themselves, and any other folder they're filed in, are
+    // untouched. No confirmation dialog: unlike Delete this is trivially
+    // reversible (Add to Another Folder... puts it right back).
+    async bulkRemoveLink() {
+        const ids = [...this.state.selection];
         try {
-            await this.orm.call(MODEL, "browser_link_remove", [
-                [rec.id], this.state.selectedId || false,
-            ]);
+            await this.orm.call(MODEL, "browser_link_remove", [ids, this.state.selectedId || false]);
         } catch (err) {
             const msg =
                 (err && err.data && err.data.message) ||
@@ -644,6 +709,7 @@ export class DmsBrowser extends Component {
             this.notification.add(msg, { type: "danger" });
             return;
         }
+        this.state.selection = new Set();
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
@@ -716,6 +782,48 @@ export class DmsBrowser extends Component {
         });
     }
 
+    // Actions-menu Delete: bulkDelete only ever offers itself when
+    // !anySelectedAreLinks (see the dropdown template), so every id here is
+    // safe to unlink outright - no per-row split needed the way a mixed
+    // tree-delete would require.
+    bulkDelete() {
+        const recs = this.selectedRecords;
+        const ids = recs.map((r) => r.id);
+        const anyWithChildren = recs.some(
+            (r) => r.can_have_children && (r.child_count || r.has_children)
+        );
+        const body = recs.length === 1
+            ? this.deleteBody(recs[0])
+            : anyWithChildren
+                ? _t("Delete %s items? Some contain other documents, which will be " +
+                    "deleted too. This cannot be undone.", ids.length)
+                : _t("Delete %s items? This cannot be undone.", ids.length);
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Delete"),
+            body,
+            confirmLabel: _t("Delete"),
+            confirmClass: "btn-danger",
+            confirm: async () => {
+                try {
+                    await this.orm.unlink(MODEL, ids);
+                } catch (err) {
+                    const msg =
+                        (err && err.data && err.data.message) ||
+                        (err && err.message) ||
+                        _t("Could not delete these items.");
+                    this.notification.add(msg, { type: "danger" });
+                    return;
+                }
+                if (ids.includes(this.state.selectedId)) {
+                    this.selectFolder(false);
+                }
+                this.state.selection = new Set();
+                await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+            },
+            cancel: () => {},
+        });
+    }
+
     // ---- copy / paste -----------------------------------------------
     copySelection() {
         if (!this.state.selection.size) {
@@ -768,23 +876,23 @@ export class DmsBrowser extends Component {
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
-    // ---- row actions ---------------------------------------------------
-    async printDocument(rec, ev) {
-        ev.stopPropagation();
-        const action = await this.orm.call(MODEL, "action_report", [[rec.id]]);
+    // ---- Actions-menu bulk actions --------------------------------------
+    async bulkPrint() {
+        const action = await this.orm.call(MODEL, "action_report", [[...this.state.selection]]);
         this.action.doAction(action);
     }
 
-    downloadDocument(rec, ev) {
-        ev.stopPropagation();
-        window.open(`/sanare_dms/document/${rec.id}/download`, "_blank");
+    // Only ever offered when singleSelected is set (see the dropdown
+    // template) - the download route and the publish toggle both only
+    // make sense for one record at a time.
+    bulkDownload() {
+        window.open(`/sanare_dms/document/${this.singleSelected.id}/download`, "_blank");
     }
 
-    async togglePublish(rec, ev) {
-        ev.stopPropagation();
+    async bulkTogglePublish() {
+        const rec = this.singleSelected;
         try {
-            const isPublished = await this.orm.call(MODEL, "browser_toggle_publish", [[rec.id]]);
-            rec.is_published = isPublished;
+            rec.is_published = await this.orm.call(MODEL, "browser_toggle_publish", [[rec.id]]);
         } catch (err) {
             const msg =
                 (err && err.data && err.data.message) ||
@@ -794,11 +902,30 @@ export class DmsBrowser extends Component {
         }
     }
 
-    async toggleDisplayInPrint(rec, ev) {
-        ev.stopPropagation();
-        const value = !rec.display_in_print;
-        await this.orm.write(MODEL, [rec.id], { display_in_print: value });
-        rec.display_in_print = value;
+    async bulkSetDisplayInPrint(value) {
+        const ids = [...this.state.selection];
+        await this.orm.write(MODEL, ids, { display_in_print: value });
+        for (const rec of this.selectedRecords) {
+            rec.display_in_print = value;
+        }
+    }
+
+    async bulkSetTemplate(value) {
+        const ids = [...this.state.selection];
+        try {
+            await this.orm.call(MODEL, "browser_set_template", [ids, value]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not change the template flag.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        for (const rec of this.selectedRecords) {
+            rec.is_template = value;
+        }
+        this.loadTemplates();
     }
 
     iconFor(rec) {
@@ -810,6 +937,7 @@ export class DmsBrowser extends Component {
             html: "fa-file-code-o",
             knowledge_html: "fa-book",
             markdown: "fa-file-text-o",
+            odoo_view: "fa-bar-chart",
         }[rec.content_type] || "fa-file-o";
     }
 

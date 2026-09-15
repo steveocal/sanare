@@ -74,6 +74,14 @@
         <field name="arch" type="xml">
             <form string="Document" class="o_dms_document_form">
                 <header>
+                    <!-- "New" itself lives in the control panel, outside the
+                         form's own arch - there's no way to render a field
+                         literally inside that bar. This is the closest
+                         available surface: the very first row of the form,
+                         directly under the breadcrumb where "New" and the
+                         record's (read-only) name already show. -->
+                    <field name="name" placeholder="Document name" nolabel="1"
+                           class="o_dms_article_name"/>
                     <button name="action_submit" type="object" string="Submit for Approval"
                             class="btn-primary" invisible="not can_submit"/>
                     <button name="action_approve" type="object" string="Approve"
@@ -105,63 +113,34 @@
                                 invisible="content_type == 'folder'" string="Print"/>
                         <button name="action_download" type="object"
                                 class="oe_stat_button" icon="fa-download"
-                                invisible="content_type == 'folder'" string="Download"/>
+                                invisible="content_type in ('folder', 'odoo_view')" string="Download"/>
+                        <button name="action_open_view" type="object"
+                                class="oe_stat_button" icon="fa-external-link"
+                                invisible="content_type != 'odoo_view'" string="Open Full View"/>
                     </div>
-                    <div class="oe_title">
-                        <label for="name"/>
-                        <h1><field name="name" placeholder="Document name"/></h1>
-                        <field name="complete_name" class="text-muted" readonly="1"
-                               invisible="not parent_id"/>
-                    </div>
-                    <group>
-                        <group>
-                            <field name="content_type"
-                                   readonly="version_number > 0"/>
-                            <field name="parent_id"
-                                   options="{'no_quick_create': True}"/>
-                            <field name="linked_parent_ids" widget="many2many_tags"
-                                   domain="[('can_have_children', '=', True)]"
-                                   options="{'no_create': True}"
-                                   help="Other folders this document is also filed under. Purely for browsing - visibility, approval and print behaviour still come only from Parent."/>
-                            <field name="category_id"/>
-                            <field name="tag_ids" widget="many2many_tags"
-                                   options="{'color_field': 'color', 'no_quick_create': True}"/>
-                        </group>
-                        <group>
-                            <field name="owner_id"/>
-                            <field name="visibility" widget="radio"
-                                   options="{'horizontal': True}"/>
-                            <field name="visibility_inherited" invisible="not parent_id"/>
-                            <field name="effective_visibility" readonly="1"
-                                   invisible="visibility_inherited and parent_id"/>
-                            <field name="approval_rule_id" readonly="1"
-                                   invisible="content_type == 'folder'"/>
-                            <field name="is_published" widget="boolean_toggle"
-                                   readonly="not can_publish"
-                                   help="Publish the approved revision to the public website."/>
-                            <field name="display_in_print" invisible="not parent_id"
-                                   help="When the parent folder is printed, its full descendant tree is pulled into one combined document. Turn this off to skip this document (and everything under it) from that rollup."/>
-                            <field name="article_item" invisible="not parent_id"
-                                   widget="boolean_toggle"
-                                   help="Keep this document out of the navigation tree - it stays a child of its parent and shows only in the parent's detail pane."/>
-                            <field name="report_layout"
-                                   help="Report chrome used when this document is printed as the top-level document - a recursed child's own value is ignored."/>
-                            <field name="can_publish" invisible="1"/>
-                            <field name="can_submit" invisible="1"/>
-                            <field name="can_approve" invisible="1"/>
-                            <field name="can_reject" invisible="1"/>
-                            <field name="version_number" invisible="1"/>
-                        </group>
-                    </group>
-                    <notebook>
-                        <page string="Content" name="content"
-                              invisible="content_type == 'folder'">
-                            <field name="content_html" widget="sanare_html" class="w-100"
+                    <field name="can_publish" invisible="1"/>
+                    <field name="can_submit" invisible="1"/>
+                    <field name="can_approve" invisible="1"/>
+                    <field name="can_reject" invisible="1"/>
+                    <field name="version_number" invisible="1"/>
+
+                    <!-- Split screen: the article itself gets the whole left
+                         pane, full height; everything else that used to sit
+                         in the top field groups + most notebook pages is
+                         consolidated into a tabbed, resizable, collapsible
+                         right pane instead (see article_layout.js for the
+                         drag-resize/collapse behaviour - pure DOM/localStorage,
+                         no widget, so it works identically whether this form
+                         is opened standalone or embedded inline in the
+                         DmsBrowser detail pane). -->
+                    <div class="o_dms_article_layout d-flex">
+                        <div class="o_dms_article_main flex-grow-1">
+                            <field name="content_html" widget="sanare_html" class="w-100 h-100"
                                    invisible="content_type not in ('html', 'knowledge_html')"
                                    options="{'codeview': true, 'height': 500}"/>
                             <field name="content_markdown" widget="sanare_markdown"
                                    invisible="content_type != 'markdown'"
-                                   nolabel="1" class="w-100"/>
+                                   nolabel="1" class="w-100 h-100"/>
                             <group invisible="content_type != 'onlyoffice'" name="office_group">
                                 <field name="file_content" filename="file_name"
                                        string="Office File"/>
@@ -173,65 +152,16 @@
                                     to edit this file in place with real-time co-editing.
                                 </div>
                             </group>
-                        </page>
-                        <page string="Sharing" name="sharing">
-                            <field name="access_ids">
-                                <list editable="bottom">
-                                    <field name="partner_id"/>
-                                    <field name="group_id"/>
-                                    <field name="permission"/>
-                                </list>
-                            </field>
-                            <group string="Resolved access" col="2"
-                                   groups="base.group_no_one">
-                                <field name="allowed_user_ids" widget="many2many_tags"/>
-                                <field name="allowed_write_user_ids" widget="many2many_tags"/>
-                            </group>
-                        </page>
-                        <page string="Versions" name="versions"
-                              invisible="content_type == 'folder'">
-                            <field name="version_ids" readonly="1">
-                                <list>
-                                    <field name="version_number" string="Rev"/>
-                                    <field name="create_date" string="Saved on"/>
-                                    <field name="author_id"/>
-                                    <field name="changelog"/>
-                                    <field name="is_current" widget="boolean"/>
-                                    <field name="is_approved" widget="boolean" string="Published"/>
-                                    <button name="action_restore" type="object"
-                                            string="Restore" icon="fa-undo"/>
-                                    <button name="action_open" type="object"
-                                            string="Open" icon="fa-eye"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Approval" name="approval"
-                              invisible="not approval_request_id">
-                            <group>
-                                <field name="approval_request_id" readonly="1"/>
-                                <field name="approval_rule_id" readonly="1"/>
-                            </group>
-                            <field name="approval_line_ids" readonly="1">
-                                <list>
-                                    <field name="sequence" string="#"/>
-                                    <field name="name"/>
-                                    <field name="approver_ids" widget="many2many_tags"/>
-                                    <field name="approval_mode"/>
-                                    <field name="approver_done_ids" widget="many2many_tags"
-                                           string="Signed"/>
-                                    <field name="status" widget="badge"
-                                           decoration-warning="status == 'pending'"
-                                           decoration-success="status == 'approved'"
-                                           decoration-danger="status == 'rejected'"/>
-                                    <field name="decided_by"/>
-                                    <field name="decided_on"/>
-                                    <field name="comment"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="Contents" name="contents"
-                              invisible="content_type != 'folder'">
-                            <field name="child_ids" context="{'default_parent_id': id}">
+                            <field name="view_snapshot_id" invisible="1"/>
+                            <field name="view_snapshot_date" invisible="1"/>
+                            <field name="view_descriptor" widget="sanare_odoo_view"
+                                   nolabel="1" class="w-100 h-100"
+                                   invisible="content_type != 'odoo_view'"/>
+                            <!-- A folder has no editor - its own "content" is
+                                 the list of what's inside it, so that's what
+                                 fills the main pane instead. -->
+                            <field name="child_ids" invisible="content_type != 'folder'"
+                                   context="{'default_parent_id': id}">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
@@ -241,21 +171,122 @@
                                     <field name="display_in_print" string="In Print"/>
                                 </list>
                             </field>
-                        </page>
-                        <page string="Properties" name="properties" invisible="not parent_id">
-                            <!-- No standalone widget for properties_definition exists in Odoo
-                                 core (confirmed: only properties/card.properties/
-                                 calendar.properties are registered field widgets) - the
-                                 `properties` widget below is how new fields actually get
-                                 defined, same pattern as project.task's task_properties (its
-                                 container's task_properties_definition is never shown on
-                                 project.project's own view either). Defining a new property
-                                 here writes back to this document's parent_id's
-                                 properties_definition transparently, so it then appears on
-                                 every sibling under that same parent too. -->
-                            <field name="properties" widget="properties"/>
-                        </page>
-                    </notebook>
+                        </div>
+                        <div class="o_dms_article_resize" title="Drag to resize"/>
+                        <div class="o_dms_article_edge_toggle" title="Show panel">
+                            <i class="fa fa-chevron-left"/>
+                        </div>
+                        <div class="o_dms_article_side">
+                            <div class="o_dms_article_side_toggle" title="Hide panel">
+                                <i class="fa fa-chevron-right"/>
+                            </div>
+                            <notebook>
+                                <page string="Fields" name="fields">
+                                    <!-- Single column - two side-by-side groups (the
+                                         old top-of-form layout) don't fit this
+                                         panel's width. -->
+                                    <group col="1">
+                                        <field name="content_type"
+                                               readonly="version_number > 0"/>
+                                        <field name="parent_id"
+                                               options="{'no_quick_create': True}"/>
+                                        <field name="linked_parent_ids" widget="many2many_tags"
+                                               domain="[('can_have_children', '=', True)]"
+                                               options="{'no_create': True}"
+                                               help="Other folders this document is also filed under. Purely for browsing - visibility, approval and print behaviour still come only from Parent."/>
+                                        <field name="category_id"/>
+                                        <field name="tag_ids" widget="many2many_tags"
+                                               options="{'color_field': 'color', 'no_quick_create': True}"/>
+                                        <field name="owner_id"/>
+                                        <field name="visibility" widget="radio"/>
+                                        <field name="visibility_inherited" invisible="not parent_id"/>
+                                        <field name="effective_visibility" readonly="1"
+                                               invisible="visibility_inherited and parent_id"/>
+                                        <field name="approval_rule_id" readonly="1"
+                                               invisible="content_type == 'folder'"/>
+                                        <field name="is_published" widget="boolean_toggle"
+                                               readonly="not can_publish"
+                                               help="Publish the approved revision to the public website."/>
+                                        <field name="display_in_print" invisible="not parent_id"
+                                               help="When the parent folder is printed, its full descendant tree is pulled into one combined document. Turn this off to skip this document (and everything under it) from that rollup."/>
+                                        <field name="article_item" invisible="not parent_id"
+                                               widget="boolean_toggle"
+                                               help="Keep this document out of the navigation tree - it stays a child of its parent and shows only in the parent's detail pane."/>
+                                        <field name="report_layout"
+                                               help="Report chrome used when this document is printed as the top-level document - a recursed child's own value is ignored."/>
+                                    </group>
+                                </page>
+                                <page string="Sharing" name="sharing">
+                                    <field name="access_ids">
+                                        <list editable="bottom">
+                                            <field name="partner_id"/>
+                                            <field name="group_id"/>
+                                            <field name="permission"/>
+                                        </list>
+                                    </field>
+                                    <group string="Resolved access" col="2"
+                                           groups="base.group_no_one">
+                                        <field name="allowed_user_ids" widget="many2many_tags"/>
+                                        <field name="allowed_write_user_ids" widget="many2many_tags"/>
+                                    </group>
+                                </page>
+                                <page string="Versions" name="versions"
+                                      invisible="content_type == 'folder'">
+                                    <field name="version_ids" readonly="1">
+                                        <list>
+                                            <field name="version_number" string="Rev"/>
+                                            <field name="create_date" string="Saved on"/>
+                                            <field name="author_id"/>
+                                            <field name="changelog"/>
+                                            <field name="is_current" widget="boolean"/>
+                                            <field name="is_approved" widget="boolean" string="Published"/>
+                                            <button name="action_restore" type="object"
+                                                    string="Restore" icon="fa-undo"/>
+                                            <button name="action_open" type="object"
+                                                    string="Open" icon="fa-eye"/>
+                                        </list>
+                                    </field>
+                                </page>
+                                <page string="Approval" name="approval"
+                                      invisible="not approval_request_id">
+                                    <group>
+                                        <field name="approval_request_id" readonly="1"/>
+                                        <field name="approval_rule_id" readonly="1"/>
+                                    </group>
+                                    <field name="approval_line_ids" readonly="1">
+                                        <list>
+                                            <field name="sequence" string="#"/>
+                                            <field name="name"/>
+                                            <field name="approver_ids" widget="many2many_tags"/>
+                                            <field name="approval_mode"/>
+                                            <field name="approver_done_ids" widget="many2many_tags"
+                                                   string="Signed"/>
+                                            <field name="status" widget="badge"
+                                                   decoration-warning="status == 'pending'"
+                                                   decoration-success="status == 'approved'"
+                                                   decoration-danger="status == 'rejected'"/>
+                                            <field name="decided_by"/>
+                                            <field name="decided_on"/>
+                                            <field name="comment"/>
+                                        </list>
+                                    </field>
+                                </page>
+                                <page string="Properties" name="properties" invisible="not parent_id">
+                                    <!-- No standalone widget for properties_definition exists in Odoo
+                                         core (confirmed: only properties/card.properties/
+                                         calendar.properties are registered field widgets) - the
+                                         `properties` widget below is how new fields actually get
+                                         defined, same pattern as project.task's task_properties (its
+                                         container's task_properties_definition is never shown on
+                                         project.project's own view either). Defining a new property
+                                         here writes back to this document's parent_id's
+                                         properties_definition transparently, so it then appears on
+                                         every sibling under that same parent too. -->
+                                    <field name="properties" widget="properties"/>
+                                </page>
+                            </notebook>
+                        </div>
+                    </div>
                 </sheet>
                 <chatter/>
             </form>

@@ -15,6 +15,7 @@ class SanareDocumentVersion(models.Model):
 
     content_html = fields.Html(sanitize=False)
     content_markdown = fields.Text()
+    view_descriptor = fields.Json()
     attachment_id = fields.Many2one("ir.attachment", string="File Snapshot")
     checksum = fields.Char()
     file_size = fields.Integer()
@@ -47,6 +48,8 @@ class SanareDocumentVersion(models.Model):
             vals["content_html"] = self.content_html
         elif self.content_type == "markdown":
             vals["content_markdown"] = self.content_markdown
+        elif self.content_type == "odoo_view":
+            vals["view_descriptor"] = self.view_descriptor
         elif self.content_type == "onlyoffice" and self.attachment_id:
             if doc.attachment_id:
                 doc.attachment_id.sudo().write({"datas": self.attachment_id.datas})

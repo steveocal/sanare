@@ -4,8 +4,15 @@
     <t t-name="sanare_dms.DmsBrowser">
         <div class="o_dms_browser d-flex flex-column h-100" t-att-class="props.className">
 
-            <!-- toolbar -->
+            <!-- toolbar - same shape as a standard Odoo list view: New at
+                 the far left, breadcrumb/search in the middle, a single
+                 central Actions menu (not per-row icons) that activates
+                 once something is selected. -->
             <div class="o_dms_toolbar d-flex align-items-center gap-2 p-2 border-bottom">
+                <button class="btn btn-sm btn-primary" t-on-click="() => this.openNewDocumentDialog()">
+                    <i class="fa fa-plus me-1"/>New
+                </button>
+
                 <ol class="breadcrumb mb-0 flex-grow-1">
                     <li class="breadcrumb-item">
                         <a href="#" t-on-click.prevent="() => this.selectFolder(false)"
@@ -32,39 +39,81 @@
                     </li>
                 </ol>
 
-                <button class="btn btn-sm btn-secondary" t-on-click="() => this.startNewFolder()">
-                    <i class="fa fa-folder-o me-1"/>New Folder
-                </button>
+                <span t-if="state.selection.size" class="text-muted small me-1">
+                    <t t-esc="state.selection.size"/> selected
+                </span>
 
                 <Dropdown>
-                    <button class="btn btn-sm btn-primary">
-                        <i class="fa fa-plus me-1"/>New Document <i class="fa fa-caret-down ms-1"/>
+                    <button class="btn btn-sm btn-secondary">
+                        <i class="fa fa-cog me-1"/>Actions <i class="fa fa-caret-down ms-1"/>
                     </button>
                     <t t-set-slot="content">
-                        <t t-foreach="this.newTypesFor(state.containerContentType)" t-as="nt" t-key="nt[0]">
-                            <DropdownItem onSelected="() => this.newDocument(nt[0])">
-                                <t t-esc="nt[1]"/>
-                            </DropdownItem>
-                        </t>
-                        <div class="dropdown-divider"/>
                         <DropdownItem onSelected="() => this.openTemplatePicker()">
-                            <i class="fa fa-magic me-1"/>From Template…
+                            <i class="fa fa-magic me-1"/>New from Template…
                         </DropdownItem>
+                        <div class="dropdown-divider"/>
+                        <DropdownItem t-if="state.selection.size" onSelected="() => this.copySelection()">
+                            <i class="fa fa-clone me-1"/>Copy
+                        </DropdownItem>
+                        <DropdownItem t-if="state.clipboard.ids.length" onSelected="() => this.pasteClipboard()">
+                            <i class="fa fa-clipboard me-1"/>Paste
+                            <span class="badge text-bg-light ms-1" t-esc="state.clipboard.ids.length"/>
+                        </DropdownItem>
+                        <t t-if="state.selection.size">
+                            <div class="dropdown-divider"/>
+                            <DropdownItem onSelected="() => this.bulkPrint()">
+                                <i class="fa fa-print me-1"/>Print
+                            </DropdownItem>
+                            <DropdownItem t-if="this.singleSelected and !this.singleSelected.is_folder"
+                                          onSelected="() => this.bulkDownload()">
+                                <i class="fa fa-download me-1"/>Download
+                            </DropdownItem>
+                            <DropdownItem t-if="this.singleSelected and !this.singleSelected.is_folder"
+                                          onSelected="() => this.bulkTogglePublish()">
+                                <i class="fa fa-globe me-1"/>
+                                <t t-esc="this.singleSelected.is_published ? 'Unpublish' : 'Publish'"/>
+                            </DropdownItem>
+                            <DropdownItem onSelected="() => this.bulkSetDisplayInPrint(true)">
+                                <i class="fa fa-eye me-1"/>Include in Parent Print
+                            </DropdownItem>
+                            <DropdownItem onSelected="() => this.bulkSetDisplayInPrint(false)">
+                                <i class="fa fa-eye-slash me-1"/>Exclude from Parent Print
+                            </DropdownItem>
+                            <DropdownItem onSelected="() => this.bulkSetTemplate(true)">
+                                <i class="fa fa-magic me-1"/>Mark as Template
+                            </DropdownItem>
+                            <DropdownItem onSelected="() => this.bulkSetTemplate(false)">
+                                <i class="fa fa-magic me-1"/>Remove Template Flag
+                            </DropdownItem>
+                            <div class="dropdown-divider"/>
+                            <DropdownItem t-if="!this.anySelectedAreLinks" onSelected="() => this.bulkAddLink()">
+                                <i class="fa fa-link me-1"/>Add to Another Folder…
+                            </DropdownItem>
+                            <DropdownItem t-if="this.allSelectedAreLinks" onSelected="() => this.bulkRemoveLink()">
+                                <i class="fa fa-chain-broken me-1"/>Remove from This Folder
+                            </DropdownItem>
+                            <DropdownItem t-if="this.singleSelected and this.singleSelected.is_link"
+                                          onSelected="() => this.goToRealLocation(this.singleSelected)">
+                                <i class="fa fa-external-link me-1"/>Go to Real Location
+                            </DropdownItem>
+                            <t t-if="this.singleSelected and !this.singleSelected.is_link">
+                                <div class="dropdown-divider"/>
+                                <DropdownItem onSelected="() => this.reorder(this.singleSelected.id, 'up')">
+                                    <i class="fa fa-caret-up me-1"/>Move Up
+                                </DropdownItem>
+                                <DropdownItem onSelected="() => this.reorder(this.singleSelected.id, 'down')">
+                                    <i class="fa fa-caret-down me-1"/>Move Down
+                                </DropdownItem>
+                            </t>
+                            <t t-if="!this.anySelectedAreLinks">
+                                <div class="dropdown-divider"/>
+                                <DropdownItem onSelected="() => this.bulkDelete()">
+                                    <i class="fa fa-trash-o me-1"/>Delete
+                                </DropdownItem>
+                            </t>
+                        </t>
                     </t>
                 </Dropdown>
-
-                <button class="btn btn-sm btn-secondary" title="Copy (Ctrl+C)"
-                        t-att-disabled="!state.selection.size"
-                        t-on-click="() => this.copySelection()">
-                    <i class="fa fa-clone"/>
-                </button>
-                <button class="btn btn-sm btn-secondary" title="Paste (Ctrl+V)"
-                        t-att-disabled="!state.clipboard.ids.length"
-                        t-on-click="() => this.pasteClipboard()">
-                    <i class="fa fa-clipboard"/>
-                    <span t-if="state.clipboard.ids.length" class="badge text-bg-light ms-1"
-                          t-esc="state.clipboard.ids.length"/>
-                </button>
 
                 <button class="btn btn-sm btn-secondary" title="Refresh"
                         t-on-click="() => this.refresh()">
@@ -117,34 +166,19 @@
                     <table class="table table-sm table-hover mb-0 o_dms_table" t-else="">
                         <thead class="o_dms_thead">
                             <tr>
-                                <th style="width: 45%">Name</th>
+                                <th class="o_dms_checkbox_col">
+                                    <input type="checkbox" t-att-checked="this.allSelected"
+                                           t-on-click="(ev) => this.toggleSelectAll(ev)"/>
+                                </th>
+                                <th style="width: 40%">Name</th>
                                 <th>Type</th>
                                 <th>Owner</th>
                                 <th>Visibility</th>
                                 <th>Status</th>
                                 <th>Updated</th>
-                                <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr t-if="state.creatingFolder">
-                                <td colspan="7">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fa fa-folder-o text-warning"/>
-                                        <input type="text" class="form-control form-control-sm w-auto"
-                                               placeholder="Folder name…"
-                                               t-att-value="state.newFolderName"
-                                               t-on-input="(ev) => this.state.newFolderName = ev.target.value"
-                                               t-on-keydown="(ev) => this.onNewFolderKeydown(ev)"
-                                               t-ref="newFolderInput"/>
-                                        <button class="btn btn-sm btn-primary"
-                                                t-on-click="() => this.confirmNewFolder()">Create</button>
-                                        <button class="btn btn-sm btn-link"
-                                                t-on-click="() => this.cancelNewFolder()">Cancel</button>
-                                    </div>
-                                </td>
-                            </tr>
-
                             <tr t-foreach="state.records" t-as="rec" t-key="rec.id"
                                 class="o_dms_row"
                                 t-att-draggable="!rec.is_link"
@@ -160,6 +194,10 @@
                                 t-on-dragover="(ev) => rec.can_have_children ? this.onFolderDragOver(rec.id, ev) : null"
                                 t-on-dragleave="() => rec.can_have_children ? this.onFolderDragLeave() : null"
                                 t-on-drop="(ev) => rec.can_have_children ? this.onFolderDrop(rec.id, ev) : null">
+                                <td class="o_dms_checkbox_col" t-on-click.stop="() => {}">
+                                    <input type="checkbox" t-att-checked="state.selection.has(rec.id)"
+                                           t-on-click="(ev) => this.toggleRowSelection(rec, ev)"/>
+                                </td>
                                 <td>
                                     <span class="o_dms_icon_wrap me-2">
                                         <i t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
@@ -185,61 +223,9 @@
                                           t-att-class="this.stateClass(rec.state)" t-esc="rec.state_label"/>
                                 </td>
                                 <td class="text-muted small" t-esc="rec.updated"/>
-                                <td class="text-end text-nowrap o_dms_actions">
-                                    <span t-if="!rec.is_link" class="o_dms_reorder me-1">
-                                        <i class="fa fa-caret-up" title="Move up"
-                                           t-on-click="(ev) => { ev.stopPropagation(); this.reorder(rec.id, 'up'); }"/>
-                                        <i class="fa fa-caret-down" title="Move down"
-                                           t-on-click="(ev) => { ev.stopPropagation(); this.reorder(rec.id, 'down'); }"/>
-                                    </span>
-                                    <i class="fa fa-print mx-1"
-                                       t-att-title="rec.is_folder ? 'Print (includes contents)' : 'Print'"
-                                       t-on-click="(ev) => this.printDocument(rec, ev)"/>
-                                    <i t-if="!rec.is_folder" class="fa fa-download mx-1" title="Download"
-                                       t-on-click="(ev) => this.downloadDocument(rec, ev)"/>
-                                    <i t-if="!rec.is_folder" class="fa fa-globe mx-1" title="Toggle publish to website"
-                                       t-att-class="{ 'text-success': rec.is_published }"
-                                       t-on-click="(ev) => this.togglePublish(rec, ev)"/>
-                                    <i class="fa mx-1"
-                                       t-att-class="rec.display_in_print ? 'fa-eye' : 'fa-eye-slash text-muted'"
-                                       t-att-title="rec.display_in_print ? 'Included when parent is printed - click to exclude' : 'Excluded when parent is printed - click to include'"
-                                       t-on-click="(ev) => this.toggleDisplayInPrint(rec, ev)"/>
-                                    <i class="fa mx-1"
-                                       t-att-class="rec.is_template ? 'fa-magic text-primary' : 'fa-magic text-muted'"
-                                       t-att-title="rec.is_template ? 'Template - click to remove' : 'Mark as a template'"
-                                       t-on-click="(ev) => this.toggleIsTemplate(rec, ev)"/>
-                                    <span t-if="!rec.is_link" class="mx-1" t-on-click.stop="() => {}">
-                                        <i class="fa fa-link" title="Add to another folder…"
-                                           t-on-click="(ev) => this.openLinkPicker(rec, ev)"/>
-                                    </span>
-                                    <span t-if="rec.can_have_children" class="mx-1" t-on-click.stop="() => {}">
-                                        <Dropdown>
-                                            <i class="fa fa-plus-circle" title="Add a document here"/>
-                                            <t t-set-slot="content">
-                                                <t t-foreach="this.newTypesFor(rec.content_type)" t-as="nt" t-key="nt[0]">
-                                                    <DropdownItem onSelected="() => this.newDocument(nt[0], rec.id)">
-                                                        <t t-esc="nt[1]"/>
-                                                    </DropdownItem>
-                                                </t>
-                                                <div class="dropdown-divider"/>
-                                                <DropdownItem onSelected="() => this.openTemplatePicker(rec.id)">
-                                                    <i class="fa fa-magic me-1"/>From Template…
-                                                </DropdownItem>
-                                            </t>
-                                        </Dropdown>
-                                    </span>
-                                    <t t-if="rec.is_link">
-                                        <i class="fa fa-external-link mx-1" title="Go to real location"
-                                           t-on-click="(ev) => this.goToRealLocation(rec, ev)"/>
-                                        <i class="fa fa-chain-broken mx-1" title="Remove from this folder"
-                                           t-on-click="(ev) => this.removeLink(rec, ev)"/>
-                                    </t>
-                                    <i t-else="" class="fa fa-trash-o mx-1" title="Delete"
-                                       t-on-click="(ev) => this.deleteRecord(rec, ev)"/>
-                                </td>
                             </tr>
 
-                            <tr t-if="!state.loadingList and !state.records.length and !state.creatingFolder">
+                            <tr t-if="!state.loadingList and !state.records.length">
                                 <td colspan="7" class="text-center text-muted py-4">
                                     This folder is empty. Drag items here, or use “New”.
                                 </td>

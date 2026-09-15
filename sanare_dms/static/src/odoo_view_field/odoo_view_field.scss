@@ -1,0 +1,22 @@
+.o_sanare_odoo_view_field {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+
+    .o_sanare_odoo_view_toolbar {
+        flex: 0 0 auto;
+
+        .btn-group .btn {
+            --bs-btn-padding-y: 0.1rem;
+            --bs-btn-padding-x: 0.4rem;
+            line-height: 1.2;
+        }
+    }
+
+    .o_sanare_odoo_view_body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+    }
+}

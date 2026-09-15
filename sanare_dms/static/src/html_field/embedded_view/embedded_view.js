@@ -144,6 +144,7 @@ export class EmbeddedViewComponent extends Component {
         selectRecord: this._selectRecord,
         createRecord: this._createRecord,
         noContentHelp: _t("No records match this view template."),
+        ...(this.d.resId ? { resId: this.d.resId } : {}),
         ...(this._searchModelStr
           ? { globalState: { searchModel: this._searchModelStr } }
           : {}),
@@ -330,7 +331,7 @@ export class EmbeddedViewComponent extends Component {
   }
 
   openInFull() {
-    this.action.doAction({
+    const action = {
       type: "ir.actions.act_window",
       name: this.d.title || this.d.resModel,
       res_model: this.d.resModel,
@@ -341,7 +342,11 @@ export class EmbeddedViewComponent extends Component {
       domain: this.d.domain || [],
       context: this.d.context || {},
       target: "current",
-    })
+    }
+    if (this.d.resId) {
+      action.res_id = this.d.resId
+    }
+    this.action.doAction(action)
   }
 }
 
