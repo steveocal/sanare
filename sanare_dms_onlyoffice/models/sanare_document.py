@@ -190,8 +190,21 @@ class SanareDocument(models.Model):
         onlyoffice_odoo.utils.validation_utils.convert() (used there only
         to check connectivity during setup) - this is its "actually do the
         conversion and hand back the result" sibling, kept here rather
-        than added to that vendored module."""
+        than added to that vendored module.
+
+        Commits first - hit error -4 ("Error while downloading the document
+        file to be converted") live, every time, before this: the doc
+        server fetches the source file back from Odoo's own /onlyoffice/
+        file/content/<id> route in a brand new request/DB transaction of
+        its own, which can't see this attachment (or its just-written
+        datas) until the transaction that created/updated it actually
+        commits - normally fine for the *editor* flow, where opening the
+        editor is one request that returns before the doc server ever
+        fetches anything, but this method is always called mid-transaction
+        (from _sync_office_html, itself called before _snapshot_version
+        from inside the same write()/create() that changed the file)."""
         self.ensure_one()
+        self.env.cr.commit()
         env = self.env
         doc_server_url = config_utils.get_doc_server_public_url(env)
         jwt_secret = config_utils.get_jwt_secret(env)
