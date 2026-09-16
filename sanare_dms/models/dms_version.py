@@ -52,6 +52,11 @@ class SanareDocumentVersion(models.Model):
             vals["view_descriptor"] = self.view_descriptor
         elif self.content_type == "onlyoffice" and self.attachment_id:
             if doc.attachment_id:
+                # Re-triggers ir_attachment.py's write hook
+                # (_sync_office_html + a fresh snapshot) synchronously, so
+                # doc.content_html is already the freshly re-converted
+                # equivalent of this version's own by the time this method
+                # returns - nothing else to set here.
                 doc.attachment_id.sudo().write({"datas": self.attachment_id.datas})
             else:
                 att = self.attachment_id.sudo().copy({
@@ -59,6 +64,12 @@ class SanareDocumentVersion(models.Model):
                     "res_id": doc.id,
                 })
                 vals["attachment_id"] = att.id
+                # No attachment write fires the usual hook for a copied
+                # attachment - this version's own content_html (rendered
+                # from the exact file being restored) is the only thing
+                # that sets doc's, so use it directly rather than
+                # re-hitting the conversion API for an identical result.
+                vals["content_html"] = self.content_html
         if vals:
             doc.with_context(dms_skip_version=True).write(vals)
         doc._snapshot_version(

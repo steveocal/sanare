@@ -16,6 +16,7 @@ class IrAttachment(models.Model):
             [("attachment_id", "in", self.ids), ("content_type", "=", "onlyoffice")]
         )
         for doc in docs:
+            doc._sync_office_html()
             doc._snapshot_version(
                 changelog=self.env._("Edited in ONLYOFFICE"),
                 trigger="onlyoffice",

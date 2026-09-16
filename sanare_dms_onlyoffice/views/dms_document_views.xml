@@ -25,10 +25,32 @@
                             string="Save Version" class="btn-secondary ms-1"
                             icon="fa-floppy-o"
                             invisible="content_type != 'onlyoffice' or not attachment_id"/>
+                    <button name="action_sync_office_html" type="object"
+                            string="Regenerate Preview" class="btn-secondary ms-1"
+                            icon="fa-refresh"
+                            invisible="content_type != 'onlyoffice' or not attachment_id"/>
                     <div class="text-muted mt-1">
                         Concurrent editors co-author in real time; a version is
                         saved each time the editor is closed.
                     </div>
+                </div>
+            </xpath>
+
+            <!-- Read-only print/embed preview, auto-generated from the file
+                 (see _sync_office_html) - Word renders as real HTML, Excel/
+                 PowerPoint as page images. Separate from the office_group
+                 above (file upload/replace controls) since this is never
+                 hand-edited - "Regenerate Preview" is the only way to
+                 refresh it on demand. -->
+            <xpath expr="//group[@name='office_group']" position="after">
+                <div invisible="not type_chosen or content_type != 'onlyoffice' or not content_html"
+                     class="o_dms_oo_preview mt-2">
+                    <div class="text-muted small mb-1">Print/embed preview (auto-generated):</div>
+                    <field name="content_html" widget="html" readonly="1" nolabel="1" class="w-100"/>
+                </div>
+                <div invisible="not type_chosen or content_type != 'onlyoffice' or content_html"
+                     class="text-muted fst-italic mt-2">
+                    No print preview yet - open in ONLYOFFICE once, or click "Regenerate Preview".
                 </div>
             </xpath>
 

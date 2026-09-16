@@ -126,6 +126,15 @@
              t-out="doc._resolve_embedded_refs(doc.content_html)"/>
         <div t-elif="doc.content_type == 'markdown'"
              t-out="doc.content_markdown_html"/>
+        <!-- Word/Excel/PowerPoint print their auto-generated HTML/page-image
+             preview (see sanare_dms_onlyoffice's _sync_office_html) exactly
+             like an html page's own body - no marker resolution needed
+             here, an Office Document can't embed one. Falls back to the
+             old placeholder for a file type with no preview support, or
+             one that hasn't been synced yet (freshly uploaded, still
+             converting, or the conversion failed). -->
+        <div t-elif="doc.content_type == 'onlyoffice' and doc.content_html"
+             t-out="doc.content_html"/>
         <div t-elif="doc.content_type == 'onlyoffice'">
             <p>Office document: <span t-out="doc.file_name"/>
                (<span t-out="doc.file_size"/> bytes).</p>

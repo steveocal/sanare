@@ -1,6 +1,6 @@
 {
     "name": "Sanare Document Management — ONLYOFFICE",
-    "version": "19.0.1.1.8",
+    "version": "19.0.1.2.0",
     "category": "Document Management",
     "author": "Sanare",
     "license": "LGPL-3",
@@ -12,7 +12,13 @@
     "(permissions come from the sanare.document record rules; concurrent "
     "editors co-author in real time), blank docx/xlsx/pptx creation from the "
     "connector's shipped templates, and a new sanare.document.version snapshot "
-    "each time the editor saves back (once per co-editing session).",
+    "each time the editor saves back (once per co-editing session). Also "
+    "auto-generates a print/embed HTML preview on every save - Word converts "
+    "to real HTML via ONLYOFFICE's own conversion API, Excel/PowerPoint (no "
+    "HTML output in that API) convert to PDF and render page-by-page as "
+    "embedded images instead - so Office Documents print with their actual "
+    "content instead of a placeholder, standalone or nested inside a "
+    "parent's combined print.",
     "depends": ["sanare_dms", "onlyoffice_odoo"],
     "data": [
         "views/dms_document_views.xml",

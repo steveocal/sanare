@@ -615,6 +615,12 @@ class SanareDocument(models.Model):
                     snap_source = doc.attachment_id
                     vals["checksum"] = doc.attachment_id.checksum
                     vals["file_size"] = doc.attachment_id.file_size
+                    # Set by sanare_dms_onlyoffice's _sync_office_html right
+                    # before this runs (see its own docstring) - a Word/
+                    # Excel/PowerPoint preview rendered from the file, so
+                    # printing and an old version's own preview both stay
+                    # in sync with whatever file that version actually had.
+                    vals["content_html"] = doc.content_html
             elif doc.content_type == "odoo_view":
                 changed = not (
                     latest and (latest.view_descriptor or {}) == (doc.view_descriptor or {})
