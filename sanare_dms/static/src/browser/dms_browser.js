@@ -8,7 +8,6 @@ import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { SelectCreateDialog } from "@web/views/view_dialogs/select_create_dialog";
 import { View } from "@web/views/view";
-import { DmsNewDocumentDialog } from "./dms_new_dialog";
 import {
     Component, useState, useChildSubEnv, useSubEnv, onMounted,
     useExternalListener, onError,
@@ -22,6 +21,15 @@ const NEW_TYPES = [
     ["markdown", _t("Markdown")],
     ["onlyoffice", _t("Office Document")],
 ];
+// Office Documents are one content_type covering several real file kinds -
+// iconFor uses this to tell a Word doc from a Spreadsheet from a
+// Presentation in the tree/list, instead of always showing a Word icon.
+const OFFICE_ICONS = {
+    doc: "fa-file-word-o", docx: "fa-file-word-o",
+    xls: "fa-file-excel-o", xlsx: "fa-file-excel-o", csv: "fa-file-excel-o",
+    ppt: "fa-file-powerpoint-o", pptx: "fa-file-powerpoint-o",
+    pdf: "fa-file-pdf-o",
+};
 
 /* ------------------------------------------------------------------ *
  *  Recursive folder-tree node
@@ -493,71 +501,23 @@ export class DmsBrowser extends Component {
     }
 
     // ---- create ---------------------------------------------------
-    // Toolbar "New": opens the tree+tiles picker (DmsNewDocumentDialog) -
-    // pick a destination folder on the left, a document type in the middle.
-    openNewDocumentDialog() {
-        this.dialog.add(DmsNewDocumentDialog, {
-            initialParentId: this.state.selectedId || false,
-            tree: this.state.tree,
-            toggleNode: (n) => this.toggleNode(n),
-            onCreate: (type, parentId, extraDefaults) =>
-                this.newDocument(type, parentId, extraDefaults),
-            onTemplate: (parentId) => this.openTemplatePicker(parentId),
-            onUpload: (parentId, file) => this.uploadNewDocument(parentId, file),
-        });
-    }
-
-    // "Upload a File" / "PDF Form" in the New picker - the file is already
-    // on the client, so this skips the usual create-then-open-the-form
-    // dance and attaches it immediately: create a blank Office Document,
-    // then write file_content (its _inverse_file_content creates the
-    // attachment and snapshots a version, same as uploading through the
-    // form's own file widget would).
-    async uploadNewDocument(parentId, file) {
-        const targetParentId = parentId || false;
-        let base64;
-        try {
-            base64 = await this._fileToBase64(file);
-        } catch {
-            this.notification.add(_t("Could not read this file."), { type: "danger" });
-            return;
+    // Toolbar "New": standard-layout create, no popup - a blank record is
+    // created right under whatever's currently selected (server-side
+    // create() defaults to the user's own "My Documents" when nothing is)
+    // and opened immediately with type_chosen=False, so the form's own
+    // DmsTypeChooser widget fills the main pane asking what kind of
+    // document this should be, same idea as Knowledge's empty-article
+    // "pick an option below" prompt - not a separate dialog.
+    async createBlankDocument() {
+        const parentId = this.state.selectedId || false;
+        const newId = await this.orm.create(MODEL, [
+            { name: _t("Untitled"), parent_id: parentId, type_chosen: false },
+        ]);
+        if (parentId) {
+            this.expandedIds.add(parentId);
         }
-        const name = file.name.replace(/\.[^./]+$/, "") || file.name;
-        let newId;
-        try {
-            const ids = await this.orm.create(MODEL, [{
-                name,
-                parent_id: targetParentId,
-                content_type: "onlyoffice",
-                visibility_inherited: Boolean(targetParentId),
-            }]);
-            newId = ids[0];
-            await this.orm.write(MODEL, [newId], {
-                file_content: base64,
-                file_name: file.name,
-            });
-        } catch (err) {
-            const msg =
-                (err && err.data && err.data.message) ||
-                (err && err.message) ||
-                _t("Could not upload this file.");
-            this.notification.add(msg, { type: "danger" });
-            return;
-        }
-        if (targetParentId) {
-            this.expandedIds.add(targetParentId);
-        }
-        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
-        this.openDocument(newId);
-    }
-
-    _fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve((reader.result || "").split(",")[1] || "");
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
-        });
+        await this.refreshTree();
+        this.openDocument(newId[0]);
     }
 
     // Office Documents can only be created directly inside a folder, never
@@ -581,12 +541,10 @@ export class DmsBrowser extends Component {
 
     // parentId lets a tree row's own "+" target that folder directly,
     // regardless of which folder is currently open in the flat pane -
-    // defaults to the currently selected folder (the toolbar's own "New"
-    // picker always passes one explicitly). extraDefaults carries type-
-    // specific context the New picker collects up front - default_office_kind
-    // for a Word/Excel/Presentation tile, default_view_descriptor for a
-    // configured Odoo View - so the form opens already set up instead of
-    // asking again.
+    // defaults to the currently selected folder. This menu already asks
+    // for a specific type up front, so the resulting record skips the
+    // DmsTypeChooser prompt entirely (default_type_chosen: true) and lands
+    // straight on the real editor for that type.
     newDocument(type, parentId, extraDefaults) {
         const targetParentId = parentId !== undefined ? parentId : (this.state.selectedId || false);
         this.action.doAction(
@@ -598,6 +556,7 @@ export class DmsBrowser extends Component {
                 context: {
                     default_parent_id: targetParentId,
                     default_content_type: type,
+                    default_type_chosen: true,
                     default_visibility_inherited: Boolean(targetParentId),
                     ...(extraDefaults || {}),
                 },
@@ -932,8 +891,10 @@ export class DmsBrowser extends Component {
         if (rec.is_folder) {
             return "fa-folder";
         }
+        if (rec.content_type === "onlyoffice") {
+            return OFFICE_ICONS[(rec.file_extension || "").toLowerCase()] || "fa-file-o";
+        }
         return {
-            onlyoffice: "fa-file-word-o",
             html: "fa-file-code-o",
             knowledge_html: "fa-book",
             markdown: "fa-file-text-o",

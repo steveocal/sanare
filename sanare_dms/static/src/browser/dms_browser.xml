@@ -9,7 +9,7 @@
                  central Actions menu (not per-row icons) that activates
                  once something is selected. -->
             <div class="o_dms_toolbar d-flex align-items-center gap-2 p-2 border-bottom">
-                <button class="btn btn-sm btn-primary" t-on-click="() => this.openNewDocumentDialog()">
+                <button class="btn btn-sm btn-primary" t-on-click="() => this.createBlankDocument()">
                     <i class="fa fa-plus me-1"/>New
                 </button>
 

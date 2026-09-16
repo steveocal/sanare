@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="sanare_dms.DmsTypeChooser">
+        <div class="o_dms_type_chooser">
+            <p class="text-muted mb-4">
+                Start typing to continue with an empty page, or pick an option below to get started.
+            </p>
+
+            <t t-if="!state.pendingOdooView">
+                <div class="o_dms_new_section_title">Pages</div>
+                <div class="o_dms_new_grid mb-4">
+                    <div class="o_dms_new_tile" t-on-click="() => this.pick('folder')">
+                        <i class="fa fa-folder text-warning"/>
+                        <span>Folder</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.pick('knowledge_html')">
+                        <i class="fa fa-book"/>
+                        <span>Knowledge</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.pick('markdown')">
+                        <i class="fa fa-file-text-o"/>
+                        <span>Markdown</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.pickTemplate()">
+                        <i class="fa fa-magic"/>
+                        <span>From Template…</span>
+                    </div>
+                </div>
+
+                <div class="o_dms_new_section_title">Office</div>
+                <div class="o_dms_new_grid mb-4">
+                    <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('docx')">
+                        <i class="fa fa-file-word-o"/>
+                        <span>Word Document</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('xlsx')">
+                        <i class="fa fa-file-excel-o"/>
+                        <span>Spreadsheet</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.pickOffice('pptx')">
+                        <i class="fa fa-file-powerpoint-o"/>
+                        <span>Presentation</span>
+                    </div>
+                </div>
+
+                <div class="o_dms_new_section_title">Files</div>
+                <div class="o_dms_new_grid mb-4">
+                    <div class="o_dms_new_tile" t-on-click="() => this.startUpload('*/*')">
+                        <i class="fa fa-upload"/>
+                        <span>Upload a File</span>
+                    </div>
+                    <div class="o_dms_new_tile" t-on-click="() => this.startUpload('application/pdf,.pdf')">
+                        <i class="fa fa-file-pdf-o"/>
+                        <span>PDF Form</span>
+                    </div>
+                </div>
+
+                <div class="o_dms_new_section_title">Advanced</div>
+                <div class="o_dms_new_grid">
+                    <div class="o_dms_new_tile" t-on-click="() => this.pickOdooViewModel()">
+                        <i class="fa fa-bar-chart"/>
+                        <span>Odoo View</span>
+                    </div>
+                </div>
+            </t>
+
+            <t t-else="">
+                <button class="btn btn-sm btn-link px-0 mb-3" t-on-click="() => this.cancelOdooView()">
+                    <i class="fa fa-arrow-left me-1"/>Back
+                </button>
+                <p>
+                    Reference: <strong t-esc="state.pendingOdooView.modelDisplay"/>
+                    #<t t-esc="state.pendingOdooView.resId"/>
+                    (<t t-esc="state.pendingOdooView.recordDisplay"/>) - pick a view type:
+                </p>
+                <div class="o_dms_new_grid o_dms_new_grid_compact">
+                    <div t-foreach="viewTypeChoices" t-as="vt" t-key="vt[0]"
+                         class="o_dms_new_tile" t-on-click="() => this.pickOdooViewType(vt[0])">
+                        <i class="fa" t-att-class="vt[2]"/>
+                        <span t-esc="vt[1]"/>
+                    </div>
+                </div>
+            </t>
+
+            <input type="file" class="d-none" t-ref="fileInput" t-on-change="(ev) => this.onFileChosen(ev)"/>
+        </div>
+    </t>
+
+</templates>

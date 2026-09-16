@@ -1,0 +1,47 @@
+/* Theme-aware: same token approach as dms_browser.scss - these resolve
+   correctly in both light and dark without hardcoding either. */
+
+.o_dms_type_chooser {
+    padding: 2rem;
+    color: var(--o-main-text-color, #374151);
+
+    .o_dms_new_section_title {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--o-main-text-muted-color, #6c757d);
+        margin-bottom: .4rem;
+    }
+
+    .o_dms_new_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: .5rem;
+
+        &.o_dms_new_grid_compact {
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        }
+    }
+
+    .o_dms_new_tile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+        padding: 1rem .5rem;
+        border: 1px solid var(--o-border-color, #dee2e6);
+        border-radius: .375rem;
+        cursor: pointer;
+        text-align: center;
+        font-size: 12px;
+        color: inherit;
+
+        i { font-size: 22px; color: var(--o-brand-primary, #714b67); }
+
+        &:hover {
+            background: rgba(128, 128, 128, 0.12);
+            border-color: var(--o-brand-primary, #714b67);
+        }
+    }
+}

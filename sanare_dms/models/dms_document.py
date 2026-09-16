@@ -58,6 +58,32 @@ VISIBILITY = [
     ("public", "Public"),
 ]
 
+# The only three documents ever allowed to have no Parent (see
+# _check_parent_required) - every other document must be filed somewhere
+# under one of these. "my_documents" is per-user (one each, owner-scoped);
+# "shared"/"public" are single company-wide folders. Deliberately reuses the
+# same three names as VISIBILITY - each base folder's own visibility matches
+# its key, so a fresh document created inside it inherits the right default.
+BASE_FOLDER_KEYS = [
+    ("my_documents", "My Documents"),
+    ("shared", "Shared"),
+    ("public", "Public"),
+]
+
+# Curated subset used by the Odoo View "reference a fixed record" flow
+# (view_model_id/view_res_id/view_type below) - kept short deliberately:
+# Odoo doesn't guarantee every view type exists for every model, so this
+# only offers the types most models actually define.
+VIEW_TYPES = [
+    ("list", "List"),
+    ("kanban", "Kanban"),
+    ("form", "Form"),
+    ("calendar", "Calendar"),
+    ("pivot", "Pivot"),
+    ("graph", "Graph"),
+    ("activity", "Activity"),
+]
+
 # Which Odoo report chrome wraps this document when printed - "external"/
 # "internal" reuse Odoo's own web.external_layout/web.internal_layout as-is
 # (company letterhead, address block, etc; only the *content* wrapper - see
@@ -85,6 +111,12 @@ class SanareDocument(models.Model):
     # -- hierarchy ---------------------------------------------------------
     parent_id = fields.Many2one(
         "sanare.document", string="Parent", ondelete="cascade", index=True, tracking=True
+    )
+    base_folder_key = fields.Selection(
+        BASE_FOLDER_KEYS, copy=False,
+        help="Marks this as one of the three permanent root folders "
+             "(My Documents / Shared / Public) - the only documents allowed "
+             "to have no Parent. Set only by _get_base_folder(), never by hand.",
     )
     parent_path = fields.Char(index=True)
     child_ids = fields.One2many(
@@ -165,6 +197,14 @@ class SanareDocument(models.Model):
     content_type = fields.Selection(
         CONTENT_TYPES, required=True, default="folder", string="Type"
     )
+    type_chosen = fields.Boolean(
+        default=True,
+        help="False only for the brief moment between clicking \"New\" and "
+             "picking what kind of document this is - the form shows the "
+             "type-chooser instead of any content editor while this is "
+             "False. Sanare_dms's own \"+\" menus (which already ask for a "
+             "specific type up front) create with this True from the start.",
+    )
     is_folder = fields.Boolean(compute="_compute_is_folder", store=True)
     can_have_children = fields.Boolean(
         compute="_compute_is_folder", store=True,
@@ -193,6 +233,17 @@ class SanareDocument(models.Model):
              "downloading since the view itself can't render server-side.",
     )
     view_snapshot_date = fields.Datetime(string="Snapshot Date", copy=False)
+
+    # -- Odoo View: "reference a fixed record" flow --------------------
+    # A captured view (via the cog-menu "Save as Odoo View Document" - see
+    # create_view_document) sets view_descriptor directly and leaves these
+    # three empty; they only apply to the New-picker's "reference a fixed
+    # record" flow (DmsTypeChooser), where they're the editable, visible
+    # source of truth and view_descriptor is just what gets *derived* from
+    # them (_onchange_view_reference) for the field widget to render.
+    view_model_id = fields.Many2one("ir.model", string="Model")
+    view_res_id = fields.Integer(string="Record ID")
+    view_type = fields.Selection(VIEW_TYPES, string="View Type")
 
     attachment_id = fields.Many2one("ir.attachment", string="Office File", copy=False)
     file_content = fields.Binary(
@@ -355,6 +406,33 @@ class SanareDocument(models.Model):
             else:
                 doc.content_markdown_html = False
 
+    # Rebuilds view_descriptor from the three visible reference fields
+    # whenever any of them changes - the "reference a fixed record" flow
+    # (DmsTypeChooser) only ever sets view_model_id/view_res_id/view_type,
+    # never view_descriptor directly (unlike the cog-menu capture flow,
+    # create_view_document, which is the other way around). Fires on the
+    # very first "New" pick too, not just later edits: Odoo runs onchange
+    # against context defaults the same as a real user edit, so passing
+    # default_view_model_id/default_view_res_id/default_view_type is enough
+    # - the JS side never needs to construct view_descriptor by hand.
+    @api.onchange("view_model_id", "view_res_id", "view_type")
+    def _onchange_view_reference(self):
+        for doc in self:
+            if doc.content_type != "odoo_view" or not doc.view_model_id or not doc.view_type:
+                continue
+            vt = doc.view_type
+            descriptor = {
+                "resModel": doc.view_model_id.model,
+                "viewType": vt,
+                "views": [[False, "form"]] if vt == "form" else [[False, vt], [False, "search"]],
+                "domain": [] if vt == "form" else [["id", "=", doc.view_res_id]],
+                "context": {},
+                "title": doc.view_model_id.name,
+            }
+            if vt == "form" and doc.view_res_id:
+                descriptor["resId"] = doc.view_res_id
+            doc.view_descriptor = descriptor
+
     @api.depends("attachment_id", "attachment_id.datas")
     def _compute_file_content(self):
         for doc in self:
@@ -441,6 +519,8 @@ class SanareDocument(models.Model):
 
     def _ensure_content(self):
         self.ensure_one()
+        if not self.type_chosen:
+            raise UserError(self.env._("Pick a document type before submitting."))
         if self.content_type in HTML_TYPES and not (self.content_html or "").strip():
             raise UserError(self.env._("Add HTML content before submitting for approval."))
         if self.content_type == "markdown" and not (self.content_markdown or "").strip():
@@ -449,6 +529,37 @@ class SanareDocument(models.Model):
             raise UserError(self.env._("Create or upload the office file before submitting."))
         if self.content_type == "odoo_view" and not (self.view_descriptor or {}).get("resModel"):
             raise UserError(self.env._("This Odoo View has no captured view yet."))
+
+    @api.model
+    def _get_base_folder(self, key):
+        """Find-or-create one of the three permanent root folders (see
+        BASE_FOLDER_KEYS) - the only records _check_parent_required allows
+        to have no Parent. "my_documents" is scoped to the current user
+        (one each, created the first time each user needs a default
+        parent); "shared"/"public" are single company-wide folders, seeded
+        by data/dms_data.xml on install but found-or-created here too so an
+        already-installed database that predates this feature self-heals on
+        first use rather than erroring.
+        """
+        if key not in dict(BASE_FOLDER_KEYS):
+            raise ValueError("Unknown base folder key: %r" % (key,))
+        domain = [("base_folder_key", "=", key)]
+        if key == "my_documents":
+            domain.append(("owner_id", "=", self.env.user.id))
+        folder = self.sudo().search(domain, limit=1)
+        if folder:
+            return folder
+        visibility = {"my_documents": "private", "shared": "shared", "public": "public"}[key]
+        vals = {
+            "name": dict(BASE_FOLDER_KEYS)[key],
+            "content_type": "folder",
+            "base_folder_key": key,
+            "visibility": visibility,
+            "visibility_inherited": False,
+        }
+        if key == "my_documents":
+            vals["owner_id"] = self.env.user.id
+        return self.sudo().create(vals)
 
     def _snapshot_version(self, changelog=False, trigger="manual", author=None):
         Version = self.env["sanare.document.version"].sudo()
@@ -625,6 +736,13 @@ class SanareDocument(models.Model):
         for vals in vals_list:
             if vals.get("content_type") == "folder":
                 vals.update(content_html=False, content_markdown=False)
+            # Every document needs a parent (see _check_parent_required) -
+            # anything created without one explicitly (the toolbar "New"
+            # with nothing selected, an import, a stray RPC call) falls
+            # back to the current user's own "My Documents" rather than
+            # erroring, so a missing parent_id is never a dead end.
+            if not vals.get("parent_id") and not vals.get("base_folder_key"):
+                vals["parent_id"] = self._get_base_folder("my_documents").id
         docs = super().create(vals_list)
         for doc in docs:
             if doc.content_type != "folder" and not doc.version_ids:
@@ -632,6 +750,16 @@ class SanareDocument(models.Model):
                     changelog=self.env._("Created"), trigger="submit"
                 )
         return docs
+
+    def unlink(self):
+        if any(doc.base_folder_key for doc in self):
+            raise UserError(
+                self.env._(
+                    "\"My Documents\", \"Shared\" and \"Public\" are permanent "
+                    "folders and can't be deleted."
+                )
+            )
+        return super().unlink()
 
     def write(self, vals):
         if vals.get("website_published") or vals.get("is_published"):
@@ -1393,6 +1521,24 @@ class SanareDocument(models.Model):
                 self.env._("A document cannot be placed inside itself.")
             )
 
+    @api.constrains("parent_id", "base_folder_key")
+    def _check_parent_required(self):
+        """Every document must be filed inside a folder - the only three
+        exceptions are the permanent base folders themselves
+        (base_folder_key set, see BASE_FOLDER_KEYS/_get_base_folder).
+        create()'s own default already steers ordinary creation away from
+        ever hitting this - it's a backstop against a parent being cleared
+        later (e.g. re-parenting to root by hand)."""
+        for doc in self:
+            if not doc.parent_id and not doc.base_folder_key:
+                raise ValidationError(
+                    self.env._(
+                        "Every document must be placed inside a folder - "
+                        "\"My Documents\", \"Shared\", \"Public\", or any "
+                        "folder inside them."
+                    )
+                )
+
     @api.constrains("content_type", "parent_id", "child_ids")
     def _check_container_integrity(self):
         """Non-container types (Office Documents, Knowledge Pages - anything
@@ -1534,6 +1680,7 @@ class SanareDocument(models.Model):
                 "is_folder": r.is_folder,
                 "can_have_children": r.can_have_children,
                 "content_type": r.content_type,
+                "file_extension": r.file_extension,
                 "has_children": bool(counts.get(r.id)) if r.can_have_children else False,
                 "is_link": False,
                 "link_count": len(r.linked_parent_ids),
@@ -1551,6 +1698,7 @@ class SanareDocument(models.Model):
                     "is_folder": d.is_folder,
                     "can_have_children": False,
                     "content_type": d.content_type,
+                    "file_extension": d.file_extension,
                     "has_children": False,
                     "is_link": True,
                     "link_count": len(d.linked_parent_ids),
@@ -1578,6 +1726,7 @@ class SanareDocument(models.Model):
                 "is_folder": r.is_folder,
                 "content_type": r.content_type,
                 "content_type_label": ctypes.get(r.content_type),
+                "file_extension": r.file_extension,
                 "parent_name": r.parent_id.display_name,
             }
             for r in recs
@@ -1685,6 +1834,7 @@ class SanareDocument(models.Model):
                 "can_have_children": r.can_have_children,
                 "content_type": r.content_type,
                 "content_type_label": ctypes.get(r.content_type),
+                "file_extension": r.file_extension,
                 "state": r.state,
                 "state_label": states.get(r.state),
                 "owner": r.owner_id.display_name,
@@ -1717,6 +1867,7 @@ class SanareDocument(models.Model):
                     "can_have_children": False,
                     "content_type": d.content_type,
                     "content_type_label": ctypes.get(d.content_type),
+                    "file_extension": d.file_extension,
                     "state": d.state,
                     "state_label": states.get(d.state),
                     "owner": d.owner_id.display_name,

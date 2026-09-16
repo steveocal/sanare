@@ -135,13 +135,25 @@
                          DmsBrowser detail pane). -->
                     <div class="o_dms_article_layout d-flex">
                         <div class="o_dms_article_main flex-grow-1">
+                            <!-- Standard-layout replacement for a popup "New
+                                 Document" dialog: while type_chosen is False
+                                 (only ever true for the brief moment right
+                                 after clicking toolbar "New" with no type
+                                 picked yet), this inline chooser fills the
+                                 main pane instead of any content editor -
+                                 same idea as Knowledge's own empty-article
+                                 "pick an option below" prompt. Picking a tile
+                                 just updates fields on this record like any
+                                 other widget; nothing is created until Save. -->
+                            <field name="type_chosen" widget="sanare_type_chooser"
+                                   invisible="type_chosen" nolabel="1" class="w-100 h-100"/>
                             <field name="content_html" widget="sanare_html" class="w-100 h-100"
-                                   invisible="content_type not in ('html', 'knowledge_html')"
+                                   invisible="not type_chosen or content_type not in ('html', 'knowledge_html')"
                                    options="{'codeview': true, 'height': 500}"/>
                             <field name="content_markdown" widget="sanare_markdown"
-                                   invisible="content_type != 'markdown'"
+                                   invisible="not type_chosen or content_type != 'markdown'"
                                    nolabel="1" class="w-100 h-100"/>
-                            <group invisible="content_type != 'onlyoffice'" name="office_group">
+                            <group invisible="not type_chosen or content_type != 'onlyoffice'" name="office_group">
                                 <field name="file_content" filename="file_name"
                                        string="Office File"/>
                                 <field name="file_name" invisible="1"/>
@@ -154,13 +166,18 @@
                             </group>
                             <field name="view_snapshot_id" invisible="1"/>
                             <field name="view_snapshot_date" invisible="1"/>
+                            <group invisible="not type_chosen or content_type != 'odoo_view'" name="odoo_view_group">
+                                <field name="view_model_id" options="{'no_create': True}"/>
+                                <field name="view_res_id"/>
+                                <field name="view_type"/>
+                            </group>
                             <field name="view_descriptor" widget="sanare_odoo_view"
                                    nolabel="1" class="w-100 h-100"
-                                   invisible="content_type != 'odoo_view'"/>
+                                   invisible="not type_chosen or content_type != 'odoo_view'"/>
                             <!-- A folder has no editor - its own "content" is
                                  the list of what's inside it, so that's what
                                  fills the main pane instead. -->
-                            <field name="child_ids" invisible="content_type != 'folder'"
+                            <field name="child_ids" invisible="not type_chosen or content_type != 'folder'"
                                    context="{'default_parent_id': id}">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
