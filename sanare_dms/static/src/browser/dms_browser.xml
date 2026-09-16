@@ -200,7 +200,7 @@
                                 </td>
                                 <td>
                                     <span class="o_dms_icon_wrap me-2">
-                                        <i t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
+                                        <i class="fa" t-att-class="this.iconFor(rec) + (rec.is_folder ? ' text-warning' : ' text-muted')"/>
                                         <i t-if="rec.is_link" class="fa fa-link o_dms_link_badge" title="Linked here"/>
                                     </span>
                                     <span t-esc="rec.name"/>
@@ -304,7 +304,7 @@
                 <i t-else="" class="fa fa-fw"/>
             </span>
             <span class="o_dms_icon_wrap me-2">
-                <i t-att-class="icon + (props.node.is_folder ? ' text-warning' : ' text-muted')"/>
+                <i class="fa" t-att-class="icon + (props.node.is_folder ? ' text-warning' : ' text-muted')"/>
                 <i t-if="props.node.is_link" class="fa fa-link o_dms_link_badge" title="Linked here"/>
             </span>
             <span class="text-truncate flex-grow-1" t-esc="props.node.name"/>
