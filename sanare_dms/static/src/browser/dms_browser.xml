@@ -283,7 +283,7 @@
          dblclick opens its form). Both are draggable for reparenting;
          only folders are drop targets. -->
     <t t-name="sanare_dms.DmsTreeNode">
-        <div class="o_dms_tree_row d-flex align-items-center px-1 py-1 rounded"
+        <div class="o_dms_tree_row d-flex align-items-center pe-1 py-1 rounded"
              t-att-style="'padding-left:' + (props.depth * 14 + 4) + 'px'"
              t-att-class="{
                  'o_dms_selected': isSelected,
