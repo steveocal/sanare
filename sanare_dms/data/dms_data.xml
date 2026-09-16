@@ -55,6 +55,22 @@
         <field name="visibility">public</field>
         <field name="visibility_inherited" eval="False"/>
     </record>
+    <!-- Where the browser's "Delete" moves things instead of unlinking them
+         outright - see _move_to_trash/_restore_from_trash. -->
+    <record id="doc_folder_trash" model="sanare.document">
+        <field name="name">Trash</field>
+        <field name="content_type">folder</field>
+        <field name="base_folder_key">trash</field>
+        <!-- "public" only so the *folder itself* is navigable to every
+             internal user (the read rule's one universal-read branch,
+             visibility="shared" alone isn't - see _get_base_folder's own
+             comment). What's actually inside stays gated normally: each
+             trashed item's own visibility/visibility_inherited is frozen
+             at the moment it's trashed (_move_to_trash), so sitting in
+             this folder never changes who can see it. -->
+        <field name="visibility">public</field>
+        <field name="visibility_inherited" eval="False"/>
+    </record>
 
     <!-- Email templates. A document is "an email" by carrying a
          data-embedded="sanareEmailSend" block in its body (subject +

@@ -14,13 +14,6 @@ import {
 } from "@odoo/owl";
 
 const MODEL = "sanare.document";
-const NEW_TYPES = [
-    ["folder", _t("Folder")],
-    ["html", _t("Web Page (HTML)")],
-    ["knowledge_html", _t("Knowledge Page")],
-    ["markdown", _t("Markdown")],
-    ["onlyoffice", _t("Office Document")],
-];
 // Office Documents are one content_type covering several real file kinds -
 // iconFor uses this to tell a Word doc from a Spreadsheet from a
 // Presentation in the tree/list, instead of always showing a Word icon.
@@ -156,10 +149,11 @@ export class DmsBrowser extends Component {
                 select: (id) => this.select(id),
                 open: (id) => this.openDocument(id),
                 newDocument: (type, parentId) => this.newDocument(type, parentId),
+                newArticle: (parentId) => this.createBlankDocument(parentId),
                 openTemplatePicker: (parentId) => this.openTemplatePicker(parentId),
                 goToRealLocation: (rec, ev) => this.goToRealLocation(rec, ev),
-                newTypesFor: (contentType) => this.newTypesFor(contentType),
                 deleteRecord: (rec, ev) => this.deleteRecord(rec, ev),
+                restoreRecord: (rec, ev) => this.restoreRecord(rec, ev),
                 // onItemDragStart only ever reads rec.id - the node itself
                 // (folder or leaf document) is all it needs.
                 dragStart: (node, ev) => this.onItemDragStart(node, ev),
@@ -360,6 +354,28 @@ export class DmsBrowser extends Component {
         return recs.length > 0 && recs.every((r) => r.is_link);
     }
 
+    get allSelectedInTrash() {
+        const recs = this.selectedRecords;
+        return recs.length > 0 && recs.every((r) => r.in_trash);
+    }
+
+    async bulkRestore() {
+        const ids = [...this.state.selection];
+        try {
+            await this.orm.call(MODEL, "browser_restore", [ids]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not restore these items.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        this.notification.add(_t("Restored %s items.", ids.length), { type: "info" });
+        this.state.selection = new Set();
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
     refresh() {
         this.refreshTree();
         this.loadContents(this.state.selectedId);
@@ -501,42 +517,25 @@ export class DmsBrowser extends Component {
     }
 
     // ---- create ---------------------------------------------------
-    // Toolbar "New": standard-layout create, no popup - a blank record is
-    // created right under whatever's currently selected (server-side
-    // create() defaults to the user's own "My Documents" when nothing is)
-    // and opened immediately with type_chosen=False, so the form's own
-    // DmsTypeChooser widget fills the main pane asking what kind of
-    // document this should be, same idea as Knowledge's empty-article
-    // "pick an option below" prompt - not a separate dialog.
-    async createBlankDocument() {
-        const parentId = this.state.selectedId || false;
+    // Toolbar "New", and the tree pane's own per-folder "+" ▸ "New Article":
+    // standard-layout create, no popup - a blank record is created right
+    // under whatever's currently selected (or explicitly under parentId,
+    // for the "+" menu; server-side create() defaults to the user's own
+    // "My Documents" when neither is given) and opened immediately with
+    // type_chosen=False, so the form's own DmsTypeChooser widget fills the
+    // main pane asking what kind of document this should be, same idea as
+    // Knowledge's empty-article "pick an option below" prompt - not a
+    // separate dialog.
+    async createBlankDocument(parentId) {
+        const targetParentId = parentId !== undefined ? parentId : (this.state.selectedId || false);
         const newId = await this.orm.create(MODEL, [
-            { name: _t("Untitled"), parent_id: parentId, type_chosen: false },
+            { name: _t("Untitled"), parent_id: targetParentId, type_chosen: false },
         ]);
-        if (parentId) {
-            this.expandedIds.add(parentId);
+        if (targetParentId) {
+            this.expandedIds.add(targetParentId);
         }
         await this.refreshTree();
         this.openDocument(newId[0]);
-    }
-
-    // Office Documents can only be created directly inside a folder, never
-    // nested inside an HTML/Markdown page - mirrors the model's
-    // _check_onlyoffice_containment constraint. "Folder" itself is never
-    // offered here since these dropdowns are all "add a *document*" menus -
-    // still used by the tree pane's per-folder "+" and by "New from
-    // Template", both of which need a specific type/template up front,
-    // unlike the toolbar's own generic "New".
-    newTypesFor(parentContentType) {
-        return NEW_TYPES.filter((nt) => {
-            if (nt[0] === "folder") {
-                return false;
-            }
-            if (nt[0] === "onlyoffice") {
-                return (parentContentType || "folder") === "folder";
-            }
-            return true;
-        });
     }
 
     // parentId lets a tree row's own "+" target that folder directly,
@@ -672,64 +671,83 @@ export class DmsBrowser extends Component {
         await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
     }
 
-    // ---- delete -------------------------------------------------------
-    deleteBody(rec) {
+    // ---- delete / trash -------------------------------------------------
+    // "Delete" moves to Trash (reversible, no confirmation needed) unless
+    // the row is already in_trash, in which case it's the real, permanent
+    // unlink() - the only path that ever hard-deletes from the browser.
+    deleteForeverBody(rec) {
         const hasRealChildren = rec.can_have_children && (rec.child_count || rec.has_children);
         const linkedCount = rec.linked_child_count || 0;
         if (hasRealChildren && linkedCount) {
             return _t(
-                "Delete “%(name)s” and everything inside it? %(linked)s linked " +
-                    "document(s) filed in here will just be removed from this " +
-                    "folder - they still exist at their real location. " +
-                    "Everything else cannot be undone.",
+                "Permanently delete “%(name)s” and everything inside it? " +
+                    "%(linked)s linked document(s) filed in here will just be " +
+                    "removed from this folder - they still exist at their real " +
+                    "location. Everything else cannot be undone.",
                 { name: rec.name, linked: linkedCount }
             );
         }
         if (linkedCount) {
             return _t(
-                "Delete “%(name)s”? %(linked)s linked document(s) filed in here " +
-                    "will just be removed from this folder - they still exist at " +
-                    "their real location.",
+                "Permanently delete “%(name)s”? %(linked)s linked document(s) " +
+                    "filed in here will just be removed from this folder - they " +
+                    "still exist at their real location.",
                 { name: rec.name, linked: linkedCount }
             );
         }
         return hasRealChildren
-            ? _t("Delete “%s” and everything inside it? This cannot be undone.", rec.name)
-            : _t("Delete “%s”? This cannot be undone.", rec.name);
+            ? _t("Permanently delete “%s” and everything inside it? This cannot be undone.", rec.name)
+            : _t("Permanently delete “%s”? This cannot be undone.", rec.name);
     }
 
     deleteRecord(rec, ev) {
         ev.stopPropagation();
+        if (rec.in_trash) {
+            this.deleteForeverRecord(rec);
+        } else {
+            this.trashRecord(rec);
+        }
+    }
+
+    async trashRecord(rec) {
+        try {
+            await this.orm.call(MODEL, "browser_delete", [[rec.id]]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not delete this item.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        this.notification.add(_t("Moved “%s” to Trash.", rec.name), { type: "info" });
+        if (this.state.selectedId === rec.id) {
+            // Trashed the folder we're currently looking inside of - same
+            // "no way to know where to go instead" reasoning as before,
+            // root is always a safe fallback.
+            this.selectFolder(false);
+        }
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
+    deleteForeverRecord(rec) {
         this.dialog.add(ConfirmationDialog, {
-            // Called for both flat-pane rows (which carry child_count) and
-            // tree nodes (which carry has_children instead) - check either.
-            // linked_child_count is separate from both: those documents
-            // are only cross-listed here (see linked_parent_ids) and must
-            // never be reported as "will be deleted" - deleting this
-            // folder only drops their placement here, their real copy and
-            // any other folder they're filed in are untouched.
-            title: _t("Delete"),
-            body: this.deleteBody(rec),
-            confirmLabel: _t("Delete"),
+            title: _t("Delete Forever"),
+            body: this.deleteForeverBody(rec),
+            confirmLabel: _t("Delete Forever"),
             confirmClass: "btn-danger",
             confirm: async () => {
                 try {
-                    await this.orm.unlink(MODEL, [rec.id]);
+                    await this.orm.call(MODEL, "browser_delete_forever", [[rec.id]]);
                 } catch (err) {
                     const msg =
                         (err && err.data && err.data.message) ||
                         (err && err.message) ||
-                        _t("Could not delete this item.");
+                        _t("Could not permanently delete this item.");
                     this.notification.add(msg, { type: "danger" });
                     return;
                 }
                 if (this.state.selectedId === rec.id) {
-                    // Deleted the folder we're currently looking inside of -
-                    // neither browser_contents nor browser_tree_children
-                    // return parent_id, so there's no "go up one level" id
-                    // to navigate to here. Root is a safe, always-valid
-                    // fallback rather than showing a now-deleted folder's
-                    // stale contents.
                     this.selectFolder(false);
                 }
                 await Promise.all([
@@ -741,35 +759,72 @@ export class DmsBrowser extends Component {
         });
     }
 
+    async restoreRecord(rec, ev) {
+        ev.stopPropagation();
+        try {
+            await this.orm.call(MODEL, "browser_restore", [[rec.id]]);
+        } catch (err) {
+            const msg =
+                (err && err.data && err.data.message) ||
+                (err && err.message) ||
+                _t("Could not restore this item.");
+            this.notification.add(msg, { type: "danger" });
+            return;
+        }
+        this.notification.add(_t("Restored “%s”.", rec.name), { type: "info" });
+        await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+    }
+
     // Actions-menu Delete: bulkDelete only ever offers itself when
     // !anySelectedAreLinks (see the dropdown template), so every id here is
-    // safe to unlink outright - no per-row split needed the way a mixed
-    // tree-delete would require.
-    bulkDelete() {
+    // safe to trash/unlink outright - no per-row split needed the way a
+    // mixed tree-delete would require. Permanent bulk delete only when
+    // *every* selected row is already in Trash; otherwise it's a bulk trash.
+    async bulkDelete() {
         const recs = this.selectedRecords;
         const ids = recs.map((r) => r.id);
+        const allInTrash = recs.every((r) => r.in_trash);
+        if (!allInTrash) {
+            try {
+                await this.orm.call(MODEL, "browser_delete", [ids]);
+            } catch (err) {
+                const msg =
+                    (err && err.data && err.data.message) ||
+                    (err && err.message) ||
+                    _t("Could not delete these items.");
+                this.notification.add(msg, { type: "danger" });
+                return;
+            }
+            this.notification.add(_t("Moved %s items to Trash.", ids.length), { type: "info" });
+            if (ids.includes(this.state.selectedId)) {
+                this.selectFolder(false);
+            }
+            this.state.selection = new Set();
+            await Promise.all([this.refreshTree(), this.loadContents(this.state.selectedId)]);
+            return;
+        }
         const anyWithChildren = recs.some(
             (r) => r.can_have_children && (r.child_count || r.has_children)
         );
         const body = recs.length === 1
-            ? this.deleteBody(recs[0])
+            ? this.deleteForeverBody(recs[0])
             : anyWithChildren
-                ? _t("Delete %s items? Some contain other documents, which will be " +
-                    "deleted too. This cannot be undone.", ids.length)
-                : _t("Delete %s items? This cannot be undone.", ids.length);
+                ? _t("Permanently delete %s items? Some contain other documents, " +
+                    "which will be deleted too. This cannot be undone.", ids.length)
+                : _t("Permanently delete %s items? This cannot be undone.", ids.length);
         this.dialog.add(ConfirmationDialog, {
-            title: _t("Delete"),
+            title: _t("Delete Forever"),
             body,
-            confirmLabel: _t("Delete"),
+            confirmLabel: _t("Delete Forever"),
             confirmClass: "btn-danger",
             confirm: async () => {
                 try {
-                    await this.orm.unlink(MODEL, ids);
+                    await this.orm.call(MODEL, "browser_delete_forever", [ids]);
                 } catch (err) {
                     const msg =
                         (err && err.data && err.data.message) ||
                         (err && err.message) ||
-                        _t("Could not delete these items.");
+                        _t("Could not permanently delete these items.");
                     this.notification.add(msg, { type: "danger" });
                     return;
                 }

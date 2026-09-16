@@ -68,6 +68,7 @@ BASE_FOLDER_KEYS = [
     ("my_documents", "My Documents"),
     ("shared", "Shared"),
     ("public", "Public"),
+    ("trash", "Trash"),
 ]
 
 # Curated subset used by the Odoo View "reference a fixed record" flow
@@ -114,9 +115,22 @@ class SanareDocument(models.Model):
     )
     base_folder_key = fields.Selection(
         BASE_FOLDER_KEYS, copy=False,
-        help="Marks this as one of the three permanent root folders "
-             "(My Documents / Shared / Public) - the only documents allowed "
-             "to have no Parent. Set only by _get_base_folder(), never by hand.",
+        help="Marks this as one of the four permanent root folders "
+             "(My Documents / Shared / Public / Trash) - the only documents "
+             "allowed to have no Parent. Set only by _get_base_folder(), "
+             "never by hand.",
+    )
+    in_trash = fields.Boolean(
+        default=False, copy=False, index=True,
+        help="Deleted from the browser - filed under the Trash folder "
+             "instead of unlinked outright. Only set on the item the user "
+             "actually deleted, not on its descendants (they're still "
+             "trashed too, just by being nested under it).",
+    )
+    trash_origin_parent_id = fields.Many2one(
+        "sanare.document", copy=False,
+        help="Where this document lived before being moved to Trash - "
+             "Restore puts it back here.",
     )
     parent_path = fields.Char(index=True)
     child_ids = fields.One2many(
@@ -532,14 +546,14 @@ class SanareDocument(models.Model):
 
     @api.model
     def _get_base_folder(self, key):
-        """Find-or-create one of the three permanent root folders (see
+        """Find-or-create one of the four permanent root folders (see
         BASE_FOLDER_KEYS) - the only records _check_parent_required allows
         to have no Parent. "my_documents" is scoped to the current user
         (one each, created the first time each user needs a default
-        parent); "shared"/"public" are single company-wide folders, seeded
-        by data/dms_data.xml on install but found-or-created here too so an
-        already-installed database that predates this feature self-heals on
-        first use rather than erroring.
+        parent); "shared"/"public"/"trash" are single company-wide folders,
+        seeded by data/dms_data.xml on install but found-or-created here too
+        so an already-installed database that predates this feature
+        self-heals on first use rather than erroring.
         """
         if key not in dict(BASE_FOLDER_KEYS):
             raise ValueError("Unknown base folder key: %r" % (key,))
@@ -549,7 +563,16 @@ class SanareDocument(models.Model):
         folder = self.sudo().search(domain, limit=1)
         if folder:
             return folder
-        visibility = {"my_documents": "private", "shared": "shared", "public": "public"}[key]
+        # "trash" is "public" (not "private") so the folder itself stays
+        # navigable to every internal user - the read rule's one universal-
+        # read branch actually checks effective_visibility == "public"
+        # specifically, not just any non-private label. What's inside is
+        # still gated normally: each trashed item's own visibility is
+        # frozen at the moment it's trashed (_move_to_trash), so landing
+        # here never changes who can see it.
+        visibility = {
+            "my_documents": "private", "shared": "shared", "public": "public", "trash": "public",
+        }[key]
         vals = {
             "name": dict(BASE_FOLDER_KEYS)[key],
             "content_type": "folder",
@@ -1681,6 +1704,7 @@ class SanareDocument(models.Model):
                 "can_have_children": r.can_have_children,
                 "content_type": r.content_type,
                 "file_extension": r.file_extension,
+                "in_trash": r.in_trash,
                 "has_children": bool(counts.get(r.id)) if r.can_have_children else False,
                 "is_link": False,
                 "link_count": len(r.linked_parent_ids),
@@ -1699,6 +1723,7 @@ class SanareDocument(models.Model):
                     "can_have_children": False,
                     "content_type": d.content_type,
                     "file_extension": d.file_extension,
+                    "in_trash": d.in_trash,
                     "has_children": False,
                     "is_link": True,
                     "link_count": len(d.linked_parent_ids),
@@ -1835,6 +1860,7 @@ class SanareDocument(models.Model):
                 "content_type": r.content_type,
                 "content_type_label": ctypes.get(r.content_type),
                 "file_extension": r.file_extension,
+                "in_trash": r.in_trash,
                 "state": r.state,
                 "state_label": states.get(r.state),
                 "owner": r.owner_id.display_name,
@@ -1868,6 +1894,7 @@ class SanareDocument(models.Model):
                     "content_type": d.content_type,
                     "content_type_label": ctypes.get(d.content_type),
                     "file_extension": d.file_extension,
+                    "in_trash": d.in_trash,
                     "state": d.state,
                     "state_label": states.get(d.state),
                     "owner": d.owner_id.display_name,
@@ -1992,12 +2019,76 @@ class SanareDocument(models.Model):
             old.unlink()
         return {"attachment_id": att.id, "date": fields.Datetime.to_string(now)}
 
+    # -- Trash ----------------------------------------------------------
+    def _move_to_trash(self):
+        """Soft-delete: reparent under the Trash folder instead of
+        unlinking, remembering the real parent so Restore can undo it.
+        visibility is frozen to whatever it effectively was (and
+        visibility_inherited turned off) so landing in Trash - whose own
+        visibility is just 'private' - never changes who can still see the
+        item while it's sitting there."""
+        trash = self._get_base_folder("trash")
+        if any(doc.base_folder_key for doc in self):
+            raise UserError(self.env._("Permanent folders can't be moved to Trash."))
+        for doc in self:
+            if doc.in_trash:
+                continue
+            doc.write({
+                "trash_origin_parent_id": doc.parent_id.id,
+                "in_trash": True,
+                "visibility": doc.effective_visibility,
+                "visibility_inherited": False,
+                "parent_id": trash.id,
+            })
+
+    def _restore_from_trash(self):
+        """Undo _move_to_trash: back under trash_origin_parent_id (or the
+        user's own My Documents if that folder is gone/was itself
+        trashed-and-purged since)."""
+        for doc in self:
+            if not doc.in_trash:
+                continue
+            origin = doc.trash_origin_parent_id if doc.trash_origin_parent_id.exists() else False
+            doc.write({
+                "parent_id": origin.id if origin else self._get_base_folder("my_documents").id,
+                "in_trash": False,
+                "trash_origin_parent_id": False,
+            })
+
+    @api.model
+    def browser_delete(self, doc_ids):
+        """Browser's "Delete": soft - moves to Trash rather than unlinking.
+        See browser_delete_forever for the real, permanent delete."""
+        self.browse(doc_ids).exists()._move_to_trash()
+        return True
+
+    @api.model
+    def browser_restore(self, doc_ids):
+        self.browse(doc_ids).exists()._restore_from_trash()
+        return True
+
+    @api.model
+    def browser_delete_forever(self, doc_ids):
+        """Only ever offered in the browser for rows already in_trash - a
+        real unlink(), not reversible."""
+        docs = self.browse(doc_ids).exists()
+        if any(not d.in_trash for d in docs):
+            raise UserError(
+                self.env._("Only items already in Trash can be permanently deleted.")
+            )
+        docs.unlink()
+        return True
+
     @api.model
     def browser_move(self, doc_ids, target_parent_id):
         docs = self.browse(doc_ids).exists()
         if not docs:
             return False
-        target = self.browse(target_parent_id) if target_parent_id else self.browse()
+        # Dropping onto the "Documents" breadcrumb root used to mean "no
+        # parent" - no longer a valid destination now that every document
+        # needs one (_check_parent_required). Treat it as shorthand for the
+        # caller's own My Documents instead of erroring.
+        target = self.browse(target_parent_id) if target_parent_id else self._get_base_folder("my_documents")
         if target:
             if not target.can_have_children:
                 raise UserError(
@@ -2013,7 +2104,18 @@ class SanareDocument(models.Model):
                 )
             if target in docs:
                 raise UserError(self.env._("You cannot move a folder into itself."))
-        docs.write({"parent_id": target.id if target else False})
+        # Dragging onto the Trash tree row is the drag-and-drop equivalent
+        # of browser_delete; dragging out of Trash to anywhere else is the
+        # drag-and-drop equivalent of Restore, except landing wherever was
+        # actually dropped rather than back at trash_origin_parent_id.
+        if target and target.base_folder_key == "trash":
+            docs._move_to_trash()
+            return True
+        docs.write({
+            "parent_id": target.id if target else False,
+            "in_trash": False,
+            "trash_origin_parent_id": False,
+        })
         return True
 
     @api.model
@@ -2064,7 +2166,9 @@ class SanareDocument(models.Model):
         docs = self.browse(doc_ids).exists()
         if not docs:
             return []
-        target = self.browse(target_parent_id) if target_parent_id else self.browse()
+        # Same "root is no longer a real destination" fallback as
+        # browser_move - see its comment.
+        target = self.browse(target_parent_id) if target_parent_id else self._get_base_folder("my_documents")
         if target:
             if not target.can_have_children:
                 raise UserError(
