@@ -53,6 +53,10 @@
                     <filter name="group_salesman" string="Salesman" context="{'group_by': 'user_id'}"/>
                     <filter name="group_market" string="Market" context="{'group_by': 'market_id'}"/>
                 </group>
+                <searchpanel view_types="list,gmap">
+                    <field name="state_id" string="Province" icon="fa-map-marker"
+                           select="multi" enable_counters="1"/>
+                </searchpanel>
             </search>
         </field>
     </record>
