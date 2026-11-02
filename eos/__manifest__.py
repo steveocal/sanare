@@ -1,6 +1,6 @@
 {
     'name': 'EOS - Sanare Management & Reporting',
-    'version': '19.0.2.2.0',
+    'version': '19.0.2.3.0',
     'category': 'Sales/CRM',
     'author': 'Sanare',
     'license': 'LGPL-3',
@@ -21,7 +21,7 @@ Replaces the Excel "Management Reporting Engine" workbook with Odoo models.
 Financial layer (D) is intentionally deferred: accounting will feed the
 financial reports in a later phase.
 ''',
-    'depends': ['base', 'crm', 'product', 'stock', 'resource', 'web'],
+    'depends': ['base', 'crm', 'product', 'stock', 'resource', 'web', 'gmap_view'],
     'data': [
         'security/ir.model.access.csv',
         'data/markets.xml',
@@ -42,6 +42,7 @@ financial reports in a later phase.
         'views/kpi_views.xml',
         'views/governance_views.xml',
         'views/crm_views.xml',
+        'views/hospital_views.xml',
         'views/menus.xml',
         'views/gantt_views.xml',
     ],

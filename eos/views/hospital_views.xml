@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Hospitals = res.partner with is_hospital set. Province is the
+         partner's state_id; Salesman is the partner's salesperson (user_id). -->
+
+    <record id="view_eos_hospital_list" model="ir.ui.view">
+        <field name="name">res.partner.list.eos.hospital</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Hospitals">
+                <field name="name" string="Hospital"/>
+                <field name="hospital_type"/>
+                <field name="bed_count" sum="Total Beds"/>
+                <field name="state_id" string="Province"/>
+                <field name="user_id" string="Salesman" widget="many2one_avatar_user"/>
+                <field name="city" optional="show"/>
+                <field name="market_id" optional="show"/>
+                <field name="vendor_registration_status" optional="hide"/>
+                <field name="physician_count" string="KOLs" optional="hide"/>
+                <field name="phone" optional="hide"/>
+                <field name="email" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eos_hospital_search" model="ir.ui.view">
+        <field name="name">res.partner.search.eos.hospital</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search string="Hospitals">
+                <field name="name" string="Hospital"/>
+                <field name="state_id" string="Province"/>
+                <field name="user_id" string="Salesman"/>
+                <field name="city"/>
+                <field name="market_id"/>
+                <filter name="type_public" string="Public" domain="[('hospital_type', '=', 'public')]"/>
+                <filter name="type_private" string="Private" domain="[('hospital_type', '=', 'private')]"/>
+                <filter name="type_university" string="University" domain="[('hospital_type', '=', 'university')]"/>
+                <filter name="type_other" string="Other" domain="[('hospital_type', '=', 'other')]"/>
+                <separator/>
+                <filter name="my_hospitals" string="My Hospitals" domain="[('user_id', '=', uid)]"/>
+                <filter name="no_salesman" string="No Salesman" domain="[('user_id', '=', False)]"/>
+                <separator/>
+                <filter name="not_located" string="Not on Map"
+                        domain="['|', ('partner_latitude', '=', False), ('partner_longitude', '=', False)]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_type" string="Hospital Type" context="{'group_by': 'hospital_type'}"/>
+                    <filter name="group_province" string="Province" context="{'group_by': 'state_id'}"/>
+                    <filter name="group_salesman" string="Salesman" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_market" string="Market" context="{'group_by': 'market_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_eos_hospital_gmap" model="ir.ui.view">
+        <field name="name">res.partner.gmap.eos.hospital</field>
+        <field name="model">res.partner</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <gmap lat="partner_latitude" lng="partner_longitude" limit="10000">
+                <field name="hospital_type"/>
+                <field name="bed_count"/>
+                <field name="state_id" string="Province"/>
+                <field name="user_id" string="Salesman"/>
+                <field name="contact_address" string="Address"/>
+                <field name="phone"/>
+            </gmap>
+        </field>
+    </record>
+
+    <record id="action_eos_hospital" model="ir.actions.act_window">
+        <field name="name">Hospitals</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,gmap,form</field>
+        <field name="domain">[('is_hospital', '=', True)]</field>
+        <field name="context">{'default_is_hospital': True, 'default_is_company': True}</field>
+        <field name="search_view_id" ref="view_eos_hospital_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a hospital</p>
+            <p>Hospitals are contacts with <b>Is Hospital</b> ticked on their EOS / Sanare tab.
+                Set the address and use <i>Compute GPS</i> on the contact to place it on the map.</p>
+        </field>
+    </record>
+    <record id="action_eos_hospital_view_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_eos_hospital_list"/>
+        <field name="act_window_id" ref="action_eos_hospital"/>
+    </record>
+    <record id="action_eos_hospital_view_gmap" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">gmap</field>
+        <field name="view_id" ref="view_eos_hospital_gmap"/>
+        <field name="act_window_id" ref="action_eos_hospital"/>
+    </record>
+    <record id="action_eos_hospital_view_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="3"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="base.view_partner_form"/>
+        <field name="act_window_id" ref="action_eos_hospital"/>
+    </record>
+</odoo>

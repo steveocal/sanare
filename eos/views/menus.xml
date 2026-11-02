@@ -77,7 +77,9 @@
     <menuitem id="menu_eos_task" name="Tasks" parent="menu_eos_execution"
               action="action_eos_task" sequence="30"/>
 
-    <menuitem id="menu_eos_commercial" name="Commercial" parent="menu_eos_root" sequence="20"/>
+    <menuitem id="menu_eos_commercial" name="Contacts" parent="menu_eos_root" sequence="20"/>
+    <menuitem id="menu_eos_hospital" name="Hospitals" parent="menu_eos_commercial"
+              action="action_eos_hospital" sequence="5"/>
     <menuitem id="menu_eos_physician" name="Physicians / KOLs" parent="menu_eos_commercial"
               action="action_eos_physician" sequence="10"/>
 
