@@ -73,4 +73,17 @@
             </xpath>
         </field>
     </record>
+
+    <!-- res.partner list: No. of Beds column (filled on hospital rows only) -->
+    <record id="view_partner_tree_eos" model="ir.ui.view">
+        <field name="name">res.partner.list.eos</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <field name="phone" position="after">
+                <field name="is_hospital" column_invisible="True"/>
+                <field name="bed_count" optional="show" invisible="not is_hospital"/>
+            </field>
+        </field>
+    </record>
 </odoo>
