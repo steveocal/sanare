@@ -63,4 +63,53 @@
             </form>
         </field>
     </record>
+
+    <record id="view_eos_physician_search" model="ir.ui.view">
+        <field name="name">eos.physician.search</field>
+        <field name="model">eos.physician</field>
+        <field name="arch" type="xml">
+            <search string="Physicians / KOLs">
+                <field name="name"/>
+                <field name="hospital_id"/>
+                <field name="specialty"/>
+                <field name="market_id"/>
+                <filter name="repeat_users" string="Repeat Users" domain="[('repeat_user', '=', True)]"/>
+                <filter name="kols" string="KOL / Advisor" domain="[('relationship_stage', '=', 'kol')]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_stage" string="Relationship Stage" context="{'group_by': 'relationship_stage'}"/>
+                    <filter name="group_training" string="Training Status" context="{'group_by': 'training_status'}"/>
+                    <filter name="group_hospital" string="Hospital" context="{'group_by': 'hospital_id'}"/>
+                    <filter name="group_specialty" string="Specialty" context="{'group_by': 'specialty'}"/>
+                    <filter name="group_market" string="Market" context="{'group_by': 'market_id'}"/>
+                    <filter name="group_owner" string="Owner" context="{'group_by': 'owner'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_eos_physician_graph" model="ir.ui.view">
+        <field name="name">eos.physician.graph</field>
+        <field name="model">eos.physician</field>
+        <field name="arch" type="xml">
+            <graph string="Physicians / KOLs" type="bar" sample="1">
+                <field name="relationship_stage"/>
+                <field name="cases_ytd" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eos_physician_pivot" model="ir.ui.view">
+        <field name="name">eos.physician.pivot</field>
+        <field name="model">eos.physician</field>
+        <field name="arch" type="xml">
+            <pivot string="Physicians / KOLs" sample="1">
+                <field name="hospital_id" type="row"/>
+                <field name="relationship_stage" type="col"/>
+                <field name="cases_ytd" type="measure"/>
+                <field name="cm2_ytd" type="measure"/>
+            </pivot>
+        </field>
+    </record>
 </odoo>
