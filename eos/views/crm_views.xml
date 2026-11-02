@@ -66,6 +66,7 @@
                         <field name="is_physician" readonly="1"/>
                         <field name="market_id"/>
                         <field name="hospital_type"/>
+                        <field name="bed_count" invisible="not is_hospital"/>
                         <field name="vendor_registration_status"/>
                     </group>
                 </page>

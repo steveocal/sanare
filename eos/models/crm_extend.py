@@ -30,6 +30,7 @@ class ResPartner(models.Model):
         ('university', 'University'),
         ('other', 'Other'),
     ], string='Hospital Type')
+    bed_count = fields.Integer(string='No. of Beds')
     vendor_registration_status = fields.Selection([
         ('not_started', 'Not Started'),
         ('in_progress', 'In Progress'),
