@@ -1,6 +1,6 @@
 {
     'name': 'EOS - Sanare Management & Reporting',
-    'version': '19.0.2.3.0',
+    'version': '19.0.2.4.0',
     'category': 'Sales/CRM',
     'author': 'Sanare',
     'license': 'LGPL-3',
@@ -33,6 +33,7 @@ financial reports in a later phase.
         'data/launch_workstreams.xml',
         'data/close_steps.xml',
         'data/milestones.xml',
+        'data/country_state_en.xml',
         'views/market_views.xml',
         'views/rock_task_views.xml',
         'views/project_plan_views.xml',

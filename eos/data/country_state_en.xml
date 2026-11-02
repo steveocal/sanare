@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- English names for Thai provinces (fills only empty name_en). -->
+    <function model="res.country.state" name="_eos_load_english_names"/>
+</odoo>

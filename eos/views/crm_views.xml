@@ -86,4 +86,26 @@
             </field>
         </field>
     </record>
+
+    <!-- res.country.state: English name next to the local-script name -->
+    <record id="view_country_state_tree_eos" model="ir.ui.view">
+        <field name="name">res.country.state.list.eos</field>
+        <field name="model">res.country.state</field>
+        <field name="inherit_id" ref="base.view_country_state_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="name_en"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_country_state_form_eos" model="ir.ui.view">
+        <field name="name">res.country.state.form.eos</field>
+        <field name="model">res.country.state</field>
+        <field name="inherit_id" ref="base.view_country_state_form"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="name_en"/>
+            </field>
+        </field>
+    </record>
 </odoo>
