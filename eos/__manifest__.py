@@ -1,6 +1,6 @@
 {
     'name': 'EOS - Sanare Management & Reporting',
-    'version': '19.0.2.7.0',
+    'version': '19.0.2.8.0',
     'category': 'Sales/CRM',
     'author': 'Sanare',
     'license': 'LGPL-3',

@@ -67,6 +67,9 @@
                         <field name="market_id"/>
                         <field name="hospital_type"/>
                         <field name="bed_count" invisible="not is_hospital"/>
+                        <field name="est_doctor_count" invisible="not is_hospital"/>
+                        <field name="specialty_ids" widget="many2many_tags"
+                               options="{'color_field': 'color'}" invisible="not is_hospital"/>
                         <field name="vendor_registration_status"/>
                     </group>
                 </page>
@@ -83,6 +86,7 @@
             <field name="phone" position="after">
                 <field name="is_hospital" column_invisible="True"/>
                 <field name="bed_count" optional="show" invisible="not is_hospital"/>
+                <field name="est_doctor_count" optional="hide" invisible="not is_hospital"/>
             </field>
         </field>
     </record>

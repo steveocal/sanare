@@ -3,6 +3,7 @@ from . import rock_task
 from . import project_plan
 from . import crm_extend
 from . import country_state
+from . import hospital_specialty
 from . import physician
 from . import supply_chain
 from . import risk

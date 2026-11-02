@@ -12,6 +12,8 @@
                 <field name="name" string="Hospital"/>
                 <field name="hospital_type"/>
                 <field name="bed_count" sum="Total Beds"/>
+                <field name="est_doctor_count" sum="Total Doctors" optional="show"/>
+                <field name="specialty_ids" widget="many2many_tags" options="{'color_field': 'color'}" optional="show"/>
                 <field name="state_id" string="Province"/>
                 <field name="user_id" string="Salesman" widget="many2one_avatar_user"/>
                 <field name="city" optional="show"/>
@@ -33,6 +35,7 @@
                 <field name="name" string="Hospital"/>
                 <field name="state_id" string="Province"/>
                 <field name="user_id" string="Salesman"/>
+                <field name="specialty_ids"/>
                 <field name="city"/>
                 <field name="market_id"/>
                 <filter name="type_public" string="Public" domain="[('hospital_type', '=', 'public')]"/>
@@ -43,6 +46,8 @@
                 <filter name="my_hospitals" string="My Hospitals" domain="[('user_id', '=', uid)]"/>
                 <filter name="no_salesman" string="No Salesman" domain="[('user_id', '=', False)]"/>
                 <separator/>
+                <filter name="has_specialty" string="Specialist" domain="[('specialty_ids', '!=', False)]"/>
+                <separator/>
                 <filter name="not_located" string="Not on Map"
                         domain="['|', ('partner_latitude', '=', False), ('partner_longitude', '=', False)]"/>
                 <separator/>
@@ -52,9 +57,12 @@
                     <filter name="group_province" string="Province" context="{'group_by': 'state_id'}"/>
                     <filter name="group_salesman" string="Salesman" context="{'group_by': 'user_id'}"/>
                     <filter name="group_market" string="Market" context="{'group_by': 'market_id'}"/>
+                    <filter name="group_specialty" string="Specialty" context="{'group_by': 'specialty_ids'}"/>
                 </group>
                 <searchpanel view_types="list,gmap,graph,pivot">
                     <field name="state_id" string="Province" icon="fa-map-marker"
+                           select="multi" enable_counters="1"/>
+                    <field name="specialty_ids" string="Specialty" icon="fa-stethoscope"
                            select="multi" enable_counters="1"/>
                 </searchpanel>
             </search>
@@ -69,6 +77,8 @@
             <gmap lat="partner_latitude" lng="partner_longitude" limit="10000">
                 <field name="hospital_type"/>
                 <field name="bed_count"/>
+                <field name="est_doctor_count"/>
+                <field name="specialty_ids"/>
                 <field name="state_id" string="Province"/>
                 <field name="user_id" string="Salesman"/>
                 <field name="contact_address" string="Address"/>
@@ -99,6 +109,7 @@
                 <field name="state_id" string="Province" type="row"/>
                 <field name="hospital_type" type="col"/>
                 <field name="bed_count" type="measure"/>
+                <field name="est_doctor_count" type="measure"/>
             </pivot>
         </field>
     </record>
@@ -145,5 +156,23 @@
         <field name="view_mode">form</field>
         <field name="view_id" ref="base.view_partner_form"/>
         <field name="act_window_id" ref="action_eos_hospital"/>
+    </record>
+
+    <!-- Specialties configuration -->
+    <record id="view_eos_hospital_specialty_list" model="ir.ui.view">
+        <field name="name">eos.hospital.specialty.list</field>
+        <field name="model">eos.hospital.specialty</field>
+        <field name="arch" type="xml">
+            <list string="Hospital Specialties" editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_eos_hospital_specialty" model="ir.actions.act_window">
+        <field name="name">Hospital Specialties</field>
+        <field name="res_model">eos.hospital.specialty</field>
+        <field name="view_mode">list</field>
     </record>
 </odoo>

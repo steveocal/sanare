@@ -31,6 +31,13 @@ class ResPartner(models.Model):
         ('other', 'Other'),
     ], string='Hospital Type')
     bed_count = fields.Integer(string='No. of Beds')
+    est_doctor_count = fields.Integer(
+        string='Estimated Doctors',
+        help='Estimate, not a count: MoPH Health Resources Report provincial '
+             'doctors by sector, shared across hospitals by beds and type.')
+    specialty_ids = fields.Many2many(
+        'eos.hospital.specialty', 'eos_hospital_specialty_rel', 'partner_id', 'specialty_id',
+        string='Specialties')
     vendor_registration_status = fields.Selection([
         ('not_started', 'Not Started'),
         ('in_progress', 'In Progress'),

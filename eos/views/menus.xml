@@ -83,6 +83,9 @@
     <menuitem id="menu_eos_physician" name="Physicians / KOLs" parent="menu_eos_commercial"
               action="action_eos_physician" sequence="10"/>
 
+    <menuitem id="menu_eos_hospital_specialty" name="Hospital Specialties" parent="menu_eos_commercial"
+              action="action_eos_hospital_specialty" sequence="90"/>
+
     <menuitem id="menu_eos_operations" name="Operations" parent="menu_eos_root" sequence="30"/>
     <menuitem id="menu_eos_sku" name="Supply Chain / Inventory" parent="menu_eos_operations"
               action="action_eos_sku" sequence="10"/>
